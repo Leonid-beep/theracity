@@ -239,63 +239,104 @@
 
   /* Лого */
   .header {
-    top: 20px;          /* было 27 */
-    right: 32px;        /* 37 * 0.75 */
+    top: 1.95vh;          /* 20 / 1024 */
+    right: 2.22vw;        /* 32 / 1440 */
   }
 
   .logoText {
-    font-size: 64px;    /* 70 * 0.8 (чуть меньше, чтобы не давило) */
-    line-height: 36px;
+    font-size: 4.44vw;    /* 64 / 1440 */
+    line-height: 3.52vh;  /* 36 / 1024 */
   }
 
   .logoIconImg {
-    width: 64px;
-    height: 64px;
+    width: 4.44vw;        /* 64 / 1440 */
+    height: 4.44vw;
   }
 
   /* Линия */
   .lines {
     background: url("/images/line_1440.svg") no-repeat;
-    width: 1156px;
-    left: 123px;
-    bottom: 60px;
+    width: 80.28vw;       /* 1156 / 1440 */
+    left: 8.54vw;         /* 123 / 1440 */
+    bottom: 5.86vh;       /* 60 / 1024 */
   }
 
-  /* Фото: позиции/размеры */
-  .p1 { top: 32px;   left: 27px;  width: 202px; height: 269px; }
-  .p2 { top: 73px;  left: 346px; width: 280px; height: 210px; }
-  .p3 { top: 90px;  right: 489px; width: 213px; height: 284px; }
-  .p4 { top: 212px; right: 100px; width: 238px; height: 317px; }
-  .p5 { bottom: 40px; right: 61px; width: 238px; height: 317px; }
-  .p6 { bottom: 40px; left: 169px; width: 303px; height: 227px; }
-  .p7 { bottom: 322px; left: 66px; width: 205px; height: 274px; }
+  /* Фото */
+  .p1 {
+    top: 3.13vh;          /* 32 */
+    left: 1.88vw;         /* 27 */
+    width: 14.03vw;       /* 202 */
+    height: 26.27vh;      /* 269 */
+  }
+
+  .p2 {
+    top: 7.13vh;          /* 73 */
+    left: 24.03vw;        /* 346 */
+    width: 19.44vw;       /* 280 */
+    height: 20.51vh;      /* 210 */
+  }
+
+  .p3 {
+    top: 8.79vh;          /* 90 */
+    right: 33.96vw;       /* 489 */
+    width: 14.79vw;       /* 213 */
+    height: 27.73vh;      /* 284 */
+  }
+
+  .p4 {
+    top: 20.70vh;         /* 212 */
+    right: 6.94vw;        /* 100 */
+    width: 16.53vw;       /* 238 */
+    height: 30.96vh;      /* 317 */
+  }
+
+  .p5 {
+    bottom: 3.91vh;       /* 40 */
+    right: 4.24vw;        /* 61 */
+    width: 16.53vw;
+    height: 30.96vh;
+  }
+
+  .p6 {
+    bottom: 3.91vh;
+    left: 11.74vw;        /* 169 */
+    width: 21.04vw;       /* 303 */
+    height: 22.17vh;      /* 227 */
+  }
+
+  .p7 {
+    bottom: 31.45vh;      /* 322 */
+    left: 4.58vw;         /* 66 */
+    width: 14.24vw;       /* 205 */
+    height: 26.76vh;      /* 274 */
+  }
 
   /* Заголовок */
   .title {
-    left: 248px;
-    top: 338px;
-    width: 426px;
+    left: 17.22vw;        /* 248 */
+    top: 33.01vh;         /* 338 */
+    width: 29.58vw;       /* 426 */
     height: auto;
-    font-size: 36px;
+    font-size: 2.50vw;    /* 36 */
   }
 
   /* Кнопка */
   .cta {
-    width: 525px;
-    height: 98px;
-    font-size: 24px;
+    width: 36.46vw;       /* 525 */
+    height: 9.57vh;       /* 98 */
+    font-size: 1.67vw;    /* 24 */
   }
 
   /* Подзаголовок */
   .subtitle {
-    right: 391px;
-    bottom: 200px;
-    width: 492px;
+    right: 27.15vw;       /* 391 */
+    bottom: 19.53vh;      /* 200 */
+    width: 34.17vw;       /* 492 */
     height: auto;
-    font-size: 36px;
+    font-size: 2.50vw;    /* 36 */
   }
 
-  /* Подчеркивание (маркер) чуть тоньше на 1440 */
+  /* Маркер */
   .mark::after {
     height: 0.16em;
     bottom: 0.07em;
