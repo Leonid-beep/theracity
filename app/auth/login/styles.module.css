@@ -5,7 +5,6 @@
   overflow: hidden;
 }
 
-/* Фон-карта */
 .mapBg {
   position: absolute;
   inset: 0;
@@ -15,38 +14,33 @@
   z-index: 0;
 }
 
-/* Полоска-линии поверх карты */
-.lines {
+.collage {
   position: absolute;
-  width: 1568px;
-  height: 861px;
-  left: 145px;
-  bottom: 28px;
-  background: url("/images/line.png") no-repeat;
-  background-size: contain;
+  top: min(0.8333vh, 9px);
+  right: min(4.1146vw, 79px);
+  bottom: 0;
+  left: 0;
+  z-index: 2;
   pointer-events: none;
+  background: url("/images/collage_1920.svg") center / contain no-repeat;
 }
 
-
-/* Header */
 .header {
   position: absolute;
-
-  top: 2.5vh;         /* 27 / 1080 * 100 */
-  right: 1.9271vw;    /* 37 / 1920 * 100 */
-
+  top: min(2.5vh, 27px);
+  right: min(1.9271vw, 37px);
   z-index: 5;
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: 0.625vw;       /* 12 / 1920 * 100 */
+  gap: min(0.625vw, 12px);
 }
 
 .logoText {
-  font-size: 3.6458vw; /* 70 / 1920 * 100 */
-  line-height: 3.3333vh; /* 36 / 1080 * 100 */
+  font-size: min(3.6458vw, 70px);
+  line-height: 1;
   font-weight: 400;
   letter-spacing: 0.5px;
   color: #111;
@@ -55,107 +49,25 @@
 
 .logoIconImg {
   display: block;
-  width: 3.6458vw;  /* 70 / 1920 * 100 */
-  height: 6.4815vh; /* 70 / 1080 * 100 */
+  width: min(3.6458vw, 70px);
+  height: min(3.6458vw, 70px);
   filter: contrast(1.1);
 }
 
-/* Фотографии */
-.photos {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-}
-
-.photo {
-  position: absolute;
-  border-radius: 0.5208vw; /* 10 / 1920 * 100 */
-  overflow: hidden;
-  object-fit: contain;
-  background: #d9d9d9;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
-  transition: transform 220ms ease, box-shadow 220ms ease;
-  transform-origin: center center;
-}
-
-.photo:hover {
-  transform: scale(1.045);
-  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.22);
-}
-
-.photoImg {
-  object-fit: cover;
-}
-
-/* Раскладка фото (все px -> vw/vh) */
-.p1 {
-  top: 0.8333vh;   /* 9 */
-  left: 4.0625vw;  /* 78 */
-  width: 12.8646vw; /* 247 */
-  height: 30.4630vh; /* 329 */
-}
-
-.p2 {
-  top: 4.9074vh;   /* 53 */
-  left: 33.8021vw; /* 649 */
-  width: 19.7917vw; /* 380 */
-  height: 26.3889vh; /* 285 */
-}
-
-.p3 {
-  top: 8.0556vh;    /* 87 */
-  right: 27.1354vw; /* 521 */
-  width: 13.0729vw; /* 251 */
-  height: 31.0185vh; /* 335 */
-}
-
-.p4 {
-  top: 20.2778vh;   /* 219 */
-  right: 7.5521vw;  /* 145 */
-  width: 14.5313vw; /* 279 */
-  height: 34.4444vh; /* 372 */
-}
-
-.p5 {
-  bottom: 1.7593vh; /* 19 */
-  right: 8.3854vw;  /* 161 */
-  width: 14.2188vw; /* 273 */
-  height: 33.6111vh; /* 363 */
-}
-
-.p6 {
-  bottom: 1.7593vh; /* 19 */
-  left: 27.0833vw;  /* 520 */
-  width: 16.8750vw; /* 324 */
-  height: 22.5000vh; /* 243 */
-}
-
-.p7 {
-  bottom: 18.3333vh; /* 198 */
-  left: 5.0000vw;    /* 96 */
-  width: 13.3333vw;  /* 256 */
-  height: 31.5741vh; /* 341 */
-}
-
-/* Заголовок */
 .title {
   margin: 0;
   position: absolute;
-
-  width: 22.1875vw; /* 426 */
-  height: 26.2963vh; /* 284 */
-
-  left: 16.9271vw; /* 325 */
-  top: 34.1667vh;  /* 369 */
-
-  font-size: 2.0833vw; /* 40 */
+  left: min(16.9271vw, 325px);
+  top: min(34.1667vh, 369px);
+  width: min(22.1875vw, 426px);
+  font-size: min(2.0833vw, 40px);
   line-height: 120%;
-  letter-spacing: 5%;
+  letter-spacing: 0.05em;
   font-weight: 400;
   font-family: var(--font-text);
+  z-index: 4;
 }
 
-/* Кнопка */
 .cta {
   display: flex;
   align-items: center;
@@ -165,24 +77,24 @@
   top: 50%;
   left: 50%;
 
-  width: 27.3438vw;  /* 525 */
-  height: 9.0741vh;  /* 98 */
+  width: min(27.3438vw, 525px);
+  height: min(9.0741vh, 98px);
 
   transform: translate(-50%, -50%);
-  border-radius: 1.3021vw; /* 25 / 1920 * 100 */
+  border-radius: min(1.3021vw, 25px);
 
   background: #E0DAB4;
   color: #111;
   text-decoration: none;
-  font-size: 1.2500vw; /* 24 */
+  font-size: min(1.25vw, 24px);
   font-weight: 400;
   font-family: var(--font-button);
 
   transition: transform 220ms ease, box-shadow 220ms ease, filter 220ms ease;
   box-shadow: 0 10px 18px rgba(0, 0, 0, 0.14);
+  z-index: 4;
 }
 
-/* ВАЖНО: чтобы hover не ломал translate */
 .cta:hover {
   transform: translate(-50%, -50%) scale(1.045);
   box-shadow: 0 16px 28px rgba(0, 0, 0, 0.18);
@@ -192,21 +104,17 @@
 .subtitle {
   margin: 0;
   position: absolute;
-
-  right: 25.0000vw; /* 480 */
-  bottom: 19.5370vh; /* 211 */
-
-  width: 28.5417vw; /* 548 */
-  height: 22.8704vh; /* 247 */
-
-  font-size: 2.0833vw; /* 40 */
+  right: min(27vw, 500px);
+  bottom: min(19.537vh, 211px);
+  width: min(28.5417vw, 548px);
+  font-size: min(2.0833vw, 40px);
   line-height: 110%;
-  letter-spacing: 5%;
+  letter-spacing: 0.05em;
   font-weight: 400;
   font-family: var(--font-text);
+  z-index: 4;
 }
 
-/* Маркер */
 .mark {
   position: relative;
   display: inline-block;
@@ -221,11 +129,9 @@
   right: -0.03em;
   bottom: 0.06em;
   height: 0.18em;
-
   background:
     radial-gradient(circle, #EE0A0A 55%, transparent 58%) 0 50% / 6px 5px repeat-x,
     radial-gradient(circle, rgba(238,10,10,0.75) 55%, transparent 58%) 2px 55% / 7px 6px repeat-x;
-
   filter: blur(0.25px);
   opacity: 0.95;
   border-radius: 999px;
@@ -233,113 +139,141 @@
   pointer-events: none;
 }
 
-
-
 @media (max-width: 1440px) {
+  .collage {
+    background: url("/images/collage_1440.svg") center / contain no-repeat;
+    top: min(2.6367vh, 27px);
+    right: min(2.2222vw, 32px);
+  }
 
-  /* Лого */
   .header {
-    top: 1.95vh;          /* 20 / 1024 */
-    right: 2.22vw;        /* 32 / 1440 */
+    top: min(1.95vh, 20px);
+    right: min(2.22vw, 32px);
   }
 
   .logoText {
-    font-size: 4.44vw;    /* 64 / 1440 */
-    line-height: 3.52vh;  /* 36 / 1024 */
+    font-size: min(4.44vw, 64px);
   }
 
   .logoIconImg {
-    width: 4.44vw;        /* 64 / 1440 */
-    height: 4.44vw;
+    width: min(4.44vw, 64px);
+    height: min(4.44vw, 64px);
   }
 
-  /* Линия */
-  .lines {
-    background: url("/images/line_1440.svg") no-repeat;
-    width: 80.28vw;       /* 1156 / 1440 */
-    left: 8.54vw;         /* 123 / 1440 */
-    bottom: 5.86vh;       /* 60 / 1024 */
-  }
-
-  /* Фото */
-  .p1 {
-    top: 3.13vh;          /* 32 */
-    left: 1.88vw;         /* 27 */
-    width: 14.03vw;       /* 202 */
-    height: 26.27vh;      /* 269 */
-  }
-
-  .p2 {
-    top: 7.13vh;          /* 73 */
-    left: 24.03vw;        /* 346 */
-    width: 19.44vw;       /* 280 */
-    height: 20.51vh;      /* 210 */
-  }
-
-  .p3 {
-    top: 8.79vh;          /* 90 */
-    right: 33.96vw;       /* 489 */
-    width: 14.79vw;       /* 213 */
-    height: 27.73vh;      /* 284 */
-  }
-
-  .p4 {
-    top: 20.70vh;         /* 212 */
-    right: 6.94vw;        /* 100 */
-    width: 16.53vw;       /* 238 */
-    height: 30.96vh;      /* 317 */
-  }
-
-  .p5 {
-    bottom: 3.91vh;       /* 40 */
-    right: 4.24vw;        /* 61 */
-    width: 16.53vw;
-    height: 30.96vh;
-  }
-
-  .p6 {
-    bottom: 3.91vh;
-    left: 11.74vw;        /* 169 */
-    width: 21.04vw;       /* 303 */
-    height: 22.17vh;      /* 227 */
-  }
-
-  .p7 {
-    bottom: 31.45vh;      /* 322 */
-    left: 4.58vw;         /* 66 */
-    width: 14.24vw;       /* 205 */
-    height: 26.76vh;      /* 274 */
-  }
-
-  /* Заголовок */
   .title {
-    left: 17.22vw;        /* 248 */
-    top: 33.01vh;         /* 338 */
-    width: 29.58vw;       /* 426 */
-    height: auto;
-    font-size: 2.50vw;    /* 36 */
+    left: min(17.22vw, 248px);
+    top: min(33.01vh, 338px);
+    width: min(29.58vw, 426px);
+    font-size: min(2.50vw, 36px);
   }
 
-  /* Кнопка */
   .cta {
-    width: 36.46vw;       /* 525 */
-    height: 9.57vh;       /* 98 */
-    font-size: 1.67vw;    /* 24 */
+    width: min(36.46vw, 525px);
+    height: min(9.57vh, 98px);
+    font-size: min(1.67vw, 24px);
   }
 
-  /* Подзаголовок */
   .subtitle {
-    right: 27.15vw;       /* 391 */
-    bottom: 19.53vh;      /* 200 */
-    width: 34.17vw;       /* 492 */
-    height: auto;
-    font-size: 2.50vw;    /* 36 */
+    right: min(27.15vw, 391px);
+    bottom: min(19.53vh, 200px);
+    width: min(34.17vw, 492px);
+    font-size: min(2.50vw, 36px);
   }
 
-  /* Маркер */
   .mark::after {
     height: 0.16em;
     bottom: 0.07em;
     opacity: 0.92;
   }
 }
+
+
+@media (max-width: 1024px) {
+  .header {
+    top: min(1.537vh, 21px);
+    right: min(1.953vw, 20px);
+  }
+
+  .logoText {
+    font-size: min(4.883vw, 50px);
+    line-height: min(2.635vh, 36px);
+  }
+
+  .logoIconImg {
+    width: min(4.883vw, 50px);
+    height: min(4.883vw, 50px);
+  }
+
+  .collage {
+    top: min(1.537vh, 21px);
+    right: min(2.148vw, 22px);
+    background: url("/images/collage_1024.svg") center / contain no-repeat;
+  }
+
+  .title {
+    left: min(12.891vw, 132px);
+    top: min(29.213vh, 399px);
+    width: min(33.594vw, 344px);
+    font-size: min(3.906vw, 40px);
+  }
+
+  .cta {
+    width: min(51.270vw, 525px);
+    height: min(7.174vh, 98px);
+    font-size: min(2.344vw, 24px);
+  }
+
+  .subtitle {
+    right: min(22.461vw, 230px);
+    bottom: min(25.403vh, 347px);
+    width: min(48.047vw, 492px);
+    font-size: min(3.516vw, 36px);
+  }
+}
+
+
+@media (max-width: 768px) {
+  .header {
+    top: min(2.998vh, 20px);
+    right: min(5.067vw, 19px);
+  }
+
+  .logoText {
+    font-size: min(7.467vw, 28px);
+    line-height: min(5.397vh, 36px);
+  }
+
+  .logoIconImg {
+    width: min(7.467vw, 28px);
+    height: min(7.467vw, 28px);
+  }
+
+  .collage {
+    top: min(2.998vh, 20px);
+    right: min(2.400vw, 9px);
+    background: url("/images/collage_700.svg") center / contain no-repeat;
+  }
+
+  .title {
+    left: min(14.933vw, 56px);
+    top: min(38.680vh, 258px);
+    width: min(70.400vw, 264px);
+    font-size: min(6.400vw, 24px);
+  }
+
+  .cta {
+    width: min(101.600vw, 381px);
+    height: min(9.445vh, 63px);
+    font-size: min(5.333vw, 20px);
+  }
+
+  .subtitle {
+    right: min(27.200vw, 102px);
+    bottom: min(29.085vh, 194px);
+    width: min(107.200vw, 402px);
+    font-size: min(6.400vw, 24px);
+  }
+}
+
+
+
