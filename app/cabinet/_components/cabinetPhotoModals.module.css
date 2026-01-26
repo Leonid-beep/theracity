@@ -1,0 +1,179 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(2px);
+  display: grid;
+  place-items: center;
+}
+
+.modal {
+  position: relative;
+  border-radius: 14px;
+  background: rgba(201, 191, 191, 0.5);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+}
+
+.closeBtn {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.closeBtn::before,
+.closeBtn::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 28px;
+  height: 2px;
+  background: #111;
+  transform-origin: center;
+}
+
+.closeBtn::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.closeBtn::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.modalPhoto {
+  width: 450px;
+  height: 675px;
+  padding: 0;
+}
+
+.photoTitle {
+  position: absolute;
+  left: 15px;
+  top: 19.5px;
+  font-family: var(--font-text);
+  font-size: 27px;
+  letter-spacing: 0.05em;
+  color: #111;
+  max-width: calc(450px - 60px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.photoWrap {
+  position: absolute;
+  left: 50%;
+  top: calc(19.5px + 27px + 16.5px);
+  width: 300px;
+  height: 375px;
+  transform: translateX(-50%);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.2);
+}
+
+.photoImg {
+  width: 300px;
+  height: 375px;
+  object-fit: cover;
+}
+
+.likeDot {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #ee0a0a;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+}
+
+.meta {
+  position: absolute;
+  left: 15px;
+  top: calc(19.5px + 27px + 16.5px + 375px + 21px);
+  font-family: var(--font-text);
+  font-size: 27px;
+  letter-spacing: 0.05em;
+  color: #111;
+  max-width: calc(450px - 30px);
+}
+
+.actions {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  width: 420px;
+  display: grid;
+  gap: 21.5px;
+}
+
+.bigBtn {
+  width: 420px;
+  height: 37.5px;
+  border: 0;
+  border-radius: 999px;
+  background: #e0dab4;
+  cursor: pointer;
+  font-family: var(--font-button);
+  font-size: 16px;
+  letter-spacing: 0.05em;
+  color: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.16);
+}
+
+.bigBtnDanger {
+  text-decoration: underline;
+  text-decoration-color: #ee0a0a;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.btnPlus {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.12);
+  position: relative;
+}
+
+.btnPlus::before,
+.btnPlus::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 2px;
+  background: #111;
+  transform: translate(-50%, -50%);
+}
+
+.btnPlus::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.btnTrash {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.stepStub {
+  display: none;
+}

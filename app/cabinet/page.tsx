@@ -1,23 +1,44 @@
-// app/(app)/cabinet/page.tsx
 "use client";
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import styles from "./styles.module.css";
+import CabinetRouteModal, { CabinetRouteItem } from "./_components/CabinetRouteModal";
+import CabinetPhotoModals, { CabinetPhotoItem } from "./_components/CabinetPhotoModals";
+import ConfirmDeleteModal from "./_components/ConfirmDeleteModal";
 
-type Item = { id: number; src: string; title: string };
+type ItemBase = { id: number; src: string; title: string };
 
-const makeItems = (n: number): Item[] =>
+const makePhotoItems = (n: number): CabinetPhotoItem[] =>
   Array.from({ length: n }).map((_, i) => ({
     id: i + 1,
     src: `/images/city/city-${(i % 7) + 1}.jpg`,
-    title: ["Прогулка по центру", "Песня", "Дворы и колодцы", "За поворотом", "Красиво"][i % 5],
+    title: ["Жёлтый двор-колодец", "Тихая арка", "Сырая улица", "Светлый двор"][i % 4],
+    metro: ["Василеостровская", "Сенная площадь", "Чернышевская", "Удельная"][i % 4],
+    coords: ["59.936435, 30.270504", "59.931120, 30.360210", "59.944010, 30.312800", "59.999020, 30.300100"][i % 4],
   }));
 
+const makeRouteItems = (n: number): CabinetRouteItem[] =>
+  Array.from({ length: n }).map((_, i) => {
+    const photos = Array.from({ length: 6 }).map((__, k) => ({
+      src: `/images/city/city-${((i + k) % 7) + 1}.jpg`,
+      alt: "route photo",
+    }));
+    return {
+      id: i + 1,
+      title: ["По дворам-колодцам", "Прогулка по центру", "За поворотом", "Песня", "Красиво"][i % 5],
+      desc:
+        "Маршрут для любителей дворов, плохой погоды, Невского проспекта, узких улочек и многого другого",
+      metro: ["Василеостровская", "Сенная площадь", "Чернышевская", "Удельная"][i % 4],
+      address: ["59.936435, 30.270504", "59.931120, 30.360210", "59.944010, 30.312800", "59.999020, 30.300100"][i % 4],
+      photos,
+    };
+  });
+
 const sections = [
-  { key: "my_routes", title: "Мои маршруты", items: makeItems(56) },
-  { key: "fav_photos", title: "Избранные фотографии", items: makeItems(56) },
-  { key: "fav_routes", title: "Избранные маршруты", items: makeItems(56) },
+  { key: "my_routes", title: "Мои маршруты", kind: "routes" as const, items: makeRouteItems(56) },
+  { key: "fav_photos", title: "Избранные фотографии", kind: "photos" as const, items: makePhotoItems(56) },
+  { key: "fav_routes", title: "Избранные маршруты", kind: "routes" as const, items: makeRouteItems(56) },
 ] as const;
 
 function Pager({
@@ -34,20 +55,13 @@ function Pager({
 
   const pagesToShow = useMemo(() => {
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-
-    const out: (number | "dots")[] = [];
-    const push = (v: number | "dots") => out.push(v);
-
-    push(1);
-
+    const out: (number | "dots")[] = [1];
     const left = Math.max(2, page - 1);
     const right = Math.min(totalPages - 1, page + 1);
-
-    if (left > 2) push("dots");
-    for (let p = left; p <= right; p++) push(p);
-    if (right < totalPages - 1) push("dots");
-
-    push(totalPages);
+    if (left > 2) out.push("dots");
+    for (let p = left; p <= right; p++) out.push(p);
+    if (right < totalPages - 1) out.push("dots");
+    out.push(totalPages);
     return out;
   }, [page, totalPages]);
 
@@ -107,6 +121,63 @@ export default function CabinetPage() {
   const getPage = (key: string) => pages[key] ?? 1;
   const setPage = (key: string, p: number) => setPages((prev) => ({ ...prev, [key]: p }));
 
+  const [openRoute, setOpenRoute] = useState(false);
+  const [openPhotoFlow, setOpenPhotoFlow] = useState(false);
+  const [activeSectionKey, setActiveSectionKey] = useState<"my_routes" | "fav_photos" | "fav_routes" | null>(null);
+
+  const [activeRoute, setActiveRoute] = useState<CabinetRouteItem | null>(null);
+  const [activePhoto, setActivePhoto] = useState<CabinetPhotoItem | null>(null);
+
+  const [favPhotos, setFavPhotos] = useState<Set<number>>(() => new Set(Array.from({ length: 56 }, (_, i) => i + 1)));
+  const [favRoutes, setFavRoutes] = useState<Set<number>>(() => new Set(Array.from({ length: 56 }, (_, i) => i + 1)));
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmKind, setConfirmKind] = useState<"delete_route" | "remove_fav_route" | "remove_fav_photo">("delete_route");
+
+  const openRouteModal = (sectionKey: "my_routes" | "fav_routes", r: CabinetRouteItem) => {
+    setActiveSectionKey(sectionKey);
+    setActiveRoute(r);
+    setOpenRoute(true);
+  };
+
+  const openPhotoModal = (p: CabinetPhotoItem) => {
+    setActiveSectionKey("fav_photos");
+    setActivePhoto(p);
+    setOpenPhotoFlow(true);
+  };
+
+  const askDelete = (kind: typeof confirmKind) => {
+    setConfirmKind(kind);
+    setConfirmOpen(true);
+  };
+
+  const doDelete = () => {
+    if (confirmKind === "delete_route" && activeRoute) {
+      // мок: “удалили” — просто закрываем
+      setOpenRoute(false);
+      setActiveRoute(null);
+    }
+    if (confirmKind === "remove_fav_route" && activeRoute) {
+      setFavRoutes((prev) => {
+        const n = new Set(prev);
+        n.delete(activeRoute.id);
+        return n;
+      });
+      setOpenRoute(false);
+      setActiveRoute(null);
+    }
+    if (confirmKind === "remove_fav_photo" && activePhoto) {
+      setFavPhotos((prev) => {
+        const n = new Set(prev);
+        n.delete(activePhoto.id);
+        return n;
+      });
+      setOpenPhotoFlow(false);
+      setActivePhoto(null);
+    }
+    setConfirmOpen(false);
+  };
+
   return (
     <main className={styles.root}>
       <h1 className={styles.userName}>leo1406</h1>
@@ -118,7 +189,7 @@ export default function CabinetPage() {
 
           const pageItems = useMemo(() => {
             const start = (page - 1) * pageSize;
-            return s.items.slice(start, start + pageSize);
+            return (s.items as any[]).slice(start, start + pageSize);
           }, [page, s.items]);
 
           return (
@@ -128,10 +199,25 @@ export default function CabinetPage() {
               </h2>
 
               <div className={styles.row}>
-                {pageItems.map((p) => (
-                  <figure key={p.id} className={styles.card}>
+                {pageItems.map((p: ItemBase) => (
+                  <figure
+                    key={p.id}
+                    className={styles.card}
+                    onClick={() => {
+                      if (s.kind === "routes") openRouteModal(s.key as any, p as any);
+                      else openPhotoModal(p as any);
+                    }}
+                    role="button"
+                    tabIndex={0}
+                  >
                     <div className={styles.thumb}>
                       <Image src={p.src} alt={p.title} fill className={styles.img} />
+                      {s.key === "fav_photos" && favPhotos.has(p.id) ? (
+                        <span className={styles.likeDot} aria-hidden="true" />
+                      ) : null}
+                      {s.key === "fav_routes" && favRoutes.has(p.id) ? (
+                        <span className={styles.likeDot} aria-hidden="true" />
+                      ) : null}
                     </div>
                     <figcaption className={styles.cap}>{p.title}</figcaption>
                   </figure>
@@ -143,6 +229,42 @@ export default function CabinetPage() {
           );
         })}
       </div>
+
+      <CabinetRouteModal
+        open={openRoute}
+        route={activeRoute}
+        onClose={() => setOpenRoute(false)}
+        actionLabel={
+          activeSectionKey === "my_routes" ? "УДАЛИТЬ МАРШРУТ" : "УДАЛИТЬ ИЗ ИЗБРАННОГО"
+        }
+        onDelete={() => {
+          if (activeSectionKey === "my_routes") askDelete("delete_route");
+          else askDelete("remove_fav_route");
+        }}
+      />
+
+      <CabinetPhotoModals
+        open={openPhotoFlow}
+        photo={activePhoto}
+        isFav={activePhoto ? favPhotos.has(activePhoto.id) : false}
+        onClose={() => setOpenPhotoFlow(false)}
+        onToggleFav={() => {
+          if (!activePhoto) return;
+          setFavPhotos((prev) => {
+            const n = new Set(prev);
+            if (n.has(activePhoto.id)) n.delete(activePhoto.id);
+            else n.add(activePhoto.id);
+            return n;
+          });
+        }}
+        onRemoveFav={() => askDelete("remove_fav_photo")}
+      />
+
+      <ConfirmDeleteModal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onYes={doDelete}
+      />
     </main>
   );
 }

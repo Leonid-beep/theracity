@@ -1,21 +1,38 @@
-// app/(app)/routes/page.tsx
 "use client";
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import styles from "./styles.module.css";
+import RouteModal from "./_components/RouteModal";
 
-const allRoutes = Array.from({ length: 56 }).map((_, i) => ({
-  id: i + 1,
-  src: `/images/city/city-${(i % 7) + 1}.jpg`,
-  title: ["Прогулка по центру", "Песня", "Дворы и колодцы", "За поворотом", "Красиво"][i % 5],
-}));
+const baseTitles = ["Прогулка по центру", "Песня", "Дворы и колодцы", "За поворотом", "Красиво"];
+const baseMetro = ["Василеостровская", "Чернышевская", "Сенная площадь", "Удельная", "Горный институт"];
+
+const allRoutes = Array.from({ length: 56 }).map((_, i) => {
+  const id = i + 1;
+  const title = baseTitles[i % 5];
+  return {
+    id,
+    src: `/images/city/city-${(i % 7) + 1}.jpg`,
+    title,
+    desc: "Маршрут для любителей дворов, плохой погоды, Невского проспекта, узких улочек и многого другого",
+    metro: baseMetro[i % 5],
+    address: `59.${936000 + i}35, 30.${271000 + i}04`,
+    photos: Array.from({ length: 5 }).map((__, k) => ({
+      src: `/images/city/city-${((i + k) % 7) + 1}.jpg`,
+      alt: `${title} — фото ${k + 1}`,
+    })),
+  };
+});
 
 export default function RoutesPage() {
   const pageSize = 28;
-
   const totalPages = Math.max(1, Math.ceil(allRoutes.length / pageSize));
   const [page, setPage] = useState(1);
+
+  const [open, setOpen] = useState(false);
+  const [activeRouteId, setActiveRouteId] = useState<number | null>(null);
+  const [liked, setLiked] = useState<Set<number>>(() => new Set());
 
   const canPrev = page > 1;
   const canNext = page < totalPages;
@@ -27,24 +44,34 @@ export default function RoutesPage() {
 
   const pagesToShow = useMemo(() => {
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-
     const out: (number | "dots")[] = [];
-    const push = (v: number | "dots") => out.push(v);
-
-    push(1);
-
+    out.push(1);
     const left = Math.max(2, page - 1);
     const right = Math.min(totalPages - 1, page + 1);
-
-    if (left > 2) push("dots");
-    for (let p = left; p <= right; p++) push(p);
-    if (right < totalPages - 1) push("dots");
-
-    push(totalPages);
+    if (left > 2) out.push("dots");
+    for (let p = left; p <= right; p++) out.push(p);
+    if (right < totalPages - 1) out.push("dots");
+    out.push(totalPages);
     return out;
   }, [page, totalPages]);
 
   const go = (p: number) => setPage(Math.min(totalPages, Math.max(1, p)));
+
+  const activeRoute = useMemo(() => allRoutes.find((r) => r.id === activeRouteId) ?? null, [activeRouteId]);
+
+  const openRoute = (id: number) => {
+    setActiveRouteId(id);
+    setOpen(true);
+  };
+
+  const toggleLike = (id: number) => {
+    setLiked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   return (
     <main className={styles.root}>
@@ -55,14 +82,18 @@ export default function RoutesPage() {
       <div className={styles.wrap}>
         <section className={styles.gallery}>
           <div className={styles.grid}>
-            {pageItems.map((p) => (
-              <figure key={p.id} className={styles.card}>
-                <div className={styles.thumb}>
-                  <Image src={p.src} alt={p.title} fill className={styles.img} />
-                </div>
-                <figcaption className={styles.cap}>{p.title}</figcaption>
-              </figure>
-            ))}
+            {pageItems.map((r) => {
+              const isLiked = liked.has(r.id);
+              return (
+                <figure key={r.id} className={styles.card} onClick={() => openRoute(r.id)} role="button" tabIndex={0}>
+                  <div className={styles.thumb}>
+                    <Image src={r.src} alt={r.title} fill className={styles.img} />
+                    {isLiked ? <span className={styles.likeDot} aria-hidden="true" /> : null}
+                  </div>
+                  <figcaption className={styles.cap}>{r.title}</figcaption>
+                </figure>
+              );
+            })}
           </div>
 
           <div className={styles.pagination}>
@@ -151,6 +182,14 @@ export default function RoutesPage() {
           </div>
         </aside>
       </div>
+
+      <RouteModal
+        open={open}
+        route={activeRoute}
+        liked={activeRoute ? liked.has(activeRoute.id) : false}
+        onToggleLike={() => activeRoute && toggleLike(activeRoute.id)}
+        onClose={() => setOpen(false)}
+      />
     </main>
   );
 }

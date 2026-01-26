@@ -1,9 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import styles from "./styles.module.css";
+import ForgotPasswordModal from "./_components/ForgotPasswordModal";
 
 export default function LoginPage() {
+  const [forgotOpen, setForgotOpen] = useState(false);
+
   return (
     <main className={styles.root}>
       <h1 className={styles.h1}>Вход в личный кабинет</h1>
@@ -25,7 +29,11 @@ export default function LoginPage() {
               ВОЙТИ
             </button>
 
-            <button type="button" className={styles.forgotBtn}>
+            <button
+              type="button"
+              className={styles.forgotBtn}
+              onClick={() => setForgotOpen(true)}
+            >
               Забыли пароль?
             </button>
           </form>
@@ -38,6 +46,8 @@ export default function LoginPage() {
           <span className={styles.mark}>Зарегистрироваться</span>
         </Link>
       </p>
+
+      <ForgotPasswordModal open={forgotOpen} onClose={() => setForgotOpen(false)} />
     </main>
   );
 }

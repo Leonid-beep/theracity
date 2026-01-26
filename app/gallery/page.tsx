@@ -4,17 +4,20 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import styles from "./styles.module.css";
+import PhotoModals from "../_components/PhotoModals";
 
-const allPhotos = Array.from({ length: 56 }).map((_, i) => ({
+export type PhotoItem = {
+  id: number;
+  src: string;
+  title: string;
+};
+
+const titlePool = ["Жёлтый двор-колодец", "Тихий переулок", "Солнечная арка", "Кирпичный двор"];
+
+const allPhotos: PhotoItem[] = Array.from({ length: 56 }).map((_, i) => ({
   id: i + 1,
   src: `/images/city/city-${(i % 7) + 1}.jpg`,
-  title: [
-    "м. Горный институт",
-    "м. Чернышевская",
-    "м. Василеостровская",
-    "м. Сенная площадь",
-    "м. Технологический институт",
-  ][i % 5],
+  title: titlePool[i % titlePool.length],
 }));
 
 export default function GalleryPage() {
@@ -22,6 +25,9 @@ export default function GalleryPage() {
 
   const totalPages = Math.max(1, Math.ceil(allPhotos.length / pageSize));
   const [page, setPage] = useState(1);
+
+  const [selected, setSelected] = useState<PhotoItem | null>(null);
+  const [liked, setLiked] = useState<Set<number>>(() => new Set());
 
   const canPrev = page > 1;
   const canNext = page < totalPages;
@@ -35,24 +41,30 @@ export default function GalleryPage() {
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
 
     const out: (number | "dots")[] = [];
-    const push = (v: number | "dots") => out.push(v);
-
-    push(1);
+    out.push(1);
 
     const left = Math.max(2, page - 1);
     const right = Math.min(totalPages - 1, page + 1);
 
-    if (left > 2) push("dots");
+    if (left > 2) out.push("dots");
+    for (let p = left; p <= right; p++) out.push(p);
+    if (right < totalPages - 1) out.push("dots");
 
-    for (let p = left; p <= right; p++) push(p);
-
-    if (right < totalPages - 1) push("dots");
-
-    push(totalPages);
+    out.push(totalPages);
     return out;
   }, [page, totalPages]);
 
   const go = (p: number) => setPage(Math.min(totalPages, Math.max(1, p)));
+
+  const isLiked = (id: number) => liked.has(id);
+  const toggleLike = (id: number) => {
+    setLiked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   return (
     <main className={styles.root}>
@@ -64,9 +76,10 @@ export default function GalleryPage() {
         <section className={styles.gallery}>
           <div className={styles.grid}>
             {pageItems.map((p) => (
-              <figure key={p.id} className={styles.card}>
+              <figure key={p.id} className={styles.card} onClick={() => setSelected(p)} role="button" tabIndex={0}>
                 <div className={styles.thumb}>
                   <Image src={p.src} alt={p.title} fill className={styles.img} />
+                  {isLiked(p.id) ? <span className={styles.cardLike} aria-hidden="true" /> : null}
                 </div>
                 <figcaption className={styles.cap}>{p.title}</figcaption>
               </figure>
@@ -159,6 +172,13 @@ export default function GalleryPage() {
           </div>
         </aside>
       </div>
+
+      <PhotoModals
+        photo={selected}
+        onClose={() => setSelected(null)}
+        liked={liked}
+        onToggleLike={toggleLike}
+      />
     </main>
   );
 }

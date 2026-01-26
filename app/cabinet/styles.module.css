@@ -144,6 +144,19 @@
   transform: translateY(-1px);
 }
 
+.likeDot {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #ee0a0a;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+  z-index: 2;
+}
+
+
 .mark {
   position: relative;
   display: inline-block;
