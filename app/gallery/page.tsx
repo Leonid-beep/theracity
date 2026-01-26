@@ -1,26 +1,69 @@
 // app/(app)/gallery/page.tsx
 "use client";
 
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import styles from "./styles.module.css";
 
-const photos = Array.from({ length: 28 }).map((_, i) => ({
+const allPhotos = Array.from({ length: 56 }).map((_, i) => ({
   id: i + 1,
   src: `/images/city/city-${(i % 7) + 1}.jpg`,
-  title: ["м. Горный институт", "м. Чернышевская", "м. Василеостровская", "м. Сенная площадь", "м. Технологический институт"][i % 5],
+  title: [
+    "м. Горный институт",
+    "м. Чернышевская",
+    "м. Василеостровская",
+    "м. Сенная площадь",
+    "м. Технологический институт",
+  ][i % 5],
 }));
 
 export default function GalleryPage() {
+  const pageSize = 28;
+
+  const totalPages = Math.max(1, Math.ceil(allPhotos.length / pageSize));
+  const [page, setPage] = useState(1);
+
+  const canPrev = page > 1;
+  const canNext = page < totalPages;
+
+  const pageItems = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return allPhotos.slice(start, start + pageSize);
+  }, [page]);
+
+  const pagesToShow = useMemo(() => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+
+    const out: (number | "dots")[] = [];
+    const push = (v: number | "dots") => out.push(v);
+
+    push(1);
+
+    const left = Math.max(2, page - 1);
+    const right = Math.min(totalPages - 1, page + 1);
+
+    if (left > 2) push("dots");
+
+    for (let p = left; p <= right; p++) push(p);
+
+    if (right < totalPages - 1) push("dots");
+
+    push(totalPages);
+    return out;
+  }, [page, totalPages]);
+
+  const go = (p: number) => setPage(Math.min(totalPages, Math.max(1, p)));
+
   return (
     <main className={styles.root}>
+      <h1 className={styles.h1}>
+        <span className={styles.mark}>Выберите</span> место, которое откликается
+      </h1>
+
       <div className={styles.wrap}>
         <section className={styles.gallery}>
-          <h1 className={styles.h1}>
-            <span className={styles.mark}>Выберите</span> место, которое откликается
-          </h1>
-
           <div className={styles.grid}>
-            {photos.map((p) => (
+            {pageItems.map((p) => (
               <figure key={p.id} className={styles.card}>
                 <div className={styles.thumb}>
                   <Image src={p.src} alt={p.title} fill className={styles.img} />
@@ -31,29 +74,51 @@ export default function GalleryPage() {
           </div>
 
           <div className={styles.pagination}>
-            <button className={styles.pagBtn} aria-label="Назад">
+            <button
+              className={`${styles.pagBtn} ${!canPrev ? styles.pagBtnDisabled : ""}`}
+              aria-label="Назад"
+              disabled={!canPrev}
+              onClick={() => go(page - 1)}
+            >
               ←
             </button>
+
             <div className={styles.pages}>
-              <button className={`${styles.page} ${styles.pageActive}`}>1</button>
-              <button className={styles.page}>2</button>
-              <button className={styles.page}>3</button>
-              <span className={styles.dots}>…</span>
-              <button className={styles.page}>67</button>
-              <button className={styles.page}>68</button>
+              {pagesToShow.map((p, idx) =>
+                p === "dots" ? (
+                  <span key={`d-${idx}`} className={styles.dots}>
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={p}
+                    className={`${styles.page} ${p === page ? styles.pageActive : ""}`}
+                    onClick={() => go(p)}
+                    aria-current={p === page ? "page" : undefined}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
             </div>
-            <button className={styles.pagBtn} aria-label="Вперёд">
+
+            <button
+              className={`${styles.pagBtn} ${!canNext ? styles.pagBtnDisabled : ""}`}
+              aria-label="Вперёд"
+              disabled={!canNext}
+              onClick={() => go(page + 1)}
+            >
               →
             </button>
           </div>
         </section>
 
         <aside className={styles.filter}>
-          <h2 className={styles.filterTitle}>
-            <span className={styles.mark}>Фильтр</span> для фотографий
-          </h2>
-
           <div className={styles.filterBox}>
+            <h2 className={styles.filterTitle}>
+              <span className={styles.mark}>Фильтр</span> для фотографий
+            </h2>
+
             <div className={styles.field}>
               <div className={styles.fieldLabel}>тип пространства</div>
               <select className={styles.select} defaultValue="Дворы">

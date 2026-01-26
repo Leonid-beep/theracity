@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import styles from "./styles.module.css";
 
@@ -9,7 +10,7 @@ type Item = { label: string; href: string };
 
 export default function BurgerMenu() {
   const pathname = usePathname();
-  if (pathname === "/start") return null;
+  const isStart = pathname === "/start";
 
   const items: Item[] = useMemo(
     () => [
@@ -48,6 +49,12 @@ export default function BurgerMenu() {
     };
   }, [open]);
 
+  useEffect(() => {
+    if (isStart) setOpen(false);
+  }, [isStart]);
+
+  if (isStart) return null;
+
   return (
     <>
       <button
@@ -74,7 +81,14 @@ export default function BurgerMenu() {
         >
           <div className={styles.topLeft}>
             <span className={styles.brand}>TheraCity</span>
-            <span className={styles.brandMark} aria-hidden="true" />
+            <Image
+              src="/images/city/icons8-bed-100.png"
+              alt=""
+              width={15}
+              height={15}
+              className={styles.brandMark}
+              priority
+            />
           </div>
 
           <button

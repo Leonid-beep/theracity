@@ -1,12 +1,15 @@
 .root {
   position: relative;
   width: 100%;
-  min-height: 100vh;
-  padding-top: 80px;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .h1 {
-  margin: 0 0 48px 80px;
+  position: absolute;
+  left: 80px;
+  top: 113px;
+  margin: 0;
   font-family: var(--font-text);
   font-weight: 400;
   font-size: 48px;
@@ -15,13 +18,14 @@
 }
 
 .textBlock {
+  position: absolute;
+  left: 80px;
+  top: calc(113px + 48px + 91px);
   width: 1646px;
-  margin-left: 80px;
   font-family: var(--font-button);
   font-weight: 400;
-  font-size: 18px;
+  font-size: 14px;
   line-height: 36px;
-  letter-spacing: 0.05em;
   color: #111;
 }
 
