@@ -70,7 +70,22 @@
 
 .img {
   object-fit: cover;
+  z-index: 0;
 }
+
+.cardLike {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 23px;
+  height: 23px;
+  z-index: 2;
+  pointer-events: none;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+
 
 .cap {
   margin-top: 13.5px;
@@ -142,18 +157,6 @@
   font-size: 22px;
   opacity: 0.7;
   transform: translateY(-1px);
-}
-
-.likeDot {
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  background: #ee0a0a;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
-  z-index: 2;
 }
 
 

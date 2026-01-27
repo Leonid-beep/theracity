@@ -177,3 +177,391 @@
 .stepStub {
   display: none;
 }
+
+.modalChoice {
+  width: 450px;
+  height: 200px;
+}
+
+.choiceBtns {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 413px;
+  display: grid;
+  gap: 12px;
+}
+
+.choiceBtn {
+  width: 413px;
+  height: 50px;
+  border: 0;
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: var(--font-button);
+  letter-spacing: 0.05em;
+  color: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.18);
+}
+
+.choiceBtn1 {
+  font-size: 16px;
+  background: linear-gradient(
+    180deg,
+    rgba(224, 218, 180, 0.95) 0%,
+    rgba(169, 167, 138, 0.9) 100%
+  );
+}
+
+.choiceBtn2 {
+  font-size: 14px;
+  background: linear-gradient(
+    180deg,
+    rgba(224, 218, 180, 0.75) 0%,
+    rgba(169, 167, 138, 0.75) 100%
+  );
+}
+
+.modalPick {
+  width: 450px;
+  height: 675px;
+  padding: 0;
+}
+
+.pickTitle {
+  position: absolute;
+  left: 15px;
+  top: 19.5px;
+  font-family: var(--font-text);
+  font-size: 30px;
+  letter-spacing: 0.05em;
+  color: #111;
+}
+
+.pickMark {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 0.12em;
+}
+
+.pickMark::after {
+  content: "";
+  position: absolute;
+  left: -0.03em;
+  right: -0.03em;
+  bottom: 0.06em;
+  height: 0.18em;
+  background: radial-gradient(circle, #ee0a0a 55%, transparent 58%) 0 50% / 6px 5px repeat-x,
+    radial-gradient(circle, rgba(238, 10, 10, 0.75) 55%, transparent 58%) 2px 55% / 7px 6px repeat-x;
+  border-radius: 999px;
+}
+
+.pickGrid {
+  position: absolute;
+  left: 50%;
+  top: calc(19.5px + 30px + 29px);
+  transform: translateX(-50%);
+  width: 340px;
+  display: grid;
+  grid-template-columns: 150px 150px;
+  column-gap: 40px;
+  row-gap: 18px;
+}
+
+.pickCard {
+  width: 150px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.pickCardActive .pickThumb {
+  outline: 2px solid #ee0a0a;
+  outline-offset: 0px;
+}
+
+.pickThumb {
+  width: 150px;
+  height: 200px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+}
+
+.pickImg {
+  width: 150px;
+  height: 200px;
+  object-fit: cover;
+}
+
+.pickCap {
+  margin-top: 10px;
+  font-family: var(--font-text);
+  font-size: 24px;
+  letter-spacing: 0.05em;
+  color: #111;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pickPagination {
+  position: absolute;
+  left: 50%;
+  bottom: 74px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+
+.pickConfirm {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  width: 413px;
+  height: 37px;
+  border: 0;
+  border-radius: 999px;
+  background: #e0dab4;
+  cursor: pointer;
+  font-family: var(--font-button);
+  font-size: 15px;
+  letter-spacing: 0.05em;
+  color: #111;
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.16);
+}
+
+.modalCreate {
+  width: 450px;
+  height: 860px;
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+}
+
+.createTitle {
+  position: absolute;
+  left: 15px;
+  top: 19.5px;
+  font-family: var(--font-text);
+  font-size: 30px;
+  letter-spacing: 0.05em;
+  color: #111;
+  max-width: calc(450px - 60px);
+}
+
+.createBody {
+  position: relative;
+  margin-top: calc(19.5px + 30px + 18px);
+  padding: 0 15px 18px 15px;
+  display: grid;
+  gap: 18px;
+}
+
+.createLabel {
+  font-family: var(--font-button);
+  font-size: 16px;
+  letter-spacing: 0.05em;
+  color: #111;
+}
+
+.createField {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+
+.createInput {
+  width: 300px;
+  height: 75px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  background: rgba(255, 255, 255, 0.86);
+  padding: 12px;
+  box-sizing: border-box;
+  font-family: var(--font-text);
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  outline: none;
+}
+
+.createTextarea {
+  width: 300px;
+  height: 187.5px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  background: rgba(255, 255, 255, 0.86);
+  padding: 12px;
+  box-sizing: border-box;
+  resize: none;
+  font-family: var(--font-text);
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  outline: none;
+}
+
+.createSelectField {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+
+.createSelect {
+  width: 290px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  background: rgba(255, 255, 255, 0.78);
+  padding: 0 12px;
+  box-sizing: border-box;
+  font-family: var(--font-button);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: #111;
+  outline: none;
+}
+
+.createConfirm {
+  width: 413px;
+  height: 37px;
+  border: 0;
+  border-radius: 999px;
+  background: #e0dab4;
+  cursor: pointer;
+  font-family: var(--font-button);
+  font-size: 16px;
+  letter-spacing: 0.05em;
+  color: #111;
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.16);
+  justify-self: center;
+}
+
+
+.pickPagination {
+  position: absolute;
+  left: 50%;
+  bottom: 69px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+
+.pagBtn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-text);
+  font-size: 26px;
+  line-height: 1;
+  color: #111;
+  display: grid;
+  place-items: center;
+}
+
+.pagBtnDisabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.pages {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.page {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-text);
+  font-size: 18px;
+  line-height: 1;
+  color: #111;
+  opacity: 0.9;
+  display: grid;
+  place-items: center;
+}
+
+.pageActive {
+  background: #111;
+  color: #fff;
+  opacity: 1;
+}
+
+.dots {
+  font-family: var(--font-text);
+  font-size: 22px;
+  opacity: 0.7;
+  transform: translateY(-1px);
+}
+
+
+.photoWrap {
+  position: absolute;
+  left: 50%;
+  top: calc(19.5px + 27px + 16.5px);
+  width: 300px;
+  height: 375px;
+  transform: translateX(-50%);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.2);
+}
+
+.likeIcon {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 23px;
+  height: 23px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.btnImg {
+  width: 23px;
+  height: 23px;
+  display: block;
+}
+
+.pickPagination {
+  position: absolute;
+  left: 50%;
+  bottom: 69px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+
+.createField,
+.createSelectField {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+
+.createInput,
+.createTextarea,
+.createSelect {
+  justify-self: start;
+}

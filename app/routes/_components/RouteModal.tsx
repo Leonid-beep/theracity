@@ -1,6 +1,7 @@
+// app/(app)/routes/_components/RouteModal.tsx
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import styles from "./routeModal.module.css";
 
@@ -28,11 +29,7 @@ export default function RouteModal({
 }) {
   const photos = route?.photos ?? [];
   const totalPages = Math.max(1, photos.length);
-
-  const [page, setPage] = (function useRoutePage() {
-    const React = require("react") as typeof import("react");
-    return React.useState(1) as [number, (v: number) => void];
-  })();
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     if (!open) return;
@@ -54,7 +51,6 @@ export default function RouteModal({
 
   const canPrev = page > 1;
   const canNext = page < totalPages;
-
   const go = (p: number) => setPage(Math.min(totalPages, Math.max(1, p)));
 
   const pagesToShow = useMemo(() => {
@@ -79,12 +75,7 @@ export default function RouteModal({
 
   return (
     <div className={styles.overlay} onClick={onClose} role="presentation">
-      <div
-        className={`${styles.modal} ${styles.modalRoute}`}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-      >
+      <div className={`${styles.modal} ${styles.modalRoute}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <button type="button" className={styles.closeBtn} aria-label="Закрыть" onClick={onClose} />
 
         <div className={styles.routeTitle} title={route.title}>
@@ -95,12 +86,7 @@ export default function RouteModal({
 
         <div className={styles.photoRow}>
           {prev ? (
-            <button
-              type="button"
-              className={styles.sideThumb}
-              aria-label="Предыдущее фото"
-              onClick={() => go(page - 1)}
-            >
+            <button type="button" className={styles.sideThumb} aria-label="Предыдущее фото" onClick={() => go(page - 1)}>
               <Image src={prev.src} alt={prev.alt} width={112} height={141} className={styles.sideImg} />
             </button>
           ) : (
@@ -109,16 +95,20 @@ export default function RouteModal({
 
           <div className={styles.mainPhoto}>
             <Image src={main.src} alt={main.alt} width={225} height={280} className={styles.mainImg} />
-            {liked ? <span className={styles.likeDot} aria-hidden="true" /> : null}
+            {liked ? (
+              <Image
+                src="/images/city/heart_red.png"
+                alt=""
+                width={23}
+                height={23}
+                className={styles.likeIcon}
+                aria-hidden="true"
+              />
+            ) : null}
           </div>
 
           {next ? (
-            <button
-              type="button"
-              className={styles.sideThumb}
-              aria-label="Следующее фото"
-              onClick={() => go(page + 1)}
-            >
+            <button type="button" className={styles.sideThumb} aria-label="Следующее фото" onClick={() => go(page + 1)}>
               <Image src={next.src} alt={next.alt} width={112} height={141} className={styles.sideImg} />
             </button>
           ) : (
@@ -132,12 +122,7 @@ export default function RouteModal({
         </div>
 
         <div className={styles.pagination}>
-          <button
-            className={`${styles.pagBtn} ${!canPrev ? styles.pagBtnDisabled : ""}`}
-            disabled={!canPrev}
-            onClick={() => go(page - 1)}
-            aria-label="Назад"
-          >
+          <button className={`${styles.pagBtn} ${!canPrev ? styles.pagBtnDisabled : ""}`} disabled={!canPrev} onClick={() => go(page - 1)} aria-label="Назад">
             ←
           </button>
 
@@ -148,36 +133,33 @@ export default function RouteModal({
                   …
                 </span>
               ) : (
-                <button
-                  key={p}
-                  className={`${styles.page} ${p === page ? styles.pageActive : ""}`}
-                  onClick={() => go(p)}
-                  aria-current={p === page ? "page" : undefined}
-                >
+                <button key={p} className={`${styles.page} ${p === page ? styles.pageActive : ""}`} onClick={() => go(p)} aria-current={p === page ? "page" : undefined}>
                   {p}
                 </button>
               )
             )}
           </div>
 
-          <button
-            className={`${styles.pagBtn} ${!canNext ? styles.pagBtnDisabled : ""}`}
-            disabled={!canNext}
-            onClick={() => go(page + 1)}
-            aria-label="Вперёд"
-          >
+          <button className={`${styles.pagBtn} ${!canNext ? styles.pagBtnDisabled : ""}`} disabled={!canNext} onClick={() => go(page + 1)} aria-label="Вперёд">
             →
           </button>
         </div>
 
         <div className={styles.actions}>
-          <button type="button" className={`${styles.bigBtn} ${liked ? styles.bigBtnLiked : ""}`} onClick={onToggleLike}>
-            <span className={`${styles.btnIcon} ${liked ? styles.btnIconRed : ""}`} aria-hidden="true" />
-            ДОБАВИТЬ В ИЗБРАННОЕ
+          <button type="button" className={styles.bigBtn} onClick={onToggleLike}>
+            <Image
+              src={liked ? "/images/city/heart_red.png" : "/images/city/heart_black.png"}
+              alt=""
+              width={23}
+              height={23}
+              className={styles.btnImg}
+              aria-hidden="true"
+            />
+            {liked ? "УДАЛИТЬ ИЗ ИЗБРАННОГО" : "ДОБАВИТЬ В ИЗБРАННОЕ"}
           </button>
 
           <button type="button" className={styles.bigBtn} onClick={() => {}}>
-            <span className={styles.btnShare} aria-hidden="true" />
+            <Image src="/images/city/share.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
             ПОДЕЛИТЬСЯ МАРШРУТОМ
           </button>
         </div>

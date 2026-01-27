@@ -238,32 +238,19 @@
   outline: 2px solid rgba(238, 10, 10, 0.85);
 }
 
-.btnIcon {
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.15);
+
+.btnImg {
+  width: 23px;
+  height: 23px;
+  display: block;
 }
 
-.btnIconRed {
-  background: #ee0a0a;
-}
-
-.btnShare {
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.15);
-}
-
-.likeDot {
+.likeIcon {
   position: absolute;
   right: 10px;
   top: 10px;
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  background: #ee0a0a;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+  width: 23px;
+  height: 23px;
   z-index: 2;
+  pointer-events: none;
 }

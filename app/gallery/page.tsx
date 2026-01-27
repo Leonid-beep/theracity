@@ -4,7 +4,7 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import styles from "./styles.module.css";
-import PhotoModals from "../_components/PhotoModals";
+import PhotoModals from "./_components/PhotoModals";
 
 export type PhotoItem = {
   id: number;
@@ -79,7 +79,16 @@ export default function GalleryPage() {
               <figure key={p.id} className={styles.card} onClick={() => setSelected(p)} role="button" tabIndex={0}>
                 <div className={styles.thumb}>
                   <Image src={p.src} alt={p.title} fill className={styles.img} />
-                  {isLiked(p.id) ? <span className={styles.cardLike} aria-hidden="true" /> : null}
+                  {isLiked(p.id) ? (
+                    <Image
+                      src="/images/city/heart_red.png"
+                      alt=""
+                      width={23}
+                      height={23}
+                      className={styles.cardLike}
+                      aria-hidden="true"
+                    />
+                  ) : null}
                 </div>
                 <figcaption className={styles.cap}>{p.title}</figcaption>
               </figure>
@@ -173,12 +182,7 @@ export default function GalleryPage() {
         </aside>
       </div>
 
-      <PhotoModals
-        photo={selected}
-        onClose={() => setSelected(null)}
-        liked={liked}
-        onToggleLike={toggleLike}
-      />
+      <PhotoModals photo={selected} onClose={() => setSelected(null)} liked={liked} onToggleLike={toggleLike} />
     </main>
   );
 }

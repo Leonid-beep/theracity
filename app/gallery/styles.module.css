@@ -61,20 +61,34 @@
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
 }
 
+.img {
+  object-fit: cover;
+  z-index: 0;
+}
+
 .cardLike {
   position: absolute;
   right: 10px;
   top: 10px;
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  background: #ee0a0a;
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+  width: 23px;
+  height: 23px;
+  z-index: 2;
+  pointer-events: none;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
 }
 
-.img {
-  object-fit: cover;
+.likeIcon {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 23px;
+  height: 23px;
+  display: block;
+  z-index: 2;
 }
+
 
 .cap {
   margin-top: 13.5px;

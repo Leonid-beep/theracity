@@ -253,3 +253,9 @@
   border-radius: 4px;
   background: rgba(0, 0, 0, 0.15);
 }
+
+.btnImg {
+  width: 23px;
+  height: 23px;
+  display: block;
+}

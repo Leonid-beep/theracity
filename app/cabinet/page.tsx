@@ -1,13 +1,12 @@
+// app/(app)/cabinet/page.tsx
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import styles from "./styles.module.css";
 import CabinetRouteModal, { CabinetRouteItem } from "./_components/CabinetRouteModal";
 import CabinetPhotoModals, { CabinetPhotoItem } from "./_components/CabinetPhotoModals";
 import ConfirmDeleteModal from "./_components/ConfirmDeleteModal";
-
-type ItemBase = { id: number; src: string; title: string };
 
 const makePhotoItems = (n: number): CabinetPhotoItem[] =>
   Array.from({ length: n }).map((_, i) => ({
@@ -27,8 +26,7 @@ const makeRouteItems = (n: number): CabinetRouteItem[] =>
     return {
       id: i + 1,
       title: ["По дворам-колодцам", "Прогулка по центру", "За поворотом", "Песня", "Красиво"][i % 5],
-      desc:
-        "Маршрут для любителей дворов, плохой погоды, Невского проспекта, узких улочек и многого другого",
+      desc: "Маршрут для любителей дворов, плохой погоды, Невского проспекта, узких улочек и многого другого",
       metro: ["Василеостровская", "Сенная площадь", "Чернышевская", "Удельная"][i % 4],
       address: ["59.936435, 30.270504", "59.931120, 30.360210", "59.944010, 30.312800", "59.999020, 30.300100"][i % 4],
       photos,
@@ -53,7 +51,7 @@ function Pager({
   const canPrev = page > 1;
   const canNext = page < totalPages;
 
-  const pagesToShow = useMemo(() => {
+  const pagesToShow = (() => {
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
     const out: (number | "dots")[] = [1];
     const left = Math.max(2, page - 1);
@@ -63,7 +61,7 @@ function Pager({
     if (right < totalPages - 1) out.push("dots");
     out.push(totalPages);
     return out;
-  }, [page, totalPages]);
+  })();
 
   const go = (p: number) => onChange(Math.min(totalPages, Math.max(1, p)));
 
@@ -74,6 +72,7 @@ function Pager({
         aria-label="Назад"
         disabled={!canPrev}
         onClick={() => go(page - 1)}
+        type="button"
       >
         ←
       </button>
@@ -90,6 +89,7 @@ function Pager({
               className={`${styles.page} ${p === page ? styles.pageActive : ""}`}
               onClick={() => go(p)}
               aria-current={p === page ? "page" : undefined}
+              type="button"
             >
               {p}
             </button>
@@ -102,6 +102,7 @@ function Pager({
         aria-label="Вперёд"
         disabled={!canNext}
         onClick={() => go(page + 1)}
+        type="button"
       >
         →
       </button>
@@ -153,7 +154,6 @@ export default function CabinetPage() {
 
   const doDelete = () => {
     if (confirmKind === "delete_route" && activeRoute) {
-      // мок: “удалили” — просто закрываем
       setOpenRoute(false);
       setActiveRoute(null);
     }
@@ -187,10 +187,8 @@ export default function CabinetPage() {
           const totalPages = Math.max(1, Math.ceil(s.items.length / pageSize));
           const page = Math.min(getPage(s.key), totalPages);
 
-          const pageItems = useMemo(() => {
-            const start = (page - 1) * pageSize;
-            return (s.items as any[]).slice(start, start + pageSize);
-          }, [page, s.items]);
+          const start = (page - 1) * pageSize;
+          const pageItems = s.items.slice(start, start + pageSize);
 
           return (
             <section key={s.key} className={styles.section}>
@@ -199,29 +197,59 @@ export default function CabinetPage() {
               </h2>
 
               <div className={styles.row}>
-                {pageItems.map((p: ItemBase) => (
-                  <figure
-                    key={p.id}
-                    className={styles.card}
-                    onClick={() => {
-                      if (s.kind === "routes") openRouteModal(s.key as any, p as any);
-                      else openPhotoModal(p as any);
-                    }}
-                    role="button"
-                    tabIndex={0}
-                  >
-                    <div className={styles.thumb}>
-                      <Image src={p.src} alt={p.title} fill className={styles.img} />
-                      {s.key === "fav_photos" && favPhotos.has(p.id) ? (
-                        <span className={styles.likeDot} aria-hidden="true" />
-                      ) : null}
-                      {s.key === "fav_routes" && favRoutes.has(p.id) ? (
-                        <span className={styles.likeDot} aria-hidden="true" />
-                      ) : null}
-                    </div>
-                    <figcaption className={styles.cap}>{p.title}</figcaption>
-                  </figure>
-                ))}
+                {s.kind === "photos"
+                  ? (pageItems as CabinetPhotoItem[]).map((p) => (
+                      <figure
+                        key={p.id}
+                        className={styles.card}
+                        onClick={() => openPhotoModal(p)}
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <div className={styles.thumb}>
+                          {p.src ? <Image src={p.src} alt={p.title} fill className={styles.img} /> : null}
+                          {favPhotos.has(p.id) ? (
+                            <Image
+                              src="/images/city/heart_red.png"
+                              alt=""
+                              width={23}
+                              height={23}
+                              className={styles.cardLike}
+                              aria-hidden="true"
+                            />
+                          ) : null}
+                        </div>
+                        <figcaption className={styles.cap}>{p.title}</figcaption>
+                      </figure>
+                    ))
+                  : (pageItems as CabinetRouteItem[]).map((r) => {
+                      const preview = r.photos?.[0]?.src ?? "";
+                      const isFav = s.key === "fav_routes" && favRoutes.has(r.id);
+                      return (
+                        <figure
+                          key={r.id}
+                          className={styles.card}
+                          onClick={() => openRouteModal(s.key as any, r)}
+                          role="button"
+                          tabIndex={0}
+                        >
+                          <div className={styles.thumb}>
+                            {preview ? <Image src={preview} alt={r.title} fill className={styles.img} /> : null}
+                            {isFav ? (
+                              <Image
+                                src="/images/city/heart_red.png"
+                                alt=""
+                                width={23}
+                                height={23}
+                                className={styles.cardLike}
+                                aria-hidden="true"
+                              />
+                            ) : null}
+                          </div>
+                          <figcaption className={styles.cap}>{r.title}</figcaption>
+                        </figure>
+                      );
+                    })}
               </div>
 
               <Pager page={page} totalPages={totalPages} onChange={(p) => setPage(s.key, p)} />
@@ -234,9 +262,7 @@ export default function CabinetPage() {
         open={openRoute}
         route={activeRoute}
         onClose={() => setOpenRoute(false)}
-        actionLabel={
-          activeSectionKey === "my_routes" ? "УДАЛИТЬ МАРШРУТ" : "УДАЛИТЬ ИЗ ИЗБРАННОГО"
-        }
+        actionLabel={activeSectionKey === "my_routes" ? "УДАЛИТЬ МАРШРУТ" : "УДАЛИТЬ ИЗ ИЗБРАННОГО"}
         onDelete={() => {
           if (activeSectionKey === "my_routes") askDelete("delete_route");
           else askDelete("remove_fav_route");
@@ -260,11 +286,7 @@ export default function CabinetPage() {
         onRemoveFav={() => askDelete("remove_fav_photo")}
       />
 
-      <ConfirmDeleteModal
-        open={confirmOpen}
-        onClose={() => setConfirmOpen(false)}
-        onYes={doDelete}
-      />
+      <ConfirmDeleteModal open={confirmOpen} onClose={() => setConfirmOpen(false)} onYes={doDelete} />
     </main>
   );
 }

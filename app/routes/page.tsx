@@ -1,3 +1,4 @@
+// app/(app)/routes/page.tsx
 "use client";
 
 import { useMemo, useState } from "react";
@@ -88,7 +89,16 @@ export default function RoutesPage() {
                 <figure key={r.id} className={styles.card} onClick={() => openRoute(r.id)} role="button" tabIndex={0}>
                   <div className={styles.thumb}>
                     <Image src={r.src} alt={r.title} fill className={styles.img} />
-                    {isLiked ? <span className={styles.likeDot} aria-hidden="true" /> : null}
+                    {isLiked ? (
+                      <Image
+                        src="/images/city/heart_red.png"
+                        alt=""
+                        width={23}
+                        height={23}
+                        className={styles.cardLike}
+                        aria-hidden="true"
+                      />
+                    ) : null}
                   </div>
                   <figcaption className={styles.cap}>{r.title}</figcaption>
                 </figure>

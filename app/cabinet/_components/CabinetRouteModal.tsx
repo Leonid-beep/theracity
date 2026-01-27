@@ -1,3 +1,4 @@
+// app/(app)/cabinet/_components/CabinetRouteModal.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -28,7 +29,6 @@ export default function CabinetRouteModal({
 }) {
   const photos = route?.photos ?? [];
   const totalPages = Math.max(1, photos.length);
-
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -90,7 +90,12 @@ export default function CabinetRouteModal({
 
         <div className={styles.photoRow}>
           {prev ? (
-            <button type="button" className={styles.sideThumb} aria-label="Предыдущее фото" onClick={() => go(page - 1)}>
+            <button
+              type="button"
+              className={styles.sideThumb}
+              aria-label="Предыдущее фото"
+              onClick={() => go(page - 1)}
+            >
               <Image src={prev.src} alt={prev.alt} width={112} height={141} className={styles.sideImg} />
             </button>
           ) : (
@@ -102,7 +107,12 @@ export default function CabinetRouteModal({
           </div>
 
           {next ? (
-            <button type="button" className={styles.sideThumb} aria-label="Следующее фото" onClick={() => go(page + 1)}>
+            <button
+              type="button"
+              className={styles.sideThumb}
+              aria-label="Следующее фото"
+              onClick={() => go(page + 1)}
+            >
               <Image src={next.src} alt={next.alt} width={112} height={141} className={styles.sideImg} />
             </button>
           ) : (
@@ -116,7 +126,11 @@ export default function CabinetRouteModal({
         </div>
 
         <div className={styles.pagination}>
-          <button className={`${styles.pagBtn} ${!canPrev ? styles.pagBtnDisabled : ""}`} disabled={!canPrev} onClick={() => go(page - 1)}>
+          <button
+            className={`${styles.pagBtn} ${!canPrev ? styles.pagBtnDisabled : ""}`}
+            disabled={!canPrev}
+            onClick={() => go(page - 1)}
+          >
             ←
           </button>
 
@@ -127,26 +141,34 @@ export default function CabinetRouteModal({
                   …
                 </span>
               ) : (
-                <button key={p} className={`${styles.page} ${p === page ? styles.pageActive : ""}`} onClick={() => go(p)}>
+                <button
+                  key={p}
+                  className={`${styles.page} ${p === page ? styles.pageActive : ""}`}
+                  onClick={() => go(p)}
+                >
                   {p}
                 </button>
               )
             )}
           </div>
 
-          <button className={`${styles.pagBtn} ${!canNext ? styles.pagBtnDisabled : ""}`} disabled={!canNext} onClick={() => go(page + 1)}>
+          <button
+            className={`${styles.pagBtn} ${!canNext ? styles.pagBtnDisabled : ""}`}
+            disabled={!canNext}
+            onClick={() => go(page + 1)}
+          >
             →
           </button>
         </div>
 
         <div className={styles.actions}>
           <button type="button" className={styles.bigBtn} onClick={() => {}}>
-            <span className={styles.btnShare} aria-hidden="true" />
+            <Image src="/images/city/share.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
             ПОДЕЛИТЬСЯ МАРШРУТОМ
           </button>
 
           <button type="button" className={`${styles.bigBtn} ${styles.bigBtnDanger}`} onClick={onDelete}>
-            <span className={styles.btnTrash} aria-hidden="true" />
+            <Image src="/images/city/trash.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
             {actionLabel}
           </button>
         </div>

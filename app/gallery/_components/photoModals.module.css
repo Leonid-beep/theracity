@@ -48,6 +48,12 @@
   transform: translate(-50%, -50%) rotate(-45deg);
 }
 
+.btnImg {
+  width: 23px;
+  height: 23px;
+  display: block;
+}
+
 .modalPhoto {
   width: 450px;
   height: 675px;
@@ -87,15 +93,13 @@
   object-fit: cover;
 }
 
-.likeDot {
+.likeIcon {
   position: absolute;
   right: 10px;
   top: 10px;
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  background: #ee0a0a;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+  width: 23px;
+  height: 23px;
+  display: block;
 }
 
 .meta {
@@ -135,45 +139,6 @@
   justify-content: center;
   gap: 10px;
   box-shadow: 0 12px 20px rgba(0, 0, 0, 0.16);
-}
-
-.bigBtnLiked {
-  outline: 2px solid rgba(238, 10, 10, 0.8);
-}
-
-.btnIcon {
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.15);
-}
-
-.btnIconRed {
-  background: #ee0a0a;
-}
-
-.btnPlus {
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.12);
-  position: relative;
-}
-
-.btnPlus::before,
-.btnPlus::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 10px;
-  height: 2px;
-  background: #111;
-  transform: translate(-50%, -50%);
-}
-
-.btnPlus::after {
-  transform: translate(-50%, -50%) rotate(90deg);
 }
 
 .modalChoice {
@@ -306,7 +271,7 @@
 .pickPagination {
   position: absolute;
   left: 50%;
-  bottom: 74px;
+  bottom: 69px;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
@@ -422,7 +387,6 @@
 .createField {
   display: grid;
   gap: 10px;
-  justify-items: center;
 }
 
 .createInput {
@@ -457,7 +421,6 @@
 .createSelectField {
   display: grid;
   gap: 10px;
-  justify-items: center;
 }
 
 .createSelect {

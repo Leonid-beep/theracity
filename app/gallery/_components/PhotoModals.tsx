@@ -4,10 +4,9 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import styles from "./photoModals.module.css";
-import type { PhotoItem } from "../gallery/page";
+import type { PhotoItem } from "../page";
 
 type RouteItem = { id: number; title: string; src: string };
-
 type Step = "photo" | "routeChoice" | "pickRoute" | "createRoute";
 
 export default function PhotoModals(props: {
@@ -83,25 +82,12 @@ export default function PhotoModals(props: {
 
   const goPick = (p: number) => setPickPage(Math.min(pickTotalPages, Math.max(1, p)));
 
-  const handleOverlay = () => {
-    closeAll();
-  };
+  const handleOverlay = () => closeAll();
+  const handleX = () => closeAll();
 
-  const handleX = () => {
-    closeAll();
-  };
-
-  const handleAddToRoute = () => {
-    setStep("routeChoice");
-  };
-
-  const handleCreateRoute = () => {
-    setStep("createRoute");
-  };
-
-  const handlePickRoute = () => {
-    setStep("pickRoute");
-  };
+  const handleAddToRoute = () => setStep("routeChoice");
+  const handleCreateRoute = () => setStep("createRoute");
+  const handlePickRoute = () => setStep("pickRoute");
 
   const handleConfirmPick = () => {
     if (!pickedRouteId) return;
@@ -130,7 +116,16 @@ export default function PhotoModals(props: {
 
           <div className={styles.photoWrap}>
             <Image src={photo.src} alt={photo.title} width={300} height={375} className={styles.photoImg} />
-            {likedNow ? <span className={styles.likeDot} aria-hidden="true" /> : null}
+            {likedNow ? (
+              <Image
+                src="/images/city/heart_red.png"
+                alt=""
+                width={23}
+                height={23}
+                className={styles.likeIcon}
+                aria-hidden="true"
+              />
+            ) : null}
           </div>
 
           <div className={styles.meta}>
@@ -139,17 +134,20 @@ export default function PhotoModals(props: {
           </div>
 
           <div className={styles.actions}>
-            <button
-              type="button"
-              className={`${styles.bigBtn} ${likedNow ? styles.bigBtnLiked : ""}`}
-              onClick={() => onToggleLike(photo.id)}
-            >
-              <span className={`${styles.btnIcon} ${likedNow ? styles.btnIconRed : ""}`} aria-hidden="true" />
-              ДОБАВИТЬ В ИЗБРАННОЕ
+            <button type="button" className={styles.bigBtn} onClick={() => onToggleLike(photo.id)}>
+              <Image
+                src={likedNow ? "/images/city/heart_red.png" : "/images/city/heart_black.png"}
+                alt=""
+                width={23}
+                height={23}
+                className={styles.btnImg}
+                aria-hidden="true"
+              />
+              {likedNow ? "УДАЛИТЬ ИЗ ИЗБРАННОГО" : "ДОБАВИТЬ В ИЗБРАННОЕ"}
             </button>
 
             <button type="button" className={styles.bigBtn} onClick={handleAddToRoute}>
-              <span className={styles.btnPlus} aria-hidden="true" />
+              <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
               ДОБАВИТЬ В МАРШРУТ
             </button>
           </div>
@@ -161,11 +159,11 @@ export default function PhotoModals(props: {
           <button className={styles.closeBtn} onClick={handleX} aria-label="Закрыть" type="button" />
           <div className={styles.choiceBtns}>
             <button type="button" className={`${styles.choiceBtn} ${styles.choiceBtn1}`} onClick={handleCreateRoute}>
-              <span className={styles.btnPlus} aria-hidden="true" />
+              <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
               СОЗДАТЬ НОВЫЙ МАРШРУТ
             </button>
             <button type="button" className={`${styles.choiceBtn} ${styles.choiceBtn2}`} onClick={handlePickRoute}>
-              <span className={styles.btnPlus} aria-hidden="true" />
+              <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
               ДОБАВИТЬ В СОЗДАННЫЙ МАРШРУТ
             </button>
           </div>
