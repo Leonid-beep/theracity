@@ -27,14 +27,17 @@ body {
   position: fixed;
   inset: 0;
   transform: scale(1.5);
-  background:
-    linear-gradient(
-      rgba(224, 218, 180, 0.85),
-      rgba(224, 218, 180, 0.85)
-    ),
-    url("/images/map-bg.jpg") center / cover no-repeat;
+  background: url("/images/map-bg.jpg") center / cover no-repeat;
   z-index: 0;
   pointer-events: none;
+}
+
+.appMapBg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #F7F8EF;
+  opacity: 0.85;
 }
 
 .appContent {
