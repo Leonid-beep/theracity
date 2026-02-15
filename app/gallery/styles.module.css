@@ -22,6 +22,7 @@
 
 .wrap {
   display: flex;
+  flex-direction: row;
   align-items: flex-start;
   gap: 117px;
   width: 100%;
@@ -35,26 +36,32 @@
 .gallery {
   flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, 150px);
   column-gap: 22px;
-  row-gap: 29.5px;
+  row-gap: 42px;
   align-items: start;
+  grid-auto-rows: min-content;
 }
 
 .card {
   margin: 0;
   width: 150px;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .thumb {
   position: relative;
   width: 150px;
   height: 200px;
+  flex-shrink: 0;
   border-radius: 10px;
   overflow: hidden;
   background: #d9d9d9;
@@ -91,13 +98,19 @@
 
 
 .cap {
-  margin-top: 13.5px;
+  margin: 0;
+  margin-top: 8px;
+  padding: 0;
   font-family: var(--font-text);
   font-weight: 400;
   font-size: 18px;
-  line-height: 110%;
+  line-height: 1.25;
   letter-spacing: 0.05em;
   color: #111;
+  flex-shrink: 0;
+  min-height: 1.25em;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .pagination {
@@ -105,7 +118,7 @@
   align-items: center;
   justify-content: center;
   gap: 18px;
-  margin-top: 29px;
+  margin-top: 44px;
 }
 
 .pagBtn {
@@ -165,14 +178,14 @@
 .filter {
   width: 315px;
   flex: 0 0 315px;
+  align-self: flex-start;
+  position: sticky;
+  top: calc(113px + 27px + 148px);
 }
 
 .filterBox {
-  position: fixed;
-  right: 80px;
-  top: calc(113px + 27px + 148px);
   width: 315px;
-  height: 520px;
+  min-height: 520px;
   box-sizing: border-box;
   border-radius: 10px;
   background: rgba(120, 120, 120, 0.18);
@@ -182,6 +195,15 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 0;
+}
+
+.filterFields {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .filterTitle {
@@ -198,30 +220,37 @@
 
 .field {
   width: 236px;
-  height: 72px;
+  min-height: 52px;
   display: grid;
-  grid-template-rows: 12px 1fr;
-  gap: 10px;
+  grid-template-rows: auto minmax(28px, auto);
+  gap: 6px;
+  box-sizing: border-box;
 }
 
 .field + .field {
-  margin-top: 14px;
+  margin-top: 10px;
 }
 
 .fieldLabel {
   font-family: var(--font-button);
   font-weight: 500;
   font-size: 11px;
-  line-height: 1;
+  line-height: 1.2;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: #111;
   opacity: 0.9;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .select {
-  width: 236px;
-  height: 40px;
+  width: 100%;
+  min-width: 100%;
+  box-sizing: border-box;
+  min-height: 32px;
+  height: 32px;
   border-radius: 6px;
   border: 1px solid rgba(0, 0, 0, 0.12);
   background: rgba(255, 255, 255, 0.7);
@@ -232,6 +261,7 @@
   letter-spacing: 0.05em;
   color: #111;
   outline: none;
+  flex-shrink: 0;
 }
 
 .select option {
@@ -239,9 +269,9 @@
 }
 
 .apply {
-  margin-top: auto;
+  margin-top: 24px;
   width: 228px;
-  height: 37.5px;
+  height: 32px;
   border: none;
   border-radius: 999px;
   background: #e0dab4;
@@ -275,4 +305,460 @@
   border-radius: 999px;
   z-index: -1;
   pointer-events: none;
+}
+
+/* ========== 1440 ========== */
+@media (max-width: 1440px) {
+  .wrap {
+    flex-direction: row;
+    gap: 36px;
+    padding-left: 40px;
+    padding-right: 40px;
+    padding-top: calc(80px + 40px + 100px);
+    padding-bottom: 56px;
+  }
+  .h1 {
+    left: 40px;
+    top: 80px;
+    font-size: 36px;
+    line-height: 1.1;
+  }
+  .filter {
+    width: 220px;
+    flex: 0 0 220px;
+    top: calc(80px + 40px + 100px);
+  }
+  .filterBox {
+    width: 220px;
+    min-height: 390px;
+    padding: 14px 16px 16px 16px;
+  }
+  .filterTitle {
+    margin: 0 0 14px 0;
+    width: 100%;
+    font-size: 36px;
+    line-height: 1.15;
+  }
+  .field {
+    width: 188px;
+    min-height: 44px;
+    gap: 5px;
+    grid-template-rows: auto minmax(24px, auto);
+  }
+  .field + .field {
+    margin-top: 8px;
+  }
+  .fieldLabel {
+    font-size: 10px;
+  }
+  .select {
+    width: 100%;
+    height: 28px;
+    padding: 0 10px;
+    font-size: 10px;
+  }
+  .apply {
+    margin-top: 20px;
+    width: 190px;
+    height: 28px;
+    font-size: 11px;
+    margin-top: auto;
+  }
+  .grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    column-gap: 12px;
+    row-gap: 36px;
+    grid-auto-rows: min-content;
+  }
+  .card {
+    width: 100%;
+    max-width: 112px;
+  }
+  .thumb {
+    width: 100%;
+    aspect-ratio: 112 / 150;
+    max-height: 150px;
+    height: auto;
+  }
+  .cap {
+    margin-top: 6px;
+    font-size: 14px;
+    line-height: 1.3;
+    min-height: 1.3em;
+  }
+  .cardLike {
+    width: 18px;
+    height: 18px;
+    right: 6px;
+    top: 6px;
+  }
+  .pagination {
+    gap: 14px;
+    margin-top: 36px;
+  }
+  .pagBtn {
+    width: 32px;
+    height: 32px;
+    font-size: 22px;
+  }
+  .page {
+    width: 28px;
+    height: 28px;
+    font-size: 15px;
+  }
+  .pages {
+    gap: 8px;
+  }
+  .dots {
+    font-size: 18px;
+  }
+}
+
+/* ========== 1080 ========== */
+@media (max-width: 1024px) {
+  .wrap {
+    flex-direction: row;
+  }
+  .h1 {
+    left: 40px;
+    top: 60px;
+    font-size: 26px;
+  }
+  .wrap {
+    gap: 28px;
+    padding-left: 32px;
+    padding-right: 32px;
+    padding-top: calc(60px + 32px + 72px);
+    padding-bottom: 40px;
+  }
+  .filter {
+    width: 200px;
+    flex: 0 0 200px;
+    top: calc(60px + 32px + 72px);
+  }
+  .filterBox {
+    width: 200px;
+    min-height: 346px;
+    padding: 12px 14px 14px 14px;
+  }
+  .filterTitle {
+    margin: 0 0 12px 0;
+    font-size: 32px;
+    line-height: 1.2;
+  }
+  .field {
+    width: 168px;
+    min-height: 38px;
+    gap: 4px;
+    grid-template-rows: auto minmax(22px, auto);
+  }
+  .field + .field {
+    margin-top: 6px;
+  }
+  .fieldLabel {
+    font-size: 9px;
+  }
+  .select {
+    width: 100%;
+    height: 24px;
+    padding: 0 8px;
+    font-size: 9px;
+  }
+  .apply {
+    margin-top: 18px;
+    width: 168px;
+    height: 24px;
+    font-size: 10px;
+  }
+  .grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    column-gap: 12px;
+    row-gap: 34px;
+    grid-auto-rows: min-content;
+  }
+  .card {
+    width: 100%;
+    max-width: 120px;
+  }
+  .thumb {
+    width: 100%;
+    aspect-ratio: 120 / 160;
+    height: auto;
+  }
+  .cap {
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.3;
+    min-height: 1.3em;
+  }
+  .cardLike {
+    width: 16px;
+    height: 16px;
+    right: 6px;
+    top: 6px;
+  }
+  .pagination {
+    gap: 12px;
+    margin-top: 32px;
+  }
+  .pagBtn {
+    width: 28px;
+    height: 28px;
+    font-size: 20px;
+  }
+  .page {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+  }
+  .pages {
+    gap: 6px;
+  }
+  .dots {
+    font-size: 16px;
+  }
+}
+
+/* ========== 700 ========== */
+@media (max-width: 700px) {
+  .wrap {
+    flex-direction: row;
+  }
+  .h1 {
+    left: 24px;
+    top: 48px;
+    font-size: 21px;
+  }
+  .wrap {
+    gap: 24px;
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-top: calc(48px + 28px + 56px);
+    padding-bottom: 24px;
+  }
+  .filter {
+    width: 180px;
+    flex: 0 0 180px;
+    top: calc(48px + 28px + 56px);
+  }
+  .filterBox {
+    width: 180px;
+    min-height: 284px;
+    padding: 10px 12px 12px 12px;
+  }
+  .filterTitle {
+    margin: 0 0 10px 0;
+    font-size: 26px;
+    line-height: 1.2;
+  }
+  .field {
+    width: 148px;
+    min-height: 34px;
+    gap: 4px;
+    grid-template-rows: auto minmax(20px, auto);
+  }
+  .field + .field {
+    margin-top: 5px;
+  }
+  .fieldLabel {
+    font-size: 8px;
+  }
+  .select {
+    width: 100%;
+    height: 22px;
+    padding: 0 6px;
+    font-size: 8px;
+  }
+  .apply {
+    margin-top: 16px;
+    width: 140px;
+    height: 22px;
+    font-size: 9px;
+  }
+  .grid {
+    grid-template-columns: 100px 100px 100px 100px;
+    column-gap: 10px;
+    row-gap: 32px;
+    grid-auto-rows: min-content;
+    width: max-content;
+    min-width: 430px;
+  }
+  .card {
+    width: 100px;
+  }
+  .thumb {
+    width: 100px;
+    height: 130px;
+  }
+  .cap {
+    margin-top: 5px;
+    font-size: 12px;
+    line-height: 1.3;
+    min-height: 1.3em;
+  }
+  .cardLike {
+    width: 14px;
+    height: 14px;
+    right: 5px;
+    top: 5px;
+  }
+  .pagination {
+    gap: 10px;
+    margin-top: 28px;
+  }
+  .pagBtn {
+    width: 24px;
+    height: 24px;
+    font-size: 18px;
+  }
+  .page {
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+  }
+  .pages {
+    gap: 5px;
+  }
+  .dots {
+    font-size: 14px;
+  }
+}
+
+/* ========== 320 (мобильный: фильтр сверху только на узких экранах ≤480px) ========== */
+@media (max-width: 480px) {
+  .h1 {
+    left: 16px;
+    top: 40px;
+    font-size: 19px;
+  }
+  .wrap {
+    flex-direction: column;
+    gap: 24px;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: calc(40px + 1.3em + 56px);
+    padding-bottom: 24px;
+  }
+  .gallery {
+    order: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+  .filter {
+    order: -1;
+    width: 100%;
+    flex: 0 0 auto;
+    position: static;
+  }
+  .filterBox {
+    width: 100%;
+    max-width: 280px;
+    height: auto;
+    min-height: unset;
+    margin: 0 auto;
+    padding: 6px 12px 8px;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .filterTitle {
+    margin: 0 0 4px 0;
+    width: 100%;
+    font-size: 16px;
+    line-height: 1.2;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .filterFields {
+    flex: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 12px 10px;
+    width: 100%;
+    max-width: 260px;
+    margin: 0 auto;
+    align-items: start;
+  }
+  .field {
+    width: 100%;
+    min-width: 0;
+    min-height: unset;
+    height: auto;
+    gap: 1px;
+    grid-template-rows: auto minmax(18px, auto);
+  }
+  .field + .field {
+    margin-top: 0;
+  }
+  .fieldLabel {
+    font-size: 7px;
+    line-height: 1.15;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .select {
+    width: 100%;
+    min-width: 0;
+    height: 18px;
+    min-height: 18px;
+    padding: 0 4px;
+    font-size: 7px;
+    flex-shrink: 0;
+  }
+  .apply {
+    margin: 12px auto 0;
+    width: 90px;
+    height: 20px;
+    font-size: 8px;
+    flex-shrink: 0;
+  }
+  .grid {
+    grid-template-columns: 108px 108px;
+    column-gap: 12px;
+    row-gap: 30px;
+    grid-auto-rows: min-content;
+    width: max-content;
+    min-width: 228px;
+  }
+  .card {
+    width: 108px;
+  }
+  .thumb {
+    width: 108px;
+    height: 144px;
+  }
+  .cap {
+    margin-top: 6px;
+    font-size: 11px;
+    line-height: 1.3;
+    min-height: 1.3em;
+  }
+  .cardLike {
+    width: 14px;
+    height: 14px;
+  }
+  .pagination {
+    gap: 8px;
+    margin-top: 28px;
+  }
+  .pagBtn {
+    width: 22px;
+    height: 22px;
+    font-size: 16px;
+  }
+  .page {
+    width: 18px;
+    height: 18px;
+    font-size: 11px;
+  }
+  .pages {
+    gap: 4px;
+  }
+  .dots {
+    font-size: 12px;
+  }
 }

@@ -18,12 +18,23 @@
   right: 0;
   top: 0;
   height: min(50vh, 400px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: linear-gradient(
     180deg,
     rgba(224, 218, 180, 0.95) 0%,
     rgba(169, 167, 138, 0.95) 55%,
     rgba(82, 82, 76, 0.96) 100%
   );
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  padding: 18px 8px 12px 22px;
 }
 
 .burgerBtn {
@@ -55,16 +66,16 @@
 }
 
 .closeBtn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
+  position: relative;
   z-index: 1101;
   width: 60px;
   height: 60px;
   border: 0;
   padding: 0;
+  margin: -8px -8px 0 0;
   background: transparent;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .closeIcon {
@@ -97,10 +108,6 @@
 }
 
 .topLeft {
-  position: absolute;
-  left: 22px;
-  top: 18px;
-  z-index: 1101;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -119,13 +126,16 @@
   width: 27px;
   height: 27px;
   display: block;
+  object-fit: contain;
 }
 
 .nav {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 1100;
 }
 
@@ -180,4 +190,194 @@
   border-radius: 999px;
   z-index: -1;
   pointer-events: none;
+}
+
+/* 1440 и меньше */
+@media (max-width: 1440px) {
+  .panel {
+    height: min(375px, 42vh);
+  }
+  .burgerBtn {
+    width: 45px;
+    height: 45px;
+  }
+  .burgerIcon {
+    width: 24px;
+    box-shadow: 0 -7px 0 #111, 0 7px 0 #111;
+  }
+  .closeBtn {
+    width: 45px;
+    height: 45px;
+    margin: -8px -8px 0 0;
+  }
+  .closeIcon {
+    width: 45px;
+    height: 45px;
+  }
+  .closeIcon::before,
+  .closeIcon::after {
+    width: 26px;
+  }
+  .brand {
+    font-size: 20px;
+  }
+  .brandMark {
+    width: 20px;
+    height: 20px;
+  }
+  .link {
+    font-size: 12px;
+  }
+  .header {
+    padding: 14px 8px 10px 16px;
+  }
+}
+
+/* 1024 и меньше */
+@media (max-width: 1024px) {
+  .panel {
+    height: min(265px, 29vh);
+  }
+  .burgerBtn {
+    width: 32px;
+    height: 32px;
+  }
+  .burgerIcon {
+    width: 17px;
+    box-shadow: 0 -5px 0 #111, 0 5px 0 #111;
+  }
+  .closeBtn {
+    width: 32px;
+    height: 32px;
+    margin: -6px -6px 0 0;
+  }
+  .closeIcon {
+    width: 32px;
+    height: 32px;
+  }
+  .closeIcon::before,
+  .closeIcon::after {
+    width: 18px;
+  }
+  .brand {
+    font-size: 15px;
+  }
+  .brandMark {
+    width: 15px;
+    height: 15px;
+  }
+  .link {
+    font-size: 12px;
+  }
+  .list {
+    gap: 18px;
+  }
+  .header {
+    padding: 12px 6px 8px 12px;
+  }
+}
+
+/* 700 и меньше */
+@media (max-width: 700px) {
+  .panel {
+    height: min(260px, 45vh);
+  }
+  .list {
+    gap: 12px;
+  }
+  .burgerBtn {
+    width: 22px;
+    height: 22px;
+  }
+  .burgerIcon {
+    width: 12px;
+    height: 1.5px;
+    box-shadow: 0 -4px 0 #111, 0 4px 0 #111;
+  }
+  .closeBtn {
+    width: 22px;
+    height: 22px;
+    margin: -4px -4px 0 0;
+  }
+  .closeIcon {
+    width: 22px;
+    height: 22px;
+  }
+  .closeIcon::before,
+  .closeIcon::after {
+    width: 13px;
+    height: 1.5px;
+  }
+  .brand {
+    font-size: 10px;
+  }
+  .brandMark {
+    width: 10px;
+    height: 10px;
+  }
+  .link {
+    font-size: 9px;
+    padding: 4px 8px;
+  }
+  .header {
+    padding: 8px 6px 6px 10px;
+  }
+  .topLeft {
+    gap: 6px;
+  }
+}
+
+/* 480 и меньше (320) */
+@media (max-width: 480px) {
+  .panel {
+    height: min(220px, 50vh);
+  }
+  .list {
+    gap: 8px;
+  }
+  .burgerBtn {
+    width: 25px;
+    height: 25px;
+  }
+  .burgerIcon {
+    width: 14px;
+    box-shadow: 0 -4px 0 #111, 0 4px 0 #111;
+  }
+  .closeBtn {
+    width: 25px;
+    height: 25px;
+    margin: -4px -4px 0 0;
+  }
+  .closeIcon {
+    width: 25px;
+    height: 25px;
+  }
+  .closeIcon::before,
+  .closeIcon::after {
+    width: 14px;
+  }
+  .brand {
+    font-size: 10px;
+  }
+  .brandMark {
+    width: 10px;
+    height: 10px;
+  }
+  .link {
+    font-size: 10px;
+    padding: 4px 6px;
+  }
+  .header {
+    padding: 6px 6px 4px 8px;
+  }
+  .topLeft {
+    gap: 4px;
+  }
+}
+
+/* Низкие экраны (1080x600 и т.д.) — панель выше, всё помещается */
+@media (max-height: 700px) {
+  .panel {
+    height: min(400px, 90vh);
+  }
 }

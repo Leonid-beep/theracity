@@ -1,10 +1,33 @@
 // app/(app)/routes/page.tsx
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import styles from "./styles.module.css";
 import RouteModal from "./_components/RouteModal";
+
+function useRoutesBreakpoint() {
+  const [pageSize, setPageSize] = useState(32);
+  useEffect(() => {
+    const w = window.innerWidth;
+    if (w <= 480) setPageSize(8);
+    else if (w <= 700) setPageSize(16);
+    else if (w <= 1024) setPageSize(25);
+    else if (w <= 1440) setPageSize(32);
+    else setPageSize(28);
+    const onResize = () => {
+      const nw = window.innerWidth;
+      if (nw <= 480) setPageSize(8);
+      else if (nw <= 700) setPageSize(16);
+      else if (nw <= 1024) setPageSize(25);
+      else if (nw <= 1440) setPageSize(32);
+      else setPageSize(28);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return pageSize;
+}
 
 const baseTitles = ["Прогулка по центру", "Песня", "Дворы и колодцы", "За поворотом", "Красиво"];
 const baseMetro = ["Василеостровская", "Чернышевская", "Сенная площадь", "Удельная", "Горный институт"];
@@ -27,7 +50,7 @@ const allRoutes = Array.from({ length: 56 }).map((_, i) => {
 });
 
 export default function RoutesPage() {
-  const pageSize = 28;
+  const pageSize = useRoutesBreakpoint();
   const totalPages = Math.max(1, Math.ceil(allRoutes.length / pageSize));
   const [page, setPage] = useState(1);
 
@@ -152,6 +175,7 @@ export default function RoutesPage() {
               <span className={styles.mark}>Фильтр</span> для маршрутов
             </h2>
 
+            <div className={styles.filterFields}>
             <div className={styles.field}>
               <div className={styles.fieldLabel}>тип пространства</div>
               <select className={styles.select} defaultValue="Дворы">
@@ -186,6 +210,7 @@ export default function RoutesPage() {
                 <option>Пасмурно</option>
                 <option>Дождь</option>
               </select>
+            </div>
             </div>
 
             <button className={styles.apply}>ПРИМЕНИТЬ</button>

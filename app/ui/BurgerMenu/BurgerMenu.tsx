@@ -79,26 +79,27 @@ export default function BurgerMenu() {
           aria-label="Меню"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className={styles.topLeft}>
-            <span className={styles.brand}>TheraCity</span>
-            <Image
-              src="/images/city/icons8-bed-100.png"
-              alt=""
-              width={15}
-              height={15}
-              className={styles.brandMark}
-              priority
-            />
-          </div>
-
-          <button
-            type="button"
-            className={styles.closeBtn}
-            aria-label="Закрыть меню"
-            onClick={() => setOpen(false)}
-          >
-            <span className={styles.closeIcon} aria-hidden="true" />
-          </button>
+          <header className={styles.header}>
+            <div className={styles.topLeft}>
+              <span className={styles.brand}>TheraCity</span>
+              <Image
+                src="/images/city/icons8-bed-100.png"
+                alt=""
+                width={27}
+                height={27}
+                className={styles.brandMark}
+                priority
+              />
+            </div>
+            <button
+              type="button"
+              className={styles.closeBtn}
+              aria-label="Закрыть меню"
+              onClick={() => setOpen(false)}
+            >
+              <span className={styles.closeIcon} aria-hidden="true" />
+            </button>
+          </header>
 
           <nav className={styles.nav} aria-label="Разделы">
             <ul className={styles.list} style={{ ["--active" as any]: activeIndex }}>

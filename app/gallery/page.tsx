@@ -1,10 +1,33 @@
 // app/(app)/gallery/page.tsx
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import styles from "./styles.module.css";
 import PhotoModals from "./_components/PhotoModals";
+
+function useGalleryBreakpoint() {
+  const [pageSize, setPageSize] = useState(32);
+  useEffect(() => {
+    const w = window.innerWidth;
+    if (w <= 480) setPageSize(8);
+    else if (w <= 700) setPageSize(16);
+    else if (w <= 1024) setPageSize(25);
+    else if (w <= 1440) setPageSize(32);
+    else setPageSize(28);
+    const onResize = () => {
+      const nw = window.innerWidth;
+      if (nw <= 480) setPageSize(8);
+      else if (nw <= 700) setPageSize(16);
+      else if (nw <= 1024) setPageSize(25);
+      else if (nw <= 1440) setPageSize(32);
+      else setPageSize(28);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return pageSize;
+}
 
 export type PhotoItem = {
   id: number;
@@ -21,7 +44,7 @@ const allPhotos: PhotoItem[] = Array.from({ length: 56 }).map((_, i) => ({
 }));
 
 export default function GalleryPage() {
-  const pageSize = 28;
+  const pageSize = useGalleryBreakpoint();
 
   const totalPages = Math.max(1, Math.ceil(allPhotos.length / pageSize));
   const [page, setPage] = useState(1);
@@ -141,6 +164,7 @@ export default function GalleryPage() {
               <span className={styles.mark}>Фильтр</span> для фотографий
             </h2>
 
+            <div className={styles.filterFields}>
             <div className={styles.field}>
               <div className={styles.fieldLabel}>тип пространства</div>
               <select className={styles.select} defaultValue="Дворы">
@@ -175,6 +199,7 @@ export default function GalleryPage() {
                 <option>Пасмурно</option>
                 <option>Дождь</option>
               </select>
+            </div>
             </div>
 
             <button className={styles.apply}>ПРИМЕНИТЬ</button>
