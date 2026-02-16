@@ -4,8 +4,13 @@
   z-index: 2000;
   background: rgba(0, 0, 0, 0.18);
   backdrop-filter: blur(2px);
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  min-height: 100vh;
 }
 
 .modal {
@@ -25,6 +30,7 @@
   border: 0;
   background: transparent;
   cursor: pointer;
+  z-index: 10;
 }
 
 .closeBtn::before,
@@ -103,9 +109,12 @@
   top: calc(19.5px + 27px + 16.5px + 375px + 21px);
   font-family: var(--font-text);
   font-size: 27px;
+  line-height: 1.35;
   letter-spacing: 0.05em;
   color: #111;
+  width: calc(100% - 30px);
   max-width: calc(450px - 30px);
+  word-break: break-word;
 }
 
 .actions {
@@ -180,22 +189,27 @@
 
 .modalChoice {
   width: 450px;
-  height: 200px;
+  height: 220px;
+  padding: 56px 56px 24px 20px;
+  box-sizing: border-box;
 }
 
 .choiceBtns {
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: 56%;
   transform: translate(-50%, -50%);
-  width: 413px;
+  width: calc(100% - 76px);
+  max-width: 358px;
   display: grid;
   gap: 12px;
 }
 
 .choiceBtn {
-  width: 413px;
+  width: 100%;
+  max-width: 413px;
   height: 50px;
+  box-sizing: border-box;
   border: 0;
   border-radius: 14px;
   cursor: pointer;
@@ -229,18 +243,22 @@
 
 .modalPick {
   width: 450px;
-  height: 675px;
-  padding: 0;
+  min-height: 765px;
+  padding: 56px 56px 28px 15px;
+  box-sizing: border-box;
 }
 
 .pickTitle {
   position: absolute;
   left: 15px;
-  top: 19.5px;
+  top: 24px;
   font-family: var(--font-text);
   font-size: 30px;
+  line-height: 1.25;
   letter-spacing: 0.05em;
   color: #111;
+  max-width: calc(100% - 98px);
+  white-space: normal;
 }
 
 .pickMark {
@@ -264,13 +282,15 @@
 .pickGrid {
   position: absolute;
   left: 50%;
-  top: calc(19.5px + 30px + 29px);
+  top: 120px;
   transform: translateX(-50%);
-  width: 340px;
+  width: 100%;
+  max-width: 338px;
   display: grid;
   grid-template-columns: 150px 150px;
-  column-gap: 40px;
+  column-gap: 38px;
   row-gap: 18px;
+  box-sizing: border-box;
 }
 
 .pickCard {
@@ -316,21 +336,24 @@
 .pickPagination {
   position: absolute;
   left: 50%;
-  bottom: 74px;
+  top: calc(120px + 200px + 10px + 24px + 18px + 200px + 10px + 24px + 24px);
   transform: translateX(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 18px;
+  gap: 12px;
+  max-width: calc(100% - 30px);
 }
 
 .pickConfirm {
   position: absolute;
   left: 50%;
-  bottom: 18px;
+  bottom: 28px;
   transform: translateX(-50%);
-  width: 413px;
+  width: 100%;
+  max-width: 379px;
   height: 37px;
+  box-sizing: border-box;
   border: 0;
   border-radius: 999px;
   background: #e0dab4;
@@ -447,17 +470,6 @@
 }
 
 
-.pickPagination {
-  position: absolute;
-  left: 50%;
-  bottom: 69px;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
-}
-
 .pagBtn {
   width: 40px;
   height: 40px;
@@ -513,19 +525,6 @@
 }
 
 
-.photoWrap {
-  position: absolute;
-  left: 50%;
-  top: calc(19.5px + 27px + 16.5px);
-  width: 300px;
-  height: 375px;
-  transform: translateX(-50%);
-  border-radius: 12px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.22);
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.2);
-}
-
 .likeIcon {
   position: absolute;
   right: 10px;
@@ -542,17 +541,6 @@
   display: block;
 }
 
-.pickPagination {
-  position: absolute;
-  left: 50%;
-  bottom: 69px;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
-}
-
 .createField,
 .createSelectField {
   display: grid;
@@ -564,4 +552,516 @@
 .createTextarea,
 .createSelect {
   justify-self: start;
+}
+
+/* === Адаптив: 1440, 1024, 768, 480 === */
+@media (max-width: 1440px) {
+  .modalPhoto {
+    width: 400px;
+    height: 600px;
+  }
+  .photoTitle {
+    font-size: 24px;
+    max-width: calc(400px - 60px);
+  }
+  .photoWrap {
+    width: 260px;
+    height: 325px;
+    top: calc(19.5px + 24px + 14px);
+  }
+  .photoImg {
+    width: 260px;
+    height: 325px;
+  }
+  .meta {
+    top: calc(19.5px + 24px + 14px + 325px + 16px);
+    font-size: 24px;
+    max-width: calc(400px - 30px);
+  }
+  .actions {
+    width: 360px;
+  }
+  .bigBtn {
+    width: 360px;
+    height: 36px;
+    font-size: 14px;
+  }
+  .modalChoice {
+    width: 400px;
+    height: 200px;
+    padding: 52px 52px 20px 18px;
+  }
+  .choiceBtns {
+    width: calc(100% - 70px);
+    max-width: 318px;
+    top: 56%;
+  }
+  .choiceBtn {
+    width: 100%;
+    max-width: 360px;
+    height: 46px;
+    font-size: 15px;
+  }
+  .choiceBtn2 {
+    font-size: 13px;
+  }
+  .modalPick {
+    width: 400px;
+    min-height: 690px;
+    padding: 52px 52px 28px 15px;
+  }
+  .pickTitle {
+    top: 22px;
+    font-size: 26px;
+    max-width: calc(100% - 90px);
+  }
+  .pickGrid {
+    width: 100%;
+    max-width: 298px;
+    top: 108px;
+    grid-template-columns: 130px 130px;
+    column-gap: 24px;
+    row-gap: 14px;
+  }
+  .pickThumb,
+  .pickImg {
+    width: 130px;
+    height: 173px;
+  }
+  .pickCap {
+    font-size: 20px;
+    max-width: 130px;
+  }
+  .pickPagination {
+    top: calc(108px + 173px + 10px + 20px + 14px + 173px + 10px + 20px + 24px);
+  }
+  .pickConfirm {
+    bottom: 28px;
+    width: 100%;
+    max-width: 358px;
+    font-size: 14px;
+  }
+  .modalCreate {
+    width: 400px;
+    height: 760px;
+  }
+  .createTitle {
+    font-size: 26px;
+    max-width: calc(400px - 60px);
+  }
+  .createBody {
+    margin-top: calc(19.5px + 26px + 14px);
+    padding: 0 12px 14px 12px;
+    gap: 14px;
+  }
+  .createInput {
+    max-width: 280px;
+    height: 64px;
+    font-size: 13px;
+  }
+  .createTextarea {
+    max-width: 280px;
+    height: 160px;
+    font-size: 13px;
+  }
+  .createSelect {
+    max-width: 268px;
+  }
+  .createConfirm {
+    width: 360px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .modalPhoto {
+    width: 360px;
+    height: 540px;
+  }
+  .photoTitle {
+    font-size: 22px;
+    max-width: calc(360px - 56px);
+  }
+  .photoWrap {
+    width: 240px;
+    height: 300px;
+    top: calc(16px + 22px + 12px);
+  }
+  .photoImg {
+    width: 240px;
+    height: 300px;
+  }
+  .meta {
+    top: calc(16px + 22px + 12px + 300px + 14px);
+    font-size: 20px;
+    max-width: calc(360px - 28px);
+  }
+  .actions {
+    width: 320px;
+  }
+  .bigBtn {
+    width: 320px;
+    height: 34px;
+    font-size: 13px;
+  }
+  .modalChoice {
+    width: 360px;
+    height: 180px;
+    padding: 48px 48px 18px 16px;
+  }
+  .choiceBtns {
+    width: calc(100% - 64px);
+    max-width: 278px;
+    top: 56%;
+  }
+  .choiceBtn {
+    width: 100%;
+    max-width: 320px;
+    height: 44px;
+    font-size: 14px;
+  }
+  .choiceBtn2 {
+    font-size: 12px;
+  }
+  .modalPick {
+    width: 360px;
+    min-height: 640px;
+    padding: 48px 48px 28px 14px;
+  }
+  .pickTitle {
+    font-size: 24px;
+    top: 20px;
+    max-width: calc(100% - 82px);
+  }
+  .pickGrid {
+    width: 100%;
+    max-width: 278px;
+    top: 100px;
+    grid-template-columns: 120px 120px;
+    column-gap: 20px;
+    row-gap: 12px;
+  }
+  .pickThumb,
+  .pickImg {
+    width: 120px;
+    height: 160px;
+  }
+  .pickCap {
+    font-size: 18px;
+    max-width: 120px;
+  }
+  .pickPagination {
+    top: calc(100px + 160px + 10px + 18px + 12px + 160px + 10px + 18px + 24px);
+  }
+  .pickConfirm {
+    bottom: 28px;
+    width: 100%;
+    max-width: 318px;
+    font-size: 13px;
+  }
+  .modalCreate {
+    width: 360px;
+    height: 680px;
+  }
+  .createTitle {
+    font-size: 24px;
+    top: 16px;
+    max-width: calc(360px - 56px);
+  }
+  .createBody {
+    margin-top: calc(16px + 24px + 12px);
+    padding: 0 12px 12px 12px;
+    gap: 12px;
+  }
+  .createLabel {
+    font-size: 14px;
+  }
+  .createInput {
+    max-width: 260px;
+    height: 56px;
+  }
+  .createTextarea {
+    max-width: 260px;
+    height: 140px;
+  }
+  .createSelect {
+    max-width: 248px;
+    font-size: 11px;
+  }
+  .createConfirm {
+    width: 320px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 768px) {
+  .modalPhoto {
+    width: min(340px, calc(100vw - 24px));
+    height: min(520px, calc(100vh - 24px));
+  }
+  .photoTitle {
+    left: 12px;
+    top: 16px;
+    font-size: 20px;
+    max-width: calc(100% - 52px);
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  .photoWrap {
+    width: min(220px, calc(100vw - 80px));
+    height: 275px;
+    top: calc(16px + 20px + 10px);
+  }
+  .photoImg {
+    width: 100%;
+    height: 100%;
+    max-width: 220px;
+    max-height: 275px;
+  }
+  .meta {
+    left: 12px;
+    top: calc(16px + 20px + 10px + 275px + 12px);
+    width: calc(100% - 24px);
+    font-size: 18px;
+    max-width: calc(100% - 24px);
+    line-height: 1.4;
+    word-break: break-word;
+  }
+  .actions {
+    width: min(300px, calc(100% - 24px));
+  }
+  .bigBtn {
+    width: 100%;
+    max-width: 300px;
+    height: 36px;
+    font-size: 12px;
+  }
+  .modalChoice {
+    width: min(340px, calc(100vw - 24px));
+    height: 170px;
+    padding: 48px 46px 16px 14px;
+  }
+  .choiceBtns {
+    width: calc(100% - 60px);
+    max-width: 248px;
+    top: 56%;
+  }
+  .choiceBtn {
+    width: 100%;
+    max-width: 300px;
+    height: 42px;
+    font-size: 13px;
+  }
+  .choiceBtn2 {
+    font-size: 11px;
+  }
+  .modalPick {
+    width: min(340px, calc(100vw - 24px));
+    min-height: 620px;
+    padding: 48px 46px 28px 14px;
+  }
+  .pickTitle {
+    left: 12px;
+    top: 18px;
+    font-size: 22px;
+    max-width: calc(100% - 76px);
+  }
+  .pickGrid {
+    width: min(260px, calc(100% - 28px));
+    top: 96px;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 16px;
+    row-gap: 12px;
+  }
+  .pickThumb,
+  .pickImg {
+    width: 100%;
+    max-width: 120px;
+    height: 150px;
+    margin: 0 auto;
+  }
+  .pickCard {
+    width: 100%;
+    max-width: 130px;
+    margin: 0 auto;
+  }
+  .pickCap {
+    font-size: 16px;
+    max-width: 100%;
+  }
+  .pickPagination {
+    top: calc(96px + 150px + 10px + 16px + 12px + 150px + 10px + 16px + 24px);
+  }
+  .pickConfirm {
+    bottom: 28px;
+    width: min(300px, calc(100% - 28px));
+    height: 36px;
+    font-size: 12px;
+  }
+  .modalCreate {
+    width: min(340px, calc(100vw - 24px));
+    height: auto;
+    min-height: 0;
+    max-height: calc(100vh - 24px);
+  }
+  .createTitle {
+    left: 12px;
+    top: 16px;
+    font-size: 22px;
+    max-width: calc(100% - 52px);
+  }
+  .createBody {
+    margin-top: calc(16px + 22px + 10px);
+    padding: 0 12px 12px 12px;
+    gap: 10px;
+  }
+  .createInput,
+  .createTextarea,
+  .createSelect {
+    width: 100%;
+    max-width: 240px;
+  }
+  .createTextarea {
+    height: 120px;
+  }
+  .createConfirm {
+    width: min(300px, calc(100% - 24px));
+    font-size: 12px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 480px) {
+  .overlay {
+    padding: 10px;
+  }
+  .modalPhoto {
+    width: 100%;
+    max-width: calc(100vw - 20px);
+    min-height: 500px;
+    padding-bottom: 20px;
+    box-sizing: border-box;
+  }
+  .photoTitle {
+    left: 10px;
+    top: 12px;
+    font-size: 18px;
+  }
+  .photoWrap {
+    width: min(200px, calc(100vw - 60px));
+    height: 250px;
+    top: calc(12px + 18px + 8px);
+  }
+  .photoImg {
+    max-width: 200px;
+    max-height: 250px;
+  }
+  .meta {
+    left: 10px;
+    top: calc(12px + 18px + 8px + 250px + 12px);
+    width: calc(100% - 20px);
+    max-width: none;
+    font-size: 15px;
+    line-height: 1.4;
+    min-height: 2.8em;
+  }
+  .actions {
+    position: absolute;
+    left: 50%;
+    bottom: 20px;
+    transform: translateX(-50%);
+    width: calc(100% - 20px);
+    max-width: calc(100vw - 20px);
+    padding: 0 10px;
+    box-sizing: border-box;
+  }
+  .bigBtn {
+    width: 100%;
+    max-width: none;
+    height: 40px;
+    font-size: 11px;
+  }
+  .modalChoice {
+    width: 100%;
+    max-width: calc(100vw - 20px);
+    height: 160px;
+    padding: 44px 44px 14px 12px;
+  }
+  .choiceBtns {
+    width: calc(100% - 56px);
+    max-width: none;
+    padding: 0 4px;
+    top: 56%;
+  }
+  .choiceBtn {
+    width: 100%;
+    max-width: none;
+    height: 44px;
+    font-size: 12px;
+  }
+  .choiceBtn2 {
+    font-size: 11px;
+  }
+  .modalPick {
+    width: 100%;
+    max-width: calc(100vw - 20px);
+    min-height: 580px;
+    padding: 44px 44px 28px 12px;
+  }
+  .pickTitle {
+    left: 10px;
+    top: 16px;
+    font-size: 20px;
+    max-width: calc(100% - 72px);
+  }
+  .pickGrid {
+    width: 100%;
+    padding: 0 10px;
+    top: 88px;
+    box-sizing: border-box;
+  }
+  .pickThumb,
+  .pickImg {
+    max-width: 110px;
+    height: 140px;
+  }
+  .pickCap {
+    font-size: 14px;
+  }
+  .pickPagination {
+    top: calc(88px + 140px + 10px + 14px + 12px + 140px + 10px + 14px + 24px);
+  }
+  .pickConfirm {
+    bottom: 28px;
+    width: calc(100% - 20px);
+    height: 40px;
+    font-size: 11px;
+  }
+  .modalCreate {
+    width: 100%;
+    max-width: calc(100vw - 20px);
+    height: auto;
+    min-height: 0;
+    padding-bottom: 20px;
+  }
+  .createTitle {
+    left: 10px;
+    top: 12px;
+    font-size: 20px;
+  }
+  .createBody {
+    margin-top: calc(12px + 20px + 8px);
+    padding: 0 10px 20px 10px;
+  }
+  .createInput,
+  .createTextarea,
+  .createSelect {
+    max-width: none;
+  }
+  .createConfirm {
+    width: calc(100% - 20px);
+    height: 40px;
+    font-size: 11px;
+  }
 }

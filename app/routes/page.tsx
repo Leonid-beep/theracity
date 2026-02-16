@@ -2,9 +2,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import styles from "./styles.module.css";
-import RouteModal from "./_components/RouteModal";
+
+const RouteModal = dynamic(() => import("./_components/RouteModal"), { ssr: false });
 
 function useRoutesBreakpoint() {
   const [pageSize, setPageSize] = useState(32);
@@ -218,13 +220,15 @@ export default function RoutesPage() {
         </aside>
       </div>
 
-      <RouteModal
-        open={open}
-        route={activeRoute}
-        liked={activeRoute ? liked.has(activeRoute.id) : false}
-        onToggleLike={() => activeRoute && toggleLike(activeRoute.id)}
-        onClose={() => setOpen(false)}
-      />
+      {open ? (
+          <RouteModal
+            open={open}
+            route={activeRoute}
+            liked={activeRoute ? liked.has(activeRoute.id) : false}
+            onToggleLike={() => activeRoute && toggleLike(activeRoute.id)}
+            onClose={() => setOpen(false)}
+          />
+        ) : null}
     </main>
   );
 }

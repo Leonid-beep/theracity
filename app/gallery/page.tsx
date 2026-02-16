@@ -2,9 +2,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import styles from "./styles.module.css";
-import PhotoModals from "./_components/PhotoModals";
+
+const PhotoModals = dynamic(() => import("./_components/PhotoModals"), { ssr: false });
 
 function useGalleryBreakpoint() {
   const [pageSize, setPageSize] = useState(32);
@@ -207,7 +209,9 @@ export default function GalleryPage() {
         </aside>
       </div>
 
-      <PhotoModals photo={selected} onClose={() => setSelected(null)} liked={liked} onToggleLike={toggleLike} />
+      {selected ? (
+          <PhotoModals photo={selected} onClose={() => setSelected(null)} liked={liked} onToggleLike={toggleLike} />
+        ) : null}
     </main>
   );
 }

@@ -2,11 +2,15 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import styles from "./styles.module.css";
-import CabinetRouteModal, { CabinetRouteItem } from "./_components/CabinetRouteModal";
-import CabinetPhotoModals, { CabinetPhotoItem } from "./_components/CabinetPhotoModals";
-import ConfirmDeleteModal from "./_components/ConfirmDeleteModal";
+import type { CabinetRouteItem } from "./_components/CabinetRouteModal";
+import type { CabinetPhotoItem } from "./_components/CabinetPhotoModals";
+
+const CabinetRouteModal = dynamic(() => import("./_components/CabinetRouteModal"), { ssr: false });
+const CabinetPhotoModals = dynamic(() => import("./_components/CabinetPhotoModals"), { ssr: false });
+const ConfirmDeleteModal = dynamic(() => import("./_components/ConfirmDeleteModal"), { ssr: false });
 
 const makePhotoItems = (n: number): CabinetPhotoItem[] =>
   Array.from({ length: n }).map((_, i) => ({
@@ -258,35 +262,41 @@ export default function CabinetPage() {
         })}
       </div>
 
-      <CabinetRouteModal
-        open={openRoute}
-        route={activeRoute}
-        onClose={() => setOpenRoute(false)}
-        actionLabel={activeSectionKey === "my_routes" ? "УДАЛИТЬ МАРШРУТ" : "УДАЛИТЬ ИЗ ИЗБРАННОГО"}
-        onDelete={() => {
-          if (activeSectionKey === "my_routes") askDelete("delete_route");
-          else askDelete("remove_fav_route");
-        }}
-      />
+      {openRoute ? (
+        <CabinetRouteModal
+          open
+          route={activeRoute}
+          onClose={() => setOpenRoute(false)}
+          actionLabel={activeSectionKey === "my_routes" ? "УДАЛИТЬ МАРШРУТ" : "УДАЛИТЬ ИЗ ИЗБРАННОГО"}
+          onDelete={() => {
+            if (activeSectionKey === "my_routes") askDelete("delete_route");
+            else askDelete("remove_fav_route");
+          }}
+        />
+      ) : null}
 
-      <CabinetPhotoModals
-        open={openPhotoFlow}
-        photo={activePhoto}
-        isFav={activePhoto ? favPhotos.has(activePhoto.id) : false}
-        onClose={() => setOpenPhotoFlow(false)}
-        onToggleFav={() => {
-          if (!activePhoto) return;
-          setFavPhotos((prev) => {
-            const n = new Set(prev);
-            if (n.has(activePhoto.id)) n.delete(activePhoto.id);
-            else n.add(activePhoto.id);
-            return n;
-          });
-        }}
-        onRemoveFav={() => askDelete("remove_fav_photo")}
-      />
+      {openPhotoFlow ? (
+        <CabinetPhotoModals
+          open
+          photo={activePhoto}
+          isFav={activePhoto ? favPhotos.has(activePhoto.id) : false}
+          onClose={() => setOpenPhotoFlow(false)}
+          onToggleFav={() => {
+            if (!activePhoto) return;
+            setFavPhotos((prev) => {
+              const n = new Set(prev);
+              if (n.has(activePhoto.id)) n.delete(activePhoto.id);
+              else n.add(activePhoto.id);
+              return n;
+            });
+          }}
+          onRemoveFav={() => askDelete("remove_fav_photo")}
+        />
+      ) : null}
 
-      <ConfirmDeleteModal open={confirmOpen} onClose={() => setConfirmOpen(false)} onYes={doDelete} />
+      {confirmOpen ? (
+        <ConfirmDeleteModal open onClose={() => setConfirmOpen(false)} onYes={doDelete} />
+      ) : null}
     </main>
   );
 }

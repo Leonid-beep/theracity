@@ -13,7 +13,31 @@
   left: 0;
   z-index: 2;
   pointer-events: none;
-  background: url("/images/collage_1920.svg") center / contain no-repeat;
+  background: url("/images/collage_320.svg") center / contain no-repeat;
+}
+
+@media (min-width: 701px) {
+  .collage {
+    background-image: url("/images/collage_700.svg");
+  }
+}
+
+@media (min-width: 1025px) {
+  .collage {
+    background-image: url("/images/collage_1024.svg");
+  }
+}
+
+@media (min-width: 1441px) {
+  .collage {
+    background-image: url("/images/collage_1440.svg");
+  }
+}
+
+@media (min-width: 1921px) {
+  .collage {
+    background-image: url("/images/collage_1920.svg");
+  }
 }
 
 .header {

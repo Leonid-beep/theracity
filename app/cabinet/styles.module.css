@@ -183,3 +183,329 @@
   z-index: -1;
   pointer-events: none;
 }
+
+/* ========== 1440 ========== */
+@media (max-width: 1440px) {
+  .userName {
+    left: 40px;
+    top: 80px;
+    font-size: 36px;
+  }
+  .sections {
+    padding-left: 40px;
+    padding-right: 40px;
+    padding-top: calc(80px + 36px + 47px);
+    padding-bottom: 56px;
+    gap: 56px;
+  }
+  .section {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .sectionTitle {
+    margin: 0 0 38px 0;
+    font-size: 24px;
+  }
+  .row {
+    grid-template-columns: repeat(10, 112px);
+    column-gap: 17px;
+    width: 100%;
+    max-width: 100%;
+  }
+  .card {
+    width: 112px;
+  }
+  .thumb {
+    width: 112px;
+    height: 150px;
+  }
+  .cap {
+    margin-top: 10px;
+    font-size: 13.5px;
+  }
+  .cardLike {
+    width: 18px;
+    height: 18px;
+    right: 6px;
+    top: 6px;
+  }
+  .pagination {
+    gap: 14px;
+    margin-top: 22px;
+  }
+  .pagBtn {
+    width: 32px;
+    height: 32px;
+    font-size: 22px;
+  }
+  .page {
+    width: 28px;
+    height: 28px;
+    font-size: 15px;
+  }
+  .pages {
+    gap: 8px;
+  }
+  .dots {
+    font-size: 18px;
+  }
+}
+
+/* ========== 1280 (узкие широкие экраны, напр. 1280×800) ========== */
+@media (max-width: 1320px) {
+  .sections {
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+  .section {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .row {
+    grid-template-columns: repeat(8, 112px);
+    column-gap: 17px;
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* ========== 1024 ========== */
+@media (max-width: 1024px) {
+  .userName {
+    left: 32px;
+    top: 60px;
+    font-size: 26px;
+  }
+  .sections {
+    padding-left: 32px;
+    padding-right: 32px;
+    padding-top: calc(60px + 26px + 56px);
+    padding-bottom: 40px;
+    gap: 90px;
+  }
+  .section {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .sectionTitle {
+    margin: 0 0 36px 0;
+    font-size: 26px;
+  }
+  .row {
+    grid-template-columns: repeat(7, 120px);
+    column-gap: 17px;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .card {
+    width: 120px;
+  }
+  .thumb {
+    width: 120px;
+    height: 160px;
+  }
+  .cap {
+    margin-top: 10px;
+    font-size: 15px;
+  }
+  .cardLike {
+    width: 16px;
+    height: 16px;
+    right: 6px;
+    top: 6px;
+  }
+  .pagination {
+    gap: 12px;
+    margin-top: 25px;
+  }
+  .pagBtn {
+    width: 28px;
+    height: 28px;
+    font-size: 20px;
+  }
+  .page {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+  }
+  .pages {
+    gap: 6px;
+  }
+  .dots {
+    font-size: 16px;
+  }
+}
+
+/* ========== 768 ========== */
+@media (max-width: 768px) {
+  .sections {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .section {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .row {
+    grid-template-columns: repeat(5, 100px);
+    column-gap: 15px;
+    width: 100%;
+    max-width: 100%;
+  }
+  .card {
+    width: 100px;
+  }
+  .thumb {
+    width: 100px;
+    height: 130px;
+  }
+  .cap {
+    margin-top: 8px;
+    font-size: 12px;
+  }
+  .cardLike {
+    width: 14px;
+    height: 14px;
+    right: 5px;
+    top: 5px;
+  }
+}
+
+/* ========== 700 ========== */
+@media (max-width: 700px) {
+  .userName {
+    left: 24px;
+    top: 48px;
+    font-size: 21px;
+  }
+  .sections {
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-top: calc(48px + 21px + 39px);
+    padding-bottom: 24px;
+    gap: 10px;
+  }
+  .sectionTitle {
+    margin: 0 0 34px 0;
+    font-size: 21px;
+  }
+  .row {
+    grid-template-columns: repeat(6, 100px);
+    column-gap: 15px;
+  }
+  .card {
+    width: 100px;
+  }
+  .thumb {
+    width: 100px;
+    height: 130px;
+  }
+  .cap {
+    margin-top: 8px;
+    font-size: 12px;
+  }
+  .cardLike {
+    width: 14px;
+    height: 14px;
+    right: 5px;
+    top: 5px;
+  }
+  .pagination {
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .pagBtn {
+    width: 24px;
+    height: 24px;
+    font-size: 18px;
+  }
+  .page {
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+  }
+  .pages {
+    gap: 5px;
+  }
+  .dots {
+    font-size: 14px;
+  }
+}
+
+/* ========== 320 ========== */
+@media (max-width: 480px) {
+  .userName {
+    left: 16px;
+    top: 40px;
+    font-size: 19px;
+  }
+  .sections {
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: calc(40px + 19px + 45px);
+    padding-bottom: 24px;
+    gap: 66px;
+    align-items: center;
+  }
+  .section {
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .sectionTitle {
+    margin: 0 0 14px 0;
+    font-size: 19px;
+    text-align: center;
+  }
+  .row {
+    grid-template-columns: repeat(2, 108px);
+    column-gap: 16px;
+    justify-content: center;
+    width: max-content;
+    margin: 0 auto;
+  }
+  .card {
+    width: 108px;
+  }
+  .thumb {
+    width: 108px;
+    height: 144px;
+  }
+  .cap {
+    margin-top: 10px;
+    font-size: 13px;
+  }
+  .cardLike {
+    width: 14px;
+    height: 14px;
+    right: 5px;
+    top: 5px;
+  }
+  .pagination {
+    gap: 8px;
+    margin-top: 15px;
+  }
+  .pagBtn {
+    width: 22px;
+    height: 22px;
+    font-size: 16px;
+  }
+  .page {
+    width: 18px;
+    height: 18px;
+    font-size: 11px;
+  }
+  .pages {
+    gap: 4px;
+  }
+  .dots {
+    font-size: 12px;
+  }
+}

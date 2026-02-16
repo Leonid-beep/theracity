@@ -1,8 +1,9 @@
 .root {
   position: relative;
   width: 100%;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .h1 {
@@ -13,6 +14,7 @@
   font-family: var(--font-text);
   font-weight: 400;
   font-size: 48px;
+  line-height: 1.15;
   letter-spacing: 0.05em;
   color: #111;
 }
@@ -21,7 +23,11 @@
   position: absolute;
   left: 80px;
   top: calc(113px + 48px + 91px);
-  width: 1646px;
+  width: calc(100% - 160px);
+  max-width: 1646px;
+  padding-right: 80px;
+  padding-bottom: 80px;
+  box-sizing: border-box;
   font-family: var(--font-button);
   font-weight: 400;
   font-size: 14px;
@@ -31,6 +37,10 @@
 
 .textBlock p {
   margin: 0 0 36px 0;
+}
+
+.textBlock p:last-child {
+  margin-bottom: 0;
 }
 
 .textBlock strong {
@@ -59,4 +69,88 @@
   border-radius: 999px;
   z-index: -1;
   pointer-events: none;
+}
+
+/* ========== 1440 ========== */
+@media (max-width: 1440px) {
+  .h1 {
+    left: 40px;
+    top: 80px;
+    font-size: 36px;
+  }
+  .textBlock {
+    left: 40px;
+    top: calc(80px + 36px + 60px);
+    width: calc(100% - 80px);
+    padding-right: 40px;
+    padding-bottom: 56px;
+    font-size: 13px;
+    line-height: 32px;
+  }
+  .textBlock p {
+    margin-bottom: 28px;
+  }
+}
+
+/* ========== 1024 ========== */
+@media (max-width: 1024px) {
+  .h1 {
+    left: 40px;
+    top: 60px;
+    font-size: 26px;
+  }
+  .textBlock {
+    left: 32px;
+    top: calc(60px + 26px + 50px);
+    width: calc(100% - 64px);
+    padding-right: 32px;
+    padding-bottom: 40px;
+    font-size: 12px;
+    line-height: 28px;
+  }
+  .textBlock p {
+    margin-bottom: 24px;
+  }
+}
+
+/* ========== 700 ========== */
+@media (max-width: 700px) {
+  .h1 {
+    left: 24px;
+    top: 48px;
+    font-size: 21px;
+  }
+  .textBlock {
+    left: 24px;
+    top: calc(48px + 21px + 40px);
+    width: calc(100% - 48px);
+    padding-right: 24px;
+    padding-bottom: 24px;
+    font-size: 11px;
+    line-height: 24px;
+  }
+  .textBlock p {
+    margin-bottom: 20px;
+  }
+}
+
+/* ========== 320 ========== */
+@media (max-width: 480px) {
+  .h1 {
+    left: 16px;
+    top: 40px;
+    font-size: 19px;
+  }
+  .textBlock {
+    left: 16px;
+    top: calc(40px + 19px + 32px);
+    width: calc(100% - 32px);
+    padding-right: 16px;
+    padding-bottom: 24px;
+    font-size: 10px;
+    line-height: 22px;
+  }
+  .textBlock p {
+    margin-bottom: 18px;
+  }
 }

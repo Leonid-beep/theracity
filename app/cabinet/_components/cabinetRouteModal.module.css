@@ -4,8 +4,13 @@
   z-index: 2000;
   background: rgba(0, 0, 0, 0.18);
   backdrop-filter: blur(2px);
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  min-height: 100vh;
 }
 
 .modal {
@@ -25,6 +30,7 @@
   border: 0;
   background: transparent;
   cursor: pointer;
+  z-index: 10;
 }
 
 .closeBtn::before,
@@ -49,18 +55,22 @@
 
 .modalRoute {
   width: 450px;
-  height: 825px;
+  height: 760px;
+  padding: 0 12px 0 12px;
+  padding-right: 44px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .routeTitle {
   position: absolute;
-  left: 15px;
-  top: 19.5px;
+  left: 12px;
+  top: 14px;
   font-family: var(--font-text);
   font-size: 27px;
   letter-spacing: 0.05em;
   color: #111;
-  max-width: calc(450px - 60px);
+  max-width: calc(100% - 72px);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -68,26 +78,32 @@
 
 .routeDesc {
   position: absolute;
-  left: 15px;
-  top: calc(19.5px + 27px + 29px);
-  width: 425px;
+  left: 12px;
+  top: calc(14px + 27px + 20px);
+  width: calc(100% - 24px);
+  max-width: 382px;
   font-family: var(--font-text);
   font-size: 15px;
+  line-height: 1.35;
   letter-spacing: 0.05em;
   color: #111;
+  max-height: 4.2em;
+  overflow: hidden;
 }
 
 .photoRow {
   position: absolute;
   left: 50%;
-  top: calc(19.5px + 27px + 29px + 15px + 29.25px);
+  top: calc(14px + 27px + 20px + 4.2em + 12px);
   transform: translateX(-50%);
-  width: 450px;
+  width: 100%;
+  max-width: 418px;
   display: grid;
   grid-template-columns: 112px 225px 112px;
   justify-content: center;
   align-items: center;
   column-gap: 56px;
+  box-sizing: border-box;
 }
 
 .mainPhoto {
@@ -131,34 +147,38 @@
 
 .meta {
   position: absolute;
-  left: 15px;
-  top: calc(19.5px + 27px + 29px + 15px + 29.25px + 280px + 33px);
+  left: 12px;
+  top: calc(14px + 27px + 20px + 4.2em + 12px + 280px + 24px);
   font-family: var(--font-text);
   font-size: 27px;
   letter-spacing: 0.05em;
   color: #111;
-  width: calc(450px - 30px);
+  width: calc(100% - 24px);
+  max-width: 402px;
 }
 
 .pagination {
   position: absolute;
   left: 50%;
-  top: calc(19.5px + 27px + 29px + 15px + 29.25px + 280px + 33px + 54px + 33px);
+  top: calc(14px + 27px + 20px + 4.2em + 12px + 280px + 24px + 56px + 28px);
   transform: translateX(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 18px;
+  gap: 10px;
+  max-width: calc(100% - 24px);
+  flex-wrap: nowrap;
 }
 
 .pagBtn {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
   border: none;
   background: transparent;
   cursor: pointer;
   font-family: var(--font-text);
-  font-size: 26px;
+  font-size: 20px;
   line-height: 1;
   color: #111;
   display: grid;
@@ -173,18 +193,22 @@
 .pages {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .page {
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
   border: none;
   border-radius: 999px;
   background: transparent;
   cursor: pointer;
   font-family: var(--font-text);
-  font-size: 18px;
+  font-size: 15px;
   line-height: 1;
   color: #111;
   opacity: 0.9;
@@ -200,24 +224,29 @@
 
 .dots {
   font-family: var(--font-text);
-  font-size: 22px;
+  font-size: 16px;
   opacity: 0.7;
   transform: translateY(-1px);
+  flex-shrink: 0;
 }
 
 .actions {
   position: absolute;
   left: 50%;
-  top: calc(19.5px + 27px + 29px + 15px + 29.25px + 280px + 33px + 54px + 33px + 34px + 44px);
+  top: calc(14px + 27px + 20px + 4.2em + 12px + 280px + 24px + 56px + 28px + 36px + 20px);
   transform: translateX(-50%);
-  width: 420px;
+  width: 100%;
+  max-width: min(382px, calc(100% - 24px));
   display: grid;
-  gap: 35px;
+  gap: 20px;
+  box-sizing: border-box;
 }
 
 .bigBtn {
-  width: 420px;
+  width: 100%;
+  max-width: 100%;
   height: 37.5px;
+  box-sizing: border-box;
   border: 0;
   border-radius: 999px;
   background: #e0dab4;
@@ -258,4 +287,304 @@
   width: 23px;
   height: 23px;
   display: block;
+}
+
+/* === Адаптив: 1440, 1024, 768, 480 === */
+@media (max-width: 1440px) {
+  .modalRoute {
+    width: 400px;
+    height: 700px;
+    padding-right: 44px;
+    overflow: hidden;
+  }
+  .routeTitle {
+    font-size: 24px;
+    max-width: calc(100% - 78px);
+  }
+  .routeDesc {
+    top: calc(19.5px + 24px + 22px);
+    max-width: 100%;
+    font-size: 14px;
+    max-height: 4.2em;
+  }
+  .photoRow {
+    top: calc(19.5px + 24px + 22px + 4.2em + 14px);
+    max-width: 356px;
+    grid-template-columns: 90px 200px 90px;
+    column-gap: 40px;
+  }
+  .mainPhoto,
+  .mainImg {
+    width: 200px;
+    height: 250px;
+  }
+  .sideThumb,
+  .sideImg {
+    width: 90px;
+    height: 113px;
+  }
+  .meta {
+    top: calc(19.5px + 24px + 22px + 4.2em + 14px + 250px + 26px);
+    width: calc(100% - 30px);
+    font-size: 24px;
+  }
+  .pagination {
+    top: calc(19.5px + 24px + 22px + 4.2em + 14px + 250px + 26px + 60px + 36px);
+    gap: 8px;
+  }
+  .pagBtn {
+    width: 30px;
+    height: 30px;
+    font-size: 18px;
+  }
+  .page {
+    width: 26px;
+    height: 26px;
+    font-size: 14px;
+  }
+  .dots {
+    font-size: 14px;
+  }
+  .actions {
+    max-width: min(356px, calc(100% - 24px));
+    top: calc(19.5px + 24px + 22px + 4.2em + 14px + 250px + 26px + 60px + 36px + 36px + 24px);
+  }
+  .bigBtn {
+    max-width: 100%;
+    height: 36px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .modalRoute {
+    width: 360px;
+    height: 620px;
+    padding-right: 42px;
+    overflow: hidden;
+  }
+  .routeTitle {
+    font-size: 22px;
+    max-width: calc(100% - 72px);
+  }
+  .routeDesc {
+    top: calc(16px + 22px + 18px);
+    width: calc(100% - 28px);
+    font-size: 13px;
+    max-height: 4.4em;
+  }
+  .photoRow {
+    top: calc(16px + 22px + 18px + 4.4em + 12px);
+    max-width: 318px;
+    grid-template-columns: 72px 180px 72px;
+    column-gap: 28px;
+  }
+  .mainPhoto,
+  .mainImg {
+    width: 180px;
+    height: 224px;
+  }
+  .sideThumb,
+  .sideImg {
+    width: 72px;
+    height: 90px;
+  }
+  .meta {
+    top: calc(16px + 22px + 18px + 4.4em + 12px + 224px + 22px);
+    width: calc(100% - 28px);
+    font-size: 20px;
+  }
+  .pagination {
+    top: calc(16px + 22px + 18px + 4.4em + 12px + 224px + 22px + 56px + 32px);
+    gap: 6px;
+  }
+  .pagBtn {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+  }
+  .page {
+    width: 24px;
+    height: 24px;
+    font-size: 13px;
+  }
+  .dots {
+    font-size: 13px;
+  }
+  .actions {
+    max-width: min(318px, calc(100% - 24px));
+    top: calc(16px + 22px + 18px + 4.4em + 12px + 224px + 22px + 56px + 32px + 34px + 24px);
+  }
+  .bigBtn {
+    max-width: 100%;
+    height: 34px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 768px) {
+  .modalRoute {
+    width: min(340px, calc(100vw - 24px));
+    height: min(600px, calc(100vh - 24px));
+    padding-right: 40px;
+    overflow: hidden;
+  }
+  .routeTitle {
+    font-size: 20px;
+    max-width: calc(100% - 52px);
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  .routeDesc {
+    top: calc(16px + 20px + 14px);
+    width: calc(100% - 24px);
+    font-size: 13px;
+    line-height: 1.4;
+    max-height: 4.6em;
+  }
+  .photoRow {
+    top: calc(16px + 20px + 14px + 4.6em + 12px);
+    max-width: 292px;
+    grid-template-columns: 56px 160px 56px;
+    column-gap: 16px;
+  }
+  .mainPhoto,
+  .mainImg {
+    width: 160px;
+    height: 200px;
+  }
+  .sideThumb,
+  .sideImg {
+    width: 56px;
+    height: 70px;
+  }
+  .meta {
+    top: calc(16px + 20px + 14px + 4.6em + 12px + 200px + 18px);
+    width: calc(100% - 24px);
+    font-size: 18px;
+  }
+  .pagination {
+    top: calc(16px + 20px + 14px + 4.6em + 12px + 200px + 18px + 52px + 28px);
+    max-width: calc(100% - 20px);
+    gap: 4px;
+  }
+  .pagBtn {
+    width: 26px;
+    height: 26px;
+    font-size: 14px;
+  }
+  .page {
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+  }
+  .dots {
+    font-size: 12px;
+  }
+  .actions {
+    max-width: min(300px, calc(100% - 24px));
+    top: calc(16px + 20px + 14px + 4.6em + 12px + 200px + 18px + 52px + 28px + 32px + 24px);
+  }
+  .bigBtn {
+    width: 100%;
+    max-width: 100%;
+    height: 36px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .overlay {
+    padding: 10px;
+  }
+  .modalRoute {
+    width: 100%;
+    max-width: calc(100vw - 20px);
+    height: auto;
+    min-height: 520px;
+    padding-bottom: 14px;
+    padding-right: 38px;
+    overflow: hidden;
+  }
+  .routeTitle {
+    left: 10px;
+    top: 12px;
+    font-size: 18px;
+    max-width: calc(100% - 48px);
+  }
+  .routeDesc {
+    left: 10px;
+    top: calc(12px + 18px + 10px);
+    width: calc(100% - 20px);
+    font-size: 12px;
+    line-height: 1.4;
+    max-height: 5em;
+  }
+  .photoRow {
+    top: calc(12px + 18px + 10px + 5em + 10px);
+    max-width: 260px;
+    grid-template-columns: 44px 120px 44px;
+    column-gap: 12px;
+  }
+  .mainPhoto,
+  .mainImg {
+    width: 120px;
+    height: 150px;
+  }
+  .sideThumb,
+  .sideImg {
+    width: 44px;
+    height: 55px;
+  }
+  .meta {
+    left: 10px;
+    top: calc(12px + 18px + 10px + 5em + 10px + 150px + 14px);
+    width: calc(100% - 20px);
+    font-size: 16px;
+  }
+  .pagination {
+    top: calc(12px + 18px + 10px + 5em + 10px + 150px + 14px + 48px + 24px);
+    max-width: calc(100% - 16px);
+    gap: 2px;
+  }
+  .pagBtn {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+  .page {
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+  }
+  .dots {
+    font-size: 11px;
+  }
+  .actions {
+    width: calc(100% - 20px);
+    max-width: none;
+    padding: 0 10px;
+    left: 10px;
+    transform: none;
+    top: calc(12px + 18px + 10px + 5em + 10px + 150px + 14px + 48px + 24px + 32px + 20px);
+    box-sizing: border-box;
+  }
+  .bigBtn {
+    width: 100%;
+    max-width: 100%;
+    height: 40px;
+    font-size: 11px;
+    box-sizing: border-box;
+  }
+  .closeBtn {
+    right: 10px;
+    top: 10px;
+    width: 26px;
+    height: 26px;
+  }
+  .closeBtn::before,
+  .closeBtn::after {
+    width: 22px;
+  }
 }

@@ -184,7 +184,7 @@
 
 .filterBox {
   width: 315px;
-  min-height: 520px;
+  min-height: 0;
   box-sizing: border-box;
   border-radius: 10px;
   background: rgba(120, 120, 120, 0.18);
@@ -200,7 +200,7 @@
 .filterFields {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 0 1 auto;
   min-height: 0;
   overflow-y: auto;
 }
@@ -254,7 +254,7 @@
   border: 1px solid rgba(0, 0, 0, 0.12);
   background: rgba(255, 255, 255, 0.7);
   padding: 0 12px;
-  font-family: var(--font-button);
+  font-family: var(--font-text);
   font-weight: 400;
   font-size: 11px;
   letter-spacing: 0.05em;
@@ -264,6 +264,7 @@
 }
 
 .select option {
+  font-family: var(--font-text);
   font-weight: 400;
 }
 
@@ -281,6 +282,7 @@
   letter-spacing: 0.05em;
   color: #111;
   box-shadow: 0 10px 18px rgba(0, 0, 0, 0.14);
+  flex-shrink: 0;
 }
 
 .mark {
@@ -329,7 +331,7 @@
   }
   .filterBox {
     width: 220px;
-    min-height: 390px;
+    min-height: 0;
     padding: 14px 16px 16px 16px;
   }
   .filterTitle {
@@ -356,8 +358,11 @@
     padding: 0 10px;
     font-size: 10px;
   }
+  .filterFields {
+    margin-bottom: 20px;
+  }
   .apply {
-    margin-top: 20px;
+    margin-top: auto;
     width: 190px;
     height: 28px;
     font-size: 11px;
@@ -434,7 +439,7 @@
   }
   .filterBox {
     width: 200px;
-    min-height: 346px;
+    min-height: 0;
     padding: 12px 14px 14px 14px;
   }
   .filterTitle {
@@ -461,7 +466,7 @@
     font-size: 9px;
   }
   .apply {
-    margin-top: 18px;
+    margin-top: 24px;
     width: 168px;
     height: 24px;
     font-size: 10px;
@@ -537,7 +542,7 @@
   }
   .filterBox {
     width: 180px;
-    min-height: 284px;
+    min-height: 0;
     padding: 10px 12px 12px 12px;
   }
   .filterTitle {
@@ -564,7 +569,7 @@
     font-size: 8px;
   }
   .apply {
-    margin-top: 16px;
+    margin-top: 22px;
     width: 140px;
     height: 22px;
     font-size: 9px;
@@ -704,7 +709,7 @@
     flex-shrink: 0;
   }
   .apply {
-    margin: 12px auto 0;
+    margin: 20px auto 0;
     width: 90px;
     height: 20px;
     font-size: 8px;

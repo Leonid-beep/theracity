@@ -30,6 +30,8 @@
 }
 
 .header {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -130,13 +132,16 @@
 }
 
 .nav {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
+  position: absolute;
+  top: 70px;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1100;
+  z-index: 0;
+  overflow-y: auto;
 }
 
 .list {

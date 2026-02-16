@@ -4,8 +4,13 @@
   z-index: 2100;
   background: rgba(0, 0, 0, 0.18);
   backdrop-filter: blur(2px);
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  min-height: 100vh;
 }
 
 .modal {
@@ -83,4 +88,90 @@
   letter-spacing: 0.05em;
   color: #111;
   box-shadow: 0 12px 20px rgba(0, 0, 0, 0.16);
+}
+
+/* === Адаптив: 1024, 768, 480 === */
+@media (max-width: 1024px) {
+  .modal {
+    width: 200px;
+    height: 190px;
+  }
+  .title {
+    font-size: 24px;
+    top: 32px;
+  }
+  .actions {
+    width: 180px;
+    bottom: 18px;
+    gap: 12px;
+  }
+  .btn {
+    width: 180px;
+    height: 36px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .modal {
+    width: min(180px, calc(100vw - 24px));
+    height: auto;
+    min-height: 170px;
+    padding: 12px 10px 14px;
+  }
+  .title {
+    font-size: 22px;
+    top: 28px;
+    padding: 0 8px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.25;
+  }
+  .actions {
+    width: 100%;
+    max-width: 200px;
+    bottom: 14px;
+    gap: 10px;
+  }
+  .btn {
+    width: 100%;
+    max-width: 200px;
+    height: 36px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .overlay {
+    padding: 10px;
+  }
+  .modal {
+    width: 100%;
+    max-width: calc(100vw - 20px);
+    min-height: 160px;
+    padding: 10px 12px 12px;
+  }
+  .title {
+    font-size: 18px;
+    top: 24px;
+  }
+  .actions {
+    max-width: none;
+    bottom: 12px;
+  }
+  .btn {
+    max-width: none;
+    height: 40px;
+    font-size: 12px;
+  }
+  .closeBtn {
+    right: 8px;
+    top: 8px;
+    width: 24px;
+    height: 24px;
+  }
+  .closeBtn::before,
+  .closeBtn::after {
+    width: 18px;
+  }
 }
