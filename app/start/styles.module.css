@@ -1,3 +1,5 @@
+/* Стартовая страница: коллажи + позиционирование относительно кнопки по центру */
+
 .root {
   position: relative;
   width: 100vw;
@@ -5,41 +7,43 @@
   overflow: hidden;
 }
 
+/* --- Коллажи: desktop first --- */
 .collage {
   position: absolute;
-  top: min(0.8333vh, 9px);
-  right: min(4.1146vw, 79px);
+  top: 0;
+  right: 0;
   bottom: 0;
   left: 0;
-  z-index: 2;
+  z-index: 1;
   pointer-events: none;
-  background: url("/images/collage_320.svg") center / contain no-repeat;
+  background: url("/images/collage_1920.svg") center / contain no-repeat;
 }
 
-@media (min-width: 701px) {
-  .collage {
-    background-image: url("/images/collage_700.svg");
-  }
-}
-
-@media (min-width: 1025px) {
-  .collage {
-    background-image: url("/images/collage_1024.svg");
-  }
-}
-
-@media (min-width: 1441px) {
+@media (max-width: 1600px) {
   .collage {
     background-image: url("/images/collage_1440.svg");
   }
 }
 
-@media (min-width: 1921px) {
+@media (max-width: 1280px) {
   .collage {
-    background-image: url("/images/collage_1920.svg");
+    background-image: url("/images/collage_1024.svg");
   }
 }
 
+@media (max-width: 900px) {
+  .collage {
+    background-image: url("/images/collage_700.svg");
+  }
+}
+
+@media (max-width: 480px) {
+  .collage {
+    background-image: url("/images/collage_320.svg");
+  }
+}
+
+/* --- Header --- */
 .header {
   position: absolute;
   top: min(2.5vh, 27px);
@@ -69,71 +73,222 @@
   filter: contrast(1.1);
 }
 
-.title {
-  margin: 0;
-  position: absolute;
-  left: min(16.9271vw, 325px);
-  top: min(34.1667vh, 369px);
-  width: min(22.1875vw, 426px);
-  font-size: min(2.0833vw, 40px);
-  line-height: 120%;
-  letter-spacing: 0.05em;
-  font-weight: 400;
-  font-family: var(--font-text);
-  z-index: 4;
-}
-
+/* --- Кнопка по центру --- */
 .cta {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
   position: absolute;
   top: 50%;
   left: 50%;
-
-  width: min(27.3438vw, 525px);
-  height: min(9.0741vh, 98px);
-
   transform: translate(-50%, -50%);
-  border-radius: min(1.3021vw, 25px);
-
-  background: #E0DAB4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 25px;
+  background: #e0dab4;
   color: #111;
   text-decoration: none;
-  font-size: min(1.25vw, 24px);
   font-weight: 400;
   font-family: var(--font-button);
-
-  transition: transform 220ms ease, box-shadow 220ms ease, filter 220ms ease;
   box-shadow: 0 10px 18px rgba(0, 0, 0, 0.14);
+  transition: transform 220ms ease, box-shadow 220ms ease, filter 220ms ease;
   z-index: 4;
+
+  width: 525px;
+  height: 98px;
+  font-size: 24px;
 }
 
 .cta:hover {
-  transform: translate(-50%, -50%) scale(1.045);
+  transform: translate(-50%, -50%) scale(1.02);
   box-shadow: 0 16px 28px rgba(0, 0, 0, 0.18);
   filter: brightness(1.02);
 }
 
+@media (max-width: 900px) {
+  .cta {
+    width: 381px;
+    height: 63px;
+    font-size: 20px;
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cta {
+    width: 175px;
+    height: 32px;
+    font-size: 10px;
+    border-radius: 8px;
+  }
+}
+
+/* --- Заголовок "Пространство.." (позиция от кнопки) --- */
+.title {
+  margin: 0;
+  position: absolute;
+  z-index: 4;
+  line-height: 120%;
+  letter-spacing: 0.05em;
+  font-weight: 400;
+  font-family: var(--font-text);
+  color: #111;
+  overflow-wrap: break-word;
+
+  /* 1920 */
+  width: 344px;
+  font-size: 40px;
+  right: calc(60vw);
+  left: auto;
+  top: calc(50vh - 49px - 122px);
+  bottom: auto;
+}
+
+@media (max-width: 1600px) {
+  .title {
+    /* 1440 */
+    width: 397px;
+    font-size: 36px;
+    left: calc(50vw - 290.5px);
+    right: auto;
+    top: auto;
+    bottom: calc(50vh + 49px + 35px);
+  }
+}
+
+@media (max-width: 1280px) {
+  .title {
+    /* 1024 */
+    width: 336px;
+    left: calc(50vw - 262.5px + 118px);
+    bottom: calc(50vh + 49px + 95px);
+  }
+}
+
+@media (max-width: 900px) {
+  .title {
+    /* 700 */
+    width: 264px;
+    font-size: 24px;
+    left: calc(50vw - 190.5px + 104px);
+    bottom: calc(50vh + 31.5px + 73px);
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    /* 320 */
+    width: 181px;
+    font-size: 16px;
+    left: calc(50vw - 87.5px + 28px);
+    bottom: calc(50vh + 16px + 40px);
+  }
+}
+
+/* --- Подзаголовок "Исследуйте.." (позиция от кнопки) --- */
 .subtitle {
   margin: 0;
   position: absolute;
-  right: min(27vw, 500px);
-  bottom: min(19.537vh, 211px);
-  width: min(28.5417vw, 548px);
-  font-size: min(2.0833vw, 40px);
+  z-index: 4;
   line-height: 110%;
   letter-spacing: 0.05em;
   font-weight: 400;
   font-family: var(--font-text);
-  z-index: 4;
+  color: #111;
+  overflow-wrap: break-word;
+
+  /* 1920 */
+  width: 548px;
+  font-size: 40px;
+  left: calc(50vw - 262.5px + 194px);
+  top: calc(50vh + 49px + 33px);
+}
+
+@media (max-width: 1600px) {
+  .subtitle {
+    /* 1440 */
+    width: 482px;
+    font-size: 36px;
+    left: calc(50vw - 262.5px + 99px);
+    top: calc(50vh + 49px + 72px);
+  }
+}
+
+@media (max-width: 1280px) {
+  .subtitle {
+    /* 1024 */
+    width: 492px;
+    left: calc(50vw - 262.5px + 52px);
+    top: calc(50vh + 49px + 40px);
+  }
+}
+
+@media (max-width: 900px) {
+  .subtitle {
+    /* 700 */
+    width: 333px;
+    font-size: 24px;
+    left: calc(50vw - 190.5px + 18px);
+    top: calc(50vh + 31.5px + 48px);
+  }
+}
+
+@media (max-width: 480px) {
+  .subtitle {
+    /* 320 */
+    width: 233px;
+    font-size: 16px;
+    left: calc(50vw - 87.5px - 28px);
+    top: calc(50vh + 16px + 56px);
+  }
+}
+
+/* --- Узкие по высоте планшеты/ноутбуки: 1024x600, 1280x800 --- */
+@media (max-width: 1400px) and (min-width: 901px) and (max-height: 820px) {
+  .collage {
+    background-image: url("/images/collage_1440.svg");
+  }
+
+  .title {
+    width: 310px;
+    font-size: 30px;
+    left: calc(50vw - 262.5px + 120px);
+    bottom: calc(50vh + 49px + 28px);
+  }
+
+  .subtitle {
+    width: 430px;
+    font-size: 30px;
+    left: calc(50vw - 262.5px + 70px);
+    top: calc(50vh + 49px + 18px);
+  }
+}
+
+/* --- 540x720 и похожие: плотнее композиция --- */
+@media (max-width: 600px) and (min-width: 481px) and (max-height: 760px) {
+  .cta {
+    width: 320px;
+    height: 56px;
+    font-size: 18px;
+    border-radius: 14px;
+  }
+
+  .title {
+    width: 248px;
+    font-size: 22px;
+    left: calc(50vw - 160px + 86px);
+    bottom: calc(50vh + 28px + 8px);
+  }
+
+  .subtitle {
+    width: 310px;
+    font-size: 22px;
+    left: calc(50vw - 160px + 36px);
+    top: calc(50vh + 28px + 30px);
+  }
 }
 
 .mark {
   position: relative;
   display: inline-block;
-  z-index: 0;
   padding-bottom: 0.12em;
 }
 
@@ -145,8 +300,8 @@
   bottom: 0.06em;
   height: 0.18em;
   background:
-    radial-gradient(circle, #EE0A0A 55%, transparent 58%) 0 50% / 6px 5px repeat-x,
-    radial-gradient(circle, rgba(238,10,10,0.75) 55%, transparent 58%) 2px 55% / 7px 6px repeat-x;
+    radial-gradient(circle, #ee0a0a 55%, transparent 58%) 0 50% / 6px 5px repeat-x,
+    radial-gradient(circle, rgba(238, 10, 10, 0.75) 55%, transparent 58%) 2px 55% / 7px 6px repeat-x;
   filter: blur(0.25px);
   opacity: 0.95;
   border-radius: 999px;
