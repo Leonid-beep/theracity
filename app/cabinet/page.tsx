@@ -7,10 +7,10 @@ import Image from "next/image";
 import styles from "./styles.module.css";
 import type { CabinetRouteItem } from "./_components/CabinetRouteModal";
 import type { CabinetPhotoItem } from "./_components/CabinetPhotoModals";
+import ConfirmDeleteModal from "./_components/ConfirmDeleteModal";
 
 const CabinetRouteModal = dynamic(() => import("./_components/CabinetRouteModal"), { ssr: false });
 const CabinetPhotoModals = dynamic(() => import("./_components/CabinetPhotoModals"), { ssr: false });
-const ConfirmDeleteModal = dynamic(() => import("./_components/ConfirmDeleteModal"), { ssr: false });
 
 const makePhotoItems = (n: number): CabinetPhotoItem[] =>
   Array.from({ length: n }).map((_, i) => ({
@@ -37,9 +37,11 @@ const makeRouteItems = (n: number): CabinetRouteItem[] =>
     };
   });
 
+const favPhotoItems = makePhotoItems(56);
+
 const sections = [
   { key: "my_routes", title: "Мои маршруты", kind: "routes" as const, items: makeRouteItems(56) },
-  { key: "fav_photos", title: "Избранные фотографии", kind: "photos" as const, items: makePhotoItems(56) },
+  { key: "fav_photos", title: "Избранные фотографии", kind: "photos" as const, items: favPhotoItems },
   { key: "fav_routes", title: "Избранные маршруты", kind: "routes" as const, items: makeRouteItems(56) },
 ] as const;
 
@@ -138,6 +140,8 @@ export default function CabinetPage() {
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmKind, setConfirmKind] = useState<"delete_route" | "remove_fav_route" | "remove_fav_photo">("delete_route");
+  const [pendingRouteDeleteId, setPendingRouteDeleteId] = useState<number | null>(null);
+  const [pendingPhotoDeleteId, setPendingPhotoDeleteId] = useState<number | null>(null);
 
   const openRouteModal = (sectionKey: "my_routes" | "fav_routes", r: CabinetRouteItem) => {
     setActiveSectionKey(sectionKey);
@@ -151,34 +155,42 @@ export default function CabinetPage() {
     setOpenPhotoFlow(true);
   };
 
-  const askDelete = (kind: typeof confirmKind) => {
+  const askDelete = (kind: typeof confirmKind, id?: number) => {
     setConfirmKind(kind);
+    if (kind === "remove_fav_photo") setPendingPhotoDeleteId(id ?? null);
+    if (kind === "remove_fav_route" || kind === "delete_route") setPendingRouteDeleteId(id ?? null);
     setConfirmOpen(true);
   };
 
   const doDelete = () => {
-    if (confirmKind === "delete_route" && activeRoute) {
+    if (confirmKind === "delete_route" && (pendingRouteDeleteId || activeRoute)) {
       setOpenRoute(false);
       setActiveRoute(null);
     }
-    if (confirmKind === "remove_fav_route" && activeRoute) {
+    if (confirmKind === "remove_fav_route") {
+      const targetRouteId = pendingRouteDeleteId ?? activeRoute?.id ?? null;
+      if (targetRouteId == null) return;
       setFavRoutes((prev) => {
         const n = new Set(prev);
-        n.delete(activeRoute.id);
+        n.delete(targetRouteId);
         return n;
       });
       setOpenRoute(false);
       setActiveRoute(null);
     }
-    if (confirmKind === "remove_fav_photo" && activePhoto) {
+    if (confirmKind === "remove_fav_photo") {
+      const targetPhotoId = pendingPhotoDeleteId ?? activePhoto?.id ?? null;
+      if (targetPhotoId == null) return;
       setFavPhotos((prev) => {
         const n = new Set(prev);
-        n.delete(activePhoto.id);
+        n.delete(targetPhotoId);
         return n;
       });
       setOpenPhotoFlow(false);
       setActivePhoto(null);
     }
+    setPendingRouteDeleteId(null);
+    setPendingPhotoDeleteId(null);
     setConfirmOpen(false);
   };
 
@@ -269,8 +281,8 @@ export default function CabinetPage() {
           onClose={() => setOpenRoute(false)}
           actionLabel={activeSectionKey === "my_routes" ? "УДАЛИТЬ МАРШРУТ" : "УДАЛИТЬ ИЗ ИЗБРАННОГО"}
           onDelete={() => {
-            if (activeSectionKey === "my_routes") askDelete("delete_route");
-            else askDelete("remove_fav_route");
+            if (activeSectionKey === "my_routes") askDelete("delete_route", activeRoute?.id);
+            else askDelete("remove_fav_route", activeRoute?.id);
           }}
         />
       ) : null}
@@ -279,18 +291,20 @@ export default function CabinetPage() {
         <CabinetPhotoModals
           open
           photo={activePhoto}
-          isFav={activePhoto ? favPhotos.has(activePhoto.id) : false}
+          photos={favPhotoItems}
+          favIds={favPhotos}
           onClose={() => setOpenPhotoFlow(false)}
-          onToggleFav={() => {
-            if (!activePhoto) return;
+          onToggleFav={(photoId) => {
             setFavPhotos((prev) => {
               const n = new Set(prev);
-              if (n.has(activePhoto.id)) n.delete(activePhoto.id);
-              else n.add(activePhoto.id);
+              if (n.has(photoId)) n.delete(photoId);
+              else n.add(photoId);
               return n;
             });
           }}
-          onRemoveFav={() => askDelete("remove_fav_photo")}
+          onRemoveFav={(photoId) => {
+            askDelete("remove_fav_photo", photoId);
+          }}
         />
       ) : null}
 

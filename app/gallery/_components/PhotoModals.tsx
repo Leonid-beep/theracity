@@ -1,7 +1,7 @@
 // app/(app)/gallery/_components/PhotoModals.tsx
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import styles from "./photoModals.module.css";
 import type { PhotoItem } from "../page";
@@ -11,11 +11,12 @@ type Step = "photo" | "routeChoice" | "pickRoute" | "createRoute";
 
 export default function PhotoModals(props: {
   photo: PhotoItem | null;
+  photos: PhotoItem[];
   onClose: () => void;
   liked: Set<number>;
   onToggleLike: (photoId: number) => void;
 }) {
-  const { photo, onClose, liked, onToggleLike } = props;
+  const { photo, photos, onClose, liked, onToggleLike } = props;
 
   const [step, setStep] = useState<Step>("photo");
 
@@ -29,6 +30,7 @@ export default function PhotoModals(props: {
 
   const [pickPage, setPickPage] = useState(1);
   const [pickedRouteId, setPickedRouteId] = useState<number | null>(null);
+  const [photoPage, setPhotoPage] = useState(1);
 
   const [newTitle, setNewTitle] = useState("Арт-терапия");
   const [newDesc, setNewDesc] = useState(
@@ -39,7 +41,35 @@ export default function PhotoModals(props: {
   const [newMetro, setNewMetro] = useState("Удельная");
   const [newWeather, setNewWeather] = useState("Солнечно");
 
-  const likedNow = !!photo && liked.has(photo.id);
+  const totalPhotoPages = Math.max(1, photos.length);
+  const initialPhotoPage = useMemo(() => {
+    if (!photo) return 1;
+    const idx = photos.findIndex((p) => p.id === photo.id);
+    return idx >= 0 ? idx + 1 : 1;
+  }, [photo, photos]);
+
+  useEffect(() => {
+    setPhotoPage(initialPhotoPage);
+  }, [initialPhotoPage]);
+
+  const goPhoto = (p: number) => setPhotoPage(Math.min(totalPhotoPages, Math.max(1, p)));
+  const canPhotoPrev = photoPage > 1;
+  const canPhotoNext = photoPage < totalPhotoPages;
+
+  const photoPagesToShow = useMemo(() => {
+    if (totalPhotoPages <= 7) return Array.from({ length: totalPhotoPages }, (_, i) => i + 1);
+    const out: (number | "dots")[] = [1];
+    const left = Math.max(2, photoPage - 1);
+    const right = Math.min(totalPhotoPages - 1, photoPage + 1);
+    if (left > 2) out.push("dots");
+    for (let p = left; p <= right; p++) out.push(p);
+    if (right < totalPhotoPages - 1) out.push("dots");
+    out.push(totalPhotoPages);
+    return out;
+  }, [photoPage, totalPhotoPages]);
+
+  const activePhoto = photos[photoPage - 1] ?? photo;
+  const likedNow = !!activePhoto && liked.has(activePhoto.id);
 
   const closeAll = () => {
     setStep("photo");
@@ -99,23 +129,23 @@ export default function PhotoModals(props: {
     const created: RouteItem = {
       id,
       title: newTitle.trim() || "Новый маршрут",
-      src: photo ? photo.src : `/images/city/city-1.jpg`,
+      src: activePhoto ? activePhoto.src : `/images/city/city-1.jpg`,
     };
     setRoutes((prev) => [created, ...prev]);
     closeAll();
   };
 
-  if (!open || !photo) return null;
+  if (!open || !photo || !activePhoto) return null;
 
   return (
     <div className={styles.overlay} onClick={handleOverlay} role="presentation">
       {step === "photo" ? (
         <div className={`${styles.modal} ${styles.modalPhoto}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
           <button className={styles.closeBtn} onClick={handleX} aria-label="Закрыть" type="button" />
-          <div className={styles.photoTitle}>{photo.title}</div>
+          <div className={styles.photoTitle}>{activePhoto.title}</div>
 
           <div className={styles.photoWrap}>
-            <Image src={photo.src} alt={photo.title} width={300} height={375} className={styles.photoImg} />
+            <Image src={activePhoto.src} alt={activePhoto.title} width={300} height={375} className={styles.photoImg} />
             {likedNow ? (
               <Image
                 src="/images/city/heart_red.png"
@@ -133,8 +163,50 @@ export default function PhotoModals(props: {
             <div>Адрес: 59.936435, 30.210504</div>
           </div>
 
+          <div className={styles.photoPagination}>
+            <button
+              className={`${styles.pagBtn} ${!canPhotoPrev ? styles.pagBtnDisabled : ""}`}
+              disabled={!canPhotoPrev}
+              onClick={() => goPhoto(photoPage - 1)}
+              aria-label="Назад"
+              type="button"
+            >
+              ←
+            </button>
+
+            <div className={styles.pages}>
+              {photoPagesToShow.map((p, idx) =>
+                p === "dots" ? (
+                  <span key={`d-${idx}`} className={styles.dots}>
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={p}
+                    className={`${styles.page} ${p === photoPage ? styles.pageActive : ""}`}
+                    onClick={() => goPhoto(p)}
+                    aria-current={p === photoPage ? "page" : undefined}
+                    type="button"
+                  >
+                    {p}
+                  </button>
+                )
+              )}
+            </div>
+
+            <button
+              className={`${styles.pagBtn} ${!canPhotoNext ? styles.pagBtnDisabled : ""}`}
+              disabled={!canPhotoNext}
+              onClick={() => goPhoto(photoPage + 1)}
+              aria-label="Вперёд"
+              type="button"
+            >
+              →
+            </button>
+          </div>
+
           <div className={styles.actions}>
-            <button type="button" className={styles.bigBtn} onClick={() => onToggleLike(photo.id)}>
+            <button type="button" className={styles.bigBtn} onClick={() => onToggleLike(activePhoto.id)}>
               <Image
                 src={likedNow ? "/images/city/heart_red.png" : "/images/city/heart_black.png"}
                 alt=""

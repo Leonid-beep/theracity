@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import styles from "./cabinetRouteModal.module.css";
+import styles from "../../routes/_components/routeModal.module.css";
 
 export type CabinetRouteItem = {
   id: number;

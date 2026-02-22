@@ -55,7 +55,7 @@
 
 .modalPhoto {
   width: 450px;
-  height: 675px;
+  height: 760px;
   padding: 0;
 }
 
@@ -106,10 +106,10 @@
 .meta {
   position: absolute;
   left: 15px;
-  top: calc(19.5px + 27px + 16.5px + 375px + 21px);
+  top: calc(19.5px + 27px + 16.5px + 375px + 14px);
   font-family: var(--font-text);
   font-size: 27px;
-  line-height: 1.35;
+  line-height: 1.22;
   letter-spacing: 0.05em;
   color: #111;
   width: calc(100% - 30px);
@@ -117,14 +117,45 @@
   word-break: break-word;
 }
 
+.photoPagination {
+  position: absolute;
+  left: 50%;
+  top: auto;
+  bottom: 130px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(260px, calc(100% - 24px));
+  gap: 0;
+  flex-wrap: nowrap;
+}
+
+.photoPagination .pagBtn {
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
+}
+
+.photoPagination .page {
+  width: 28px;
+  height: 28px;
+  font-size: 15px;
+}
+
+.photoPagination .dots {
+  font-size: 16px;
+}
+
 .actions {
   position: absolute;
   left: 50%;
-  bottom: 18px;
+  top: auto;
+  bottom: 10px;
   transform: translateX(-50%);
   width: 420px;
   display: grid;
-  gap: 21.5px;
+  gap: 20px;
 }
 
 .bigBtn {
@@ -493,6 +524,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 170px;
+  justify-content: center;
 }
 
 .page {
@@ -509,6 +542,7 @@
   opacity: 0.9;
   display: grid;
   place-items: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .pageActive {
@@ -558,7 +592,7 @@
 @media (max-width: 1440px) {
   .modalPhoto {
     width: 400px;
-    height: 600px;
+    height: 700px;
   }
   .photoTitle {
     font-size: 24px;
@@ -574,12 +608,32 @@
     height: 325px;
   }
   .meta {
-    top: calc(19.5px + 24px + 14px + 325px + 16px);
+    top: calc(19.5px + 24px + 14px + 325px + 12px);
     font-size: 24px;
     max-width: calc(400px - 30px);
   }
+  .photoPagination {
+    top: auto;
+    bottom: 118px;
+    gap: 8px;
+  }
+  .photoPagination .pagBtn {
+    width: 30px;
+    height: 30px;
+    font-size: 18px;
+  }
+  .photoPagination .page {
+    width: 26px;
+    height: 26px;
+    font-size: 14px;
+  }
+  .photoPagination .dots {
+    font-size: 14px;
+  }
   .actions {
     width: 360px;
+    top: auto;
+    bottom: 10px;
   }
   .bigBtn {
     width: 360px;
@@ -676,7 +730,7 @@
 @media (max-width: 1024px) {
   .modalPhoto {
     width: 360px;
-    height: 540px;
+    height: 620px;
   }
   .photoTitle {
     font-size: 22px;
@@ -692,12 +746,32 @@
     height: 300px;
   }
   .meta {
-    top: calc(16px + 22px + 12px + 300px + 14px);
+    top: calc(16px + 22px + 12px + 300px + 10px);
     font-size: 20px;
     max-width: calc(360px - 28px);
   }
+  .photoPagination {
+    top: auto;
+    bottom: 110px;
+    gap: 6px;
+  }
+  .photoPagination .pagBtn {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+  }
+  .photoPagination .page {
+    width: 24px;
+    height: 24px;
+    font-size: 13px;
+  }
+  .photoPagination .dots {
+    font-size: 13px;
+  }
   .actions {
     width: 320px;
+    top: auto;
+    bottom: 10px;
   }
   .bigBtn {
     width: 320px;
@@ -797,7 +871,17 @@
 @media (max-width: 768px) {
   .modalPhoto {
     width: min(340px, calc(100vw - 24px));
-    height: min(520px, calc(100vh - 24px));
+    height: min(500px, calc(100vh - 20px));
+  }
+  .closeBtn {
+    right: 10px;
+    top: 10px;
+    width: 26px;
+    height: 26px;
+  }
+  .closeBtn::before,
+  .closeBtn::after {
+    width: 22px;
   }
   .photoTitle {
     left: 12px;
@@ -821,15 +905,37 @@
   }
   .meta {
     left: 12px;
-    top: calc(16px + 20px + 10px + 275px + 12px);
+    top: calc(16px + 20px + 10px + 275px + 10px);
     width: calc(100% - 24px);
     font-size: 18px;
     max-width: calc(100% - 24px);
     line-height: 1.4;
     word-break: break-word;
   }
+  .photoPagination {
+    top: auto;
+    bottom: 95px;
+    max-width: calc(100% - 20px);
+    gap: 4px;
+  }
+  .photoPagination .pagBtn {
+    width: 26px;
+    height: 26px;
+    font-size: 14px;
+  }
+  .photoPagination .page {
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+  }
+  .photoPagination .dots {
+    font-size: 12px;
+  }
   .actions {
     width: min(300px, calc(100% - 24px));
+    top: auto;
+    bottom: 10px;
+    gap: 10px;
   }
   .bigBtn {
     width: 100%;
@@ -939,7 +1045,7 @@
   .modalPhoto {
     width: 100%;
     max-width: calc(100vw - 20px);
-    min-height: 500px;
+    min-height: 510px;
     padding-bottom: 20px;
     box-sizing: border-box;
   }
@@ -947,6 +1053,9 @@
     left: 10px;
     top: 12px;
     font-size: 18px;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
   }
   .photoWrap {
     width: min(200px, calc(100vw - 60px));
@@ -959,22 +1068,43 @@
   }
   .meta {
     left: 10px;
-    top: calc(12px + 18px + 8px + 250px + 12px);
+    top: calc(12px + 18px + 8px + 250px + 8px);
     width: calc(100% - 20px);
     max-width: none;
     font-size: 15px;
     line-height: 1.4;
     min-height: 2.8em;
   }
+  .photoPagination {
+    top: auto;
+    bottom: 110px;
+    max-width: calc(100% - 16px);
+    gap: 2px;
+  }
+  .photoPagination .pagBtn {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+  .photoPagination .page {
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+  }
+  .photoPagination .dots {
+    font-size: 11px;
+  }
   .actions {
     position: absolute;
     left: 50%;
-    bottom: 20px;
+    top: auto;
+    bottom: 10px;
     transform: translateX(-50%);
     width: calc(100% - 20px);
     max-width: calc(100vw - 20px);
     padding: 0 10px;
     box-sizing: border-box;
+    gap: 8px;
   }
   .bigBtn {
     width: 100%;

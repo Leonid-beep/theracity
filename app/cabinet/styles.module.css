@@ -48,20 +48,23 @@
 
 .row {
   display: grid;
-  grid-template-columns: repeat(10, 150px);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   column-gap: 22px;
+  row-gap: 24px;
   align-items: start;
 }
 
 .card {
   margin: 0;
-  width: 150px;
+  width: 100%;
+  max-width: 150px;
 }
 
 .thumb {
   position: relative;
-  width: 150px;
-  height: 200px;
+  width: 100%;
+  aspect-ratio: 150 / 200;
+  height: auto;
   border-radius: 10px;
   overflow: hidden;
   background: #d9d9d9;
@@ -128,6 +131,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 210px;
+  justify-content: center;
 }
 
 .page {
@@ -144,6 +149,7 @@
   opacity: 0.9;
   display: grid;
   place-items: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .pageActive {
@@ -208,17 +214,16 @@
     font-size: 24px;
   }
   .row {
-    grid-template-columns: repeat(10, 112px);
+    grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
     column-gap: 17px;
     width: 100%;
     max-width: 100%;
   }
   .card {
-    width: 112px;
+    max-width: 112px;
   }
   .thumb {
-    width: 112px;
-    height: 150px;
+    aspect-ratio: 112 / 150;
   }
   .cap {
     margin-top: 10px;
@@ -264,7 +269,7 @@
     overflow: hidden;
   }
   .row {
-    grid-template-columns: repeat(8, 112px);
+    grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
     column-gap: 17px;
     width: 100%;
     max-width: 100%;
@@ -295,18 +300,18 @@
     font-size: 26px;
   }
   .row {
-    grid-template-columns: repeat(7, 120px);
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
     column-gap: 17px;
     width: 100%;
     max-width: 100%;
-    overflow-x: auto;
+    justify-content: center;
+    justify-items: center;
   }
   .card {
-    width: 120px;
+    max-width: 120px;
   }
   .thumb {
-    width: 120px;
-    height: 160px;
+    aspect-ratio: 120 / 160;
   }
   .cap {
     margin-top: 10px;
@@ -352,17 +357,18 @@
     overflow: hidden;
   }
   .row {
-    grid-template-columns: repeat(5, 100px);
+    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
     column-gap: 15px;
     width: 100%;
     max-width: 100%;
+    justify-content: center;
+    justify-items: center;
   }
   .card {
-    width: 100px;
+    max-width: 100px;
   }
   .thumb {
-    width: 100px;
-    height: 130px;
+    aspect-ratio: 100 / 130;
   }
   .cap {
     margin-top: 8px;
@@ -395,15 +401,16 @@
     font-size: 21px;
   }
   .row {
-    grid-template-columns: repeat(6, 100px);
+    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
     column-gap: 15px;
+    justify-content: center;
+    justify-items: center;
   }
   .card {
-    width: 100px;
+    max-width: 100px;
   }
   .thumb {
-    width: 100px;
-    height: 130px;
+    aspect-ratio: 100 / 130;
   }
   .cap {
     margin-top: 8px;
@@ -465,18 +472,18 @@
     text-align: center;
   }
   .row {
-    grid-template-columns: repeat(2, 108px);
+    grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
     column-gap: 16px;
     justify-content: center;
-    width: max-content;
+    justify-items: center;
+    width: 100%;
     margin: 0 auto;
   }
   .card {
-    width: 108px;
+    max-width: 108px;
   }
   .thumb {
-    width: 108px;
-    height: 144px;
+    aspect-ratio: 108 / 144;
   }
   .cap {
     margin-top: 10px;

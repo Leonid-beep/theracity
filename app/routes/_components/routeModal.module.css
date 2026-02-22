@@ -54,7 +54,7 @@
 
 .modalRoute {
   width: 450px;
-  height: 825px;
+  height: 725px;
   padding: 0 15px 0 15px;
   padding-right: 48px;
   box-sizing: border-box;
@@ -148,9 +148,10 @@
 .meta {
   position: absolute;
   left: 15px;
-  top: calc(19.5px + 27px + 29px + 4.4em + 16px + 280px + 33px);
+  top: calc(19.5px + 27px + 29px + 4.4em + 16px + 280px);
   font-family: var(--font-text);
   font-size: 27px;
+  line-height: 1.22;
   letter-spacing: 0.05em;
   color: #111;
   width: calc(100% - 30px);
@@ -160,13 +161,14 @@
 .pagination {
   position: absolute;
   left: 50%;
-  top: calc(19.5px + 27px + 29px + 4.4em + 16px + 280px + 33px + 64px + 40px);
+  top: auto;
+  bottom: 130px;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
-  max-width: calc(100% - 24px);
+  justify-content: space-between;
+  width: min(260px, calc(100% - 24px));
+  gap: 0;
   flex-wrap: nowrap;
 }
 
@@ -197,6 +199,7 @@
   gap: 6px;
   flex-shrink: 1;
   min-width: 0;
+  width: 170px;
 }
 
 .page {
@@ -214,6 +217,7 @@
   opacity: 0.9;
   display: grid;
   place-items: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .pageActive {
@@ -233,7 +237,8 @@
 .actions {
   position: absolute;
   left: 50%;
-  top: calc(19.5px + 27px + 29px + 4.4em + 16px + 280px + 33px + 64px + 40px + 34px + 44px);
+  top: auto;
+  bottom: 10px;
   transform: translateX(-50%);
   width: 100%;
   max-width: 402px;
@@ -264,6 +269,13 @@
 
 .bigBtnLiked {
   outline: 2px solid rgba(238, 10, 10, 0.85);
+}
+
+.bigBtnDanger {
+  text-decoration: underline;
+  text-decoration-color: #ee0a0a;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
 }
 
 
@@ -317,12 +329,13 @@
     height: 113px;
   }
   .meta {
-    top: calc(19.5px + 24px + 22px + 4.2em + 14px + 250px + 26px);
+    top: calc(19.5px + 24px + 22px + 4.2em + 14px + 250px + 18px);
     width: calc(100% - 30px);
     font-size: 24px;
   }
   .pagination {
-    top: calc(19.5px + 24px + 22px + 4.2em + 14px + 250px + 26px + 60px + 36px);
+    top: auto;
+    bottom: 118px;
     gap: 8px;
   }
   .pagBtn {
@@ -340,7 +353,8 @@
   }
   .actions {
     max-width: 356px;
-    top: calc(19.5px + 24px + 22px + 4.2em + 14px + 250px + 26px + 60px + 36px + 28px + 38px);
+    top: auto;
+    bottom: 10px;
     gap: 28px;
   }
   .bigBtn {
@@ -383,12 +397,13 @@
     height: 90px;
   }
   .meta {
-    top: calc(16px + 22px + 18px + 4.4em + 12px + 224px + 22px);
+    top: calc(16px + 22px + 18px + 4.4em + 12px + 224px + 16px);
     width: calc(100% - 28px);
     font-size: 20px;
   }
   .pagination {
-    top: calc(16px + 22px + 18px + 4.4em + 12px + 224px + 22px + 56px + 32px);
+    top: auto;
+    bottom: 110px;
     gap: 6px;
   }
   .pagBtn {
@@ -406,7 +421,8 @@
   }
   .actions {
     max-width: 318px;
-    top: calc(16px + 22px + 18px + 4.4em + 12px + 224px + 22px + 56px + 32px + 26px + 34px);
+    top: auto;
+    bottom: 10px;
     gap: 24px;
   }
   .bigBtn {
@@ -458,12 +474,13 @@
   }
   .meta {
     left: 12px;
-    top: calc(16px + 20px + 14px + 4.6em + 12px + 200px + 18px);
+    top: calc(16px + 20px + 14px + 4.6em + 12px + 200px + 14px);
     width: calc(100% - 24px);
     font-size: 18px;
   }
   .pagination {
-    top: calc(16px + 20px + 14px + 4.6em + 12px + 200px + 18px + 52px + 28px);
+    top: auto;
+    bottom: 110px;
     max-width: calc(100% - 20px);
     gap: 4px;
   }
@@ -482,7 +499,8 @@
   }
   .actions {
     max-width: min(300px, calc(100% - 24px));
-    top: calc(16px + 20px + 14px + 4.6em + 12px + 200px + 18px + 52px + 28px + 26px + 30px);
+    top: auto;
+    bottom: 10px;
     gap: 20px;
   }
   .bigBtn {
@@ -538,12 +556,13 @@
   }
   .meta {
     left: 10px;
-    top: calc(12px + 18px + 10px + 5em + 10px + 150px + 14px);
+    top: calc(12px + 18px + 10px + 5em + 10px + 150px + 10px);
     width: calc(100% - 20px);
     font-size: 16px;
   }
   .pagination {
-    top: calc(12px + 18px + 10px + 5em + 10px + 150px + 14px + 48px + 24px);
+    top: auto;
+    bottom: 120px;
     max-width: calc(100% - 16px);
     gap: 2px;
   }
@@ -565,7 +584,7 @@
     max-width: calc(100vw - 20px);
     padding: 0 10px;
     top: auto;
-    bottom: 16px;
+    bottom: 10px;
     gap: 12px;
   }
   .bigBtn {

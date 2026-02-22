@@ -210,7 +210,13 @@ export default function GalleryPage() {
       </div>
 
       {selected ? (
-          <PhotoModals photo={selected} onClose={() => setSelected(null)} liked={liked} onToggleLike={toggleLike} />
+          <PhotoModals
+            photo={selected}
+            photos={allPhotos}
+            onClose={() => setSelected(null)}
+            liked={liked}
+            onToggleLike={toggleLike}
+          />
         ) : null}
     </main>
   );
