@@ -46,7 +46,7 @@
 /* --- Header --- */
 .header {
   position: absolute;
-  top: min(2.5vh, 27px);
+  top: min(1.5vh, 10px);
   right: min(1.9271vw, 37px);
   z-index: 5;
 }
@@ -58,7 +58,7 @@
 }
 
 .logoText {
-  font-size: min(3.6458vw, 70px);
+  font-size: min(3.6458vw, 64px);
   line-height: 1;
   font-weight: 400;
   letter-spacing: 0.5px;
@@ -68,8 +68,8 @@
 
 .logoIconImg {
   display: block;
-  width: min(3.6458vw, 70px);
-  height: min(3.6458vw, 70px);
+  width: min(3.6458vw, 64px);
+  height: min(3.6458vw, 64px);
   filter: contrast(1.1);
 }
 
@@ -103,12 +103,30 @@
   filter: brightness(1.02);
 }
 
+
+@media (max-width: 1280px) {
+  .cta {
+    width: 400px;
+    height: 70px;
+  }
+}
+
+
 @media (max-width: 900px) {
   .cta {
     width: 381px;
     height: 63px;
     font-size: 20px;
     border-radius: 16px;
+  }
+}
+
+
+@media (max-width: 650px) {
+  .cta {
+    width: 250px;
+    height: 53px;
+    font-size: 16px;
   }
 }
 
@@ -150,7 +168,7 @@
     left: calc(50vw - 290.5px);
     right: auto;
     top: auto;
-    bottom: calc(50vh + 49px + 35px);
+    bottom: calc(50vh + 49px + 30px);
   }
 }
 
@@ -158,8 +176,9 @@
   .title {
     /* 1024 */
     width: 336px;
+    font-size: 30px;
     left: calc(50vw - 262.5px + 118px);
-    bottom: calc(50vh + 49px + 95px);
+    bottom: calc(50vh + 49px + 80px);
   }
 }
 
@@ -169,7 +188,15 @@
     width: 264px;
     font-size: 24px;
     left: calc(50vw - 190.5px + 104px);
-    bottom: calc(50vh + 31.5px + 73px);
+    bottom: calc(50vh + 31.5px + 50px);
+  }
+}
+
+@media (max-width: 650px) {
+  .title {
+    font-size: 22px;
+    left: calc(50vw - 190.5px + 104px);
+    bottom: calc(50vh + 31.5px + 10px);
   }
 }
 
@@ -198,7 +225,7 @@
   /* 1920 */
   width: 548px;
   font-size: 40px;
-  left: calc(50vw - 262.5px + 194px);
+  left: calc(50vw - 262.5px + 205px);
   top: calc(50vh + 49px + 33px);
 }
 
@@ -216,6 +243,7 @@
   .subtitle {
     /* 1024 */
     width: 492px;
+    font-size: 30px;
     left: calc(50vw - 262.5px + 52px);
     top: calc(50vh + 49px + 40px);
   }
@@ -228,6 +256,14 @@
     font-size: 24px;
     left: calc(50vw - 190.5px + 18px);
     top: calc(50vh + 31.5px + 48px);
+  }
+}
+
+@media (max-width: 650px) {
+  .subtitle {
+    font-size: 22px;
+    left: calc(50vw - 190.5px + 58px);
+    top: calc(50vh + 31.5px + 10px);
   }
 }
 
@@ -259,6 +295,30 @@
     font-size: 30px;
     left: calc(50vw - 262.5px + 70px);
     top: calc(50vh + 49px + 18px);
+  }
+}
+
+/* --- Очень низкие экраны 1024x600: компактнее тексты и кнопка --- */
+@media (max-width: 1280px) and (min-width: 901px) and (max-height: 800px) {
+  .cta {
+    width: 340px;
+    height: 58px;
+    font-size: 20px;
+    border-radius: 16px;
+  }
+
+  .title {
+    width: 270px;
+    font-size: 24px;
+    left: calc(50vw - 200px);
+    bottom: calc(50vh + 29px + 10px);
+  }
+
+  .subtitle {
+    width: 360px;
+    font-size: 24px;
+    left: calc(50vw - 120px);
+    top: calc(50vh + 29px + 18px);
   }
 }
 
