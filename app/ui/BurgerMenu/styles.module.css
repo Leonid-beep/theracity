@@ -377,6 +377,13 @@
   }
 }
 
+.linkBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
 /* Низкие экраны (1080x600 и т.д.) — панель выше, всё помещается */
 @media (max-height: 700px) {
   .panel {

@@ -5,27 +5,32 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import styles from "./styles.module.css";
+import { useAuth } from "@/app/providers/AuthProvider";
 
-type Item = { label: string; href: string };
+type Item = { label: string; href: string; onClick?: () => void };
 
 export default function BurgerMenu() {
   const pathname = usePathname();
   const isStart = pathname === "/start";
+  const { user, logout } = useAuth();
 
   const items: Item[] = useMemo(
     () => [
       { label: "ГАЛЕРЕЯ", href: "/gallery" },
       { label: "МАРШРУТЫ", href: "/routes" },
       { label: "ЛИЧНЫЙ КАБИНЕТ", href: "/cabinet" },
-      { label: "ВОЙТИ/РЕГИСТРАЦИЯ", href: "/auth/login" },
+      ...(user
+        ? [{ label: "ВЫЙТИ", href: "#", onClick: () => logout() }]
+        : [{ label: "ВОЙТИ/РЕГИСТРАЦИЯ", href: "/auth/login" }]),
       { label: "О ПРОЕКТЕ", href: "/about" },
     ],
-    []
+    [user, logout]
   );
 
   const activeIndex = useMemo(() => {
     const idx = items.findIndex((i) => {
       if (i.href === "/auth/login") return pathname?.startsWith("/auth");
+      if (i.href === "#") return false;
       return pathname === i.href || pathname?.startsWith(i.href + "/");
     });
     return idx >= 0 ? idx : 0;
@@ -105,6 +110,24 @@ export default function BurgerMenu() {
             <ul className={styles.list} style={{ ["--active" as any]: activeIndex }}>
               {items.map((it, idx) => {
                 const isActive = idx === activeIndex;
+
+                if (it.onClick) {
+                  return (
+                    <li key={it.label} className={styles.item}>
+                      <button
+                        type="button"
+                        className={`${styles.link} ${styles.linkBtn}`}
+                        onClick={() => {
+                          setOpen(false);
+                          it.onClick!();
+                        }}
+                      >
+                        <span>{it.label}</span>
+                      </button>
+                    </li>
+                  );
+                }
+
                 return (
                   <li key={it.href} className={styles.item}>
                     <Link

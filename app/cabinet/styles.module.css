@@ -166,6 +166,16 @@
 }
 
 
+.loading,
+.empty {
+  font-family: var(--font-text);
+  font-size: 18px;
+  color: #888;
+  padding: 24px 0;
+  text-align: center;
+  width: 100%;
+}
+
 .mark {
   position: relative;
   display: inline-block;

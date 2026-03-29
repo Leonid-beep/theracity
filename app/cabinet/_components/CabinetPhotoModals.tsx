@@ -1,4 +1,3 @@
-// app/(app)/cabinet/_components/CabinetPhotoModals.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -6,14 +5,16 @@ import Image from "next/image";
 import styles from "./cabinetPhotoModals.module.css";
 
 export type CabinetPhotoItem = {
-  id: number;
+  id: string;
   src: string;
   title: string;
   metro: string;
   coords: string;
+  lat?: number;
+  lng?: number;
 };
 
-type RouteItem = { id: number; title: string; src: string };
+type RouteItem = { id: string; title: string; src: string };
 type Step = "photo" | "choice" | "pick" | "create";
 
 export default function CabinetPhotoModals({
@@ -28,29 +29,22 @@ export default function CabinetPhotoModals({
   open: boolean;
   photo: CabinetPhotoItem | null;
   photos: CabinetPhotoItem[];
-  favIds: Set<number>;
-  onToggleFav: (photoId: number) => void;
-  onRemoveFav: (photoId: number) => void;
+  favIds: Set<string>;
+  onToggleFav: (photoId: string) => void;
+  onRemoveFav: (photoId: string) => void;
   onClose: () => void;
 }) {
   const [step, setStep] = useState<Step>("photo");
 
-  const [routes, setRoutes] = useState<RouteItem[]>(() =>
-    Array.from({ length: 28 }).map((_, i) => ({
-      id: i + 1,
-      title: ["Прогулка по центру", "Песня", "Дворы и колодцы", "За поворотом", "Красиво"][i % 5],
-      src: `/images/city/city-${(i % 7) + 1}.jpg`,
-    }))
-  );
+  const [routes, setRoutes] = useState<RouteItem[]>([]);
+  const [routesLoaded, setRoutesLoaded] = useState(false);
 
   const [pickPage, setPickPage] = useState(1);
-  const [pickedRouteId, setPickedRouteId] = useState<number | null>(null);
+  const [pickedRouteId, setPickedRouteId] = useState<string | null>(null);
   const [photoPage, setPhotoPage] = useState(1);
 
-  const [newTitle, setNewTitle] = useState("Арт-терапия");
-  const [newDesc, setNewDesc] = useState(
-    "Маршрут для любителей дворов, тихих улиц, Невского проспекта, уюта, узких улочек и многого другого"
-  );
+  const [newTitle, setNewTitle] = useState("");
+  const [newDesc, setNewDesc] = useState("");
   const [newSpace, setNewSpace] = useState("Дворы");
   const [newMood, setNewMood] = useState("Надежда");
   const [newMetro, setNewMetro] = useState("Удельная");
@@ -69,6 +63,22 @@ export default function CabinetPhotoModals({
   useEffect(() => {
     setPhotoPage(initialPhotoPage);
   }, [initialPhotoPage]);
+
+  useEffect(() => {
+    if (!isOpen || routesLoaded) return;
+    fetch("/api/routes/my")
+      .then((r) => r.json())
+      .then((d) => {
+        const list = (d.routes ?? []).map((r: { id: string; title: string; coverUrl?: string }) => ({
+          id: r.id,
+          title: r.title,
+          src: r.coverUrl ?? "/images/city/city-1.jpg",
+        }));
+        setRoutes(list);
+        setRoutesLoaded(true);
+      })
+      .catch(() => setRoutesLoaded(true));
+  }, [isOpen, routesLoaded]);
 
   const goPhoto = (p: number) => setPhotoPage(Math.min(totalPhotoPages, Math.max(1, p)));
   const canPhotoPrev = photoPage > 1;
@@ -105,22 +115,15 @@ export default function CabinetPhotoModals({
 
   const pagesToShow = useMemo(() => {
     if (!isOpen) return [1] as (number | "dots")[];
-
     const total = pickTotalPages;
     const current = pickPage;
-
     if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-
-    const out: (number | "dots")[] = [];
-    out.push(1);
-
+    const out: (number | "dots")[] = [1];
     const left = Math.max(2, current - 1);
     const right = Math.min(total - 1, current + 1);
-
     if (left > 2) out.push("dots");
     for (let p = left; p <= right; p++) out.push(p);
     if (right < total - 1) out.push("dots");
-
     out.push(total);
     return out;
   }, [isOpen, pickPage, pickTotalPages]);
@@ -154,24 +157,42 @@ export default function CabinetPhotoModals({
     };
   }, [isOpen]);
 
-  const createConfirm = () => {
+  const createConfirm = async () => {
     if (!activePhoto) return;
-    const id = routes.length ? Math.max(...routes.map((r) => r.id)) + 1 : 1;
-    const created: RouteItem = {
-      id,
-      title: newTitle.trim() || "Новый маршрут",
-      src: activePhoto.src,
-    };
-    setRoutes((prev) => [created, ...prev]);
+    try {
+      await fetch("/api/routes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newTitle.trim() || "Новый маршрут",
+          description: newDesc.trim(),
+          photoIds: [activePhoto.id],
+        }),
+      });
+    } catch { /* ignore */ }
     closeAll();
   };
 
-  const pickConfirm = () => {
-    if (!pickedRouteId) return;
+  const pickConfirm = async () => {
+    if (!pickedRouteId || !activePhoto) return;
+    try {
+      await fetch(`/api/routes/${pickedRouteId}/photos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ photoId: activePhoto.id }),
+      });
+    } catch { /* ignore */ }
     closeAll();
   };
 
   if (!isOpen || !photo || !activePhoto) return null;
+
+  const coordParts = activePhoto.coords.split(",").map((s) => s.trim());
+  const lat = activePhoto.lat ?? parseFloat(coordParts[0]);
+  const lng = activePhoto.lng ?? parseFloat(coordParts[1]);
+  const mapsUrl = !isNaN(lat) && !isNaN(lng)
+    ? `https://yandex.ru/maps/?pt=${lng},${lat}&z=17&l=map`
+    : null;
 
   return (
     <div className={styles.overlay} onClick={closeAll} role="presentation">
@@ -184,7 +205,7 @@ export default function CabinetPhotoModals({
           </div>
 
           <div className={styles.photoWrap}>
-            <Image src={activePhoto.src} alt={activePhoto.title} width={300} height={375} className={styles.photoImg} />
+            <Image src={activePhoto.src} alt={activePhoto.title} width={300} height={375} className={styles.photoImg} unoptimized />
             {isFavNow ? (
               <Image src="/images/city/heart_red.png" alt="" width={23} height={23} className={styles.likeIcon} aria-hidden="true" />
             ) : null}
@@ -192,7 +213,16 @@ export default function CabinetPhotoModals({
 
           <div className={styles.meta}>
             <div>Метро: {activePhoto.metro}</div>
-            <div>Адрес: {activePhoto.coords}</div>
+            <div>
+              Адрес:{" "}
+              {mapsUrl ? (
+                <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>
+                  {activePhoto.coords}
+                </a>
+              ) : (
+                activePhoto.coords
+              )}
+            </div>
           </div>
 
           <div className={styles.photoPagination}>
@@ -209,9 +239,7 @@ export default function CabinetPhotoModals({
             <div className={styles.pages}>
               {photoPagesToShow.map((p, idx) =>
                 p === "dots" ? (
-                  <span key={`d-${idx}`} className={styles.dots}>
-                    …
-                  </span>
+                  <span key={`d-${idx}`} className={styles.dots}>…</span>
                 ) : (
                   <button
                     key={p}
@@ -261,13 +289,11 @@ export default function CabinetPhotoModals({
       {step === "choice" ? (
         <div className={`${styles.modal} ${styles.modalChoice}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
           <button type="button" className={styles.closeBtn} aria-label="Закрыть" onClick={closeAll} />
-
           <div className={styles.choiceBtns}>
             <button type="button" className={`${styles.choiceBtn} ${styles.choiceBtn1}`} onClick={() => setStep("create")}>
               <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
               СОЗДАТЬ НОВЫЙ МАРШРУТ
             </button>
-
             <button type="button" className={`${styles.choiceBtn} ${styles.choiceBtn2}`} onClick={() => setStep("pick")}>
               <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
               ДОБАВИТЬ В СОЗДАННЫЙ МАРШРУТ
@@ -295,7 +321,7 @@ export default function CabinetPhotoModals({
                   onClick={() => setPickedRouteId(r.id)}
                 >
                   <div className={styles.pickThumb}>
-                    <Image src={r.src} alt={r.title} width={150} height={200} className={styles.pickImg} />
+                    <Image src={r.src} alt={r.title} width={150} height={200} className={styles.pickImg} unoptimized />
                   </div>
                   <div className={styles.pickCap}>{r.title}</div>
                 </button>
@@ -317,9 +343,7 @@ export default function CabinetPhotoModals({
             <div className={styles.pages}>
               {pagesToShow.map((p, idx) =>
                 p === "dots" ? (
-                  <span key={`d-${idx}`} className={styles.dots}>
-                    …
-                  </span>
+                  <span key={`d-${idx}`} className={styles.dots}>…</span>
                 ) : (
                   <button
                     key={p}

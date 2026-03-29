@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String          @id @default(uuid())
+  username     String          @unique
+  email        String          @unique
+  passwordHash String
+  createdAt    DateTime        @default(now())
+
+  photos         Photo[]
+  routes         Route[]
+  favoritePhotos FavoritePhoto[]
+  favoriteRoutes FavoriteRoute[]
+  passwordResets PasswordReset[]
+}
+
+model Photo {
+  id           String   @id @default(uuid())
+  s3Key        String
+  title        String
+  metro        String
+  lat          Float
+  lng          Float
+  spaceType    String
+  mood         String
+  atmosphere   String
+  uploadedById String
+  createdAt    DateTime @default(now())
+
+  uploadedBy  User           @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  routePhotos RoutePhoto[]
+  favoritedBy FavoritePhoto[]
+
+  @@index([metro])
+  @@index([spaceType])
+  @@index([mood])
+  @@index([atmosphere])
+}
+
+model Route {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  createdById String
+  createdAt   DateTime @default(now())
+
+  createdBy   User           @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  routePhotos RoutePhoto[]
+  favoritedBy FavoriteRoute[]
+}
+
+model RoutePhoto {
+  routeId String
+  photoId String
+  order   Int
+
+  route Route @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  photo Photo @relation(fields: [photoId], references: [id], onDelete: Cascade)
+
+  @@id([routeId, photoId])
+  @@index([routeId])
+}
+
+model FavoritePhoto {
+  userId  String
+  photoId String
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photo Photo @relation(fields: [photoId], references: [id], onDelete: Cascade)
+
+  @@id([userId, photoId])
+}
+
+model FavoriteRoute {
+  userId  String
+  routeId String
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  route Route @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  @@id([userId, routeId])
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  userId    String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

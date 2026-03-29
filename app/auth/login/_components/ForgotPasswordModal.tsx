@@ -17,6 +17,8 @@ export default function ForgotPasswordModal({
   const [code, setCode] = useState("");
   const [p1, setP1] = useState("");
   const [p2, setP2] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -25,6 +27,7 @@ export default function ForgotPasswordModal({
     setCode("");
     setP1("");
     setP2("");
+    setError("");
   }, [open]);
 
   useEffect(() => {
@@ -46,9 +49,56 @@ export default function ForgotPasswordModal({
 
   if (!open) return null;
 
-  const sendCode = () => setStep("code");
-  const goNewPass = () => setStep("newpass");
-  const changePass = () => onClose();
+  const sendCode = async () => {
+    setError("");
+    setSubmitting(true);
+    try {
+      await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      setStep("code");
+    } catch {
+      setError("Ошибка отправки");
+    }
+    setSubmitting(false);
+  };
+
+  const goNewPass = () => {
+    setError("");
+    setStep("newpass");
+  };
+
+  const changePass = async () => {
+    setError("");
+    if (p1 !== p2) {
+      setError("Пароли не совпадают");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          code,
+          newPassword: p1,
+          confirmPassword: p2,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.errors?.[0] ?? "Ошибка");
+      } else {
+        onClose();
+      }
+    } catch {
+      setError("Ошибка сервера");
+    }
+    setSubmitting(false);
+  };
 
   return (
     <div className={styles.overlay} onClick={onClose} role="presentation">
@@ -72,8 +122,10 @@ export default function ForgotPasswordModal({
               />
             </div>
 
-            <button type="button" className={styles.btn} onClick={sendCode}>
-              ОТПРАВИТЬ КОД
+            {error && <p className={styles.error}>{error}</p>}
+
+            <button type="button" className={styles.btn} onClick={sendCode} disabled={submitting}>
+              {submitting ? "ОТПРАВКА..." : "ОТПРАВИТЬ КОД"}
             </button>
           </div>
         )}
@@ -89,6 +141,8 @@ export default function ForgotPasswordModal({
                 onChange={(e) => setCode(e.target.value)}
               />
             </div>
+
+            {error && <p className={styles.error}>{error}</p>}
 
             <button type="button" className={styles.btn} onClick={goNewPass}>
               ВОССТАНОВИТЬ ПАРОЛЬ
@@ -120,8 +174,10 @@ export default function ForgotPasswordModal({
               />
             </div>
 
-            <button type="button" className={styles.btn} onClick={changePass}>
-              СМЕНИТЬ ПАРОЛЬ
+            {error && <p className={styles.error}>{error}</p>}
+
+            <button type="button" className={styles.btn} onClick={changePass} disabled={submitting}>
+              {submitting ? "СМЕНА..." : "СМЕНИТЬ ПАРОЛЬ"}
             </button>
           </div>
         )}

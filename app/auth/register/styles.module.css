@@ -342,3 +342,16 @@
     font-size: 16px;
   }
 }
+
+.errors {
+  text-align: center;
+  color: #e74c3c;
+  font-family: var(--font-text);
+  font-size: 13px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.errors p {
+  margin: 0;
+}

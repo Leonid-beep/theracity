@@ -1,4 +1,3 @@
-// app/(app)/gallery/_components/PhotoModals.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -6,36 +5,29 @@ import Image from "next/image";
 import styles from "./photoModals.module.css";
 import type { PhotoItem } from "../page";
 
-type RouteItem = { id: number; title: string; src: string };
+type RouteItem = { id: string; title: string; src: string };
 type Step = "photo" | "routeChoice" | "pickRoute" | "createRoute";
 
 export default function PhotoModals(props: {
   photo: PhotoItem | null;
   photos: PhotoItem[];
   onClose: () => void;
-  liked: Set<number>;
-  onToggleLike: (photoId: number) => void;
+  liked: Set<string>;
+  onToggleLike: (photoId: string) => void;
 }) {
   const { photo, photos, onClose, liked, onToggleLike } = props;
 
   const [step, setStep] = useState<Step>("photo");
 
-  const [routes, setRoutes] = useState<RouteItem[]>(() =>
-    Array.from({ length: 12 }).map((_, i) => ({
-      id: i + 1,
-      title: ["Прогулка по центру", "Песня", "Дворы и колодцы", "За поворотом", "Красиво"][i % 5],
-      src: `/images/city/city-${(i % 7) + 1}.jpg`,
-    }))
-  );
+  const [routes, setRoutes] = useState<RouteItem[]>([]);
+  const [routesLoaded, setRoutesLoaded] = useState(false);
 
   const [pickPage, setPickPage] = useState(1);
-  const [pickedRouteId, setPickedRouteId] = useState<number | null>(null);
+  const [pickedRouteId, setPickedRouteId] = useState<string | null>(null);
   const [photoPage, setPhotoPage] = useState(1);
 
-  const [newTitle, setNewTitle] = useState("Арт-терапия");
-  const [newDesc, setNewDesc] = useState(
-    "Маршрут для любителей дворов, тихих улиц, Невского проспекта, уюта, узких улочек и многого другого"
-  );
+  const [newTitle, setNewTitle] = useState("");
+  const [newDesc, setNewDesc] = useState("");
   const [newSpace, setNewSpace] = useState("Дворы");
   const [newMood, setNewMood] = useState("Надежда");
   const [newMetro, setNewMetro] = useState("Удельная");
@@ -51,6 +43,23 @@ export default function PhotoModals(props: {
   useEffect(() => {
     setPhotoPage(initialPhotoPage);
   }, [initialPhotoPage]);
+
+  useEffect(() => {
+    if (!photo) return;
+    if (routesLoaded) return;
+    fetch("/api/routes/my")
+      .then((r) => r.json())
+      .then((d) => {
+        const list = (d.routes ?? []).map((r: { id: string; title: string; coverUrl?: string }) => ({
+          id: r.id,
+          title: r.title,
+          src: r.coverUrl ?? "/images/city/city-1.jpg",
+        }));
+        setRoutes(list);
+        setRoutesLoaded(true);
+      })
+      .catch(() => setRoutesLoaded(true));
+  }, [photo, routesLoaded]);
 
   const goPhoto = (p: number) => setPhotoPage(Math.min(totalPhotoPages, Math.max(1, p)));
   const canPhotoPrev = photoPage > 1;
@@ -93,74 +102,73 @@ export default function PhotoModals(props: {
   const pagesToShow = useMemo(() => {
     const total = pickTotalPages;
     const current = pickPage;
-
     if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-
-    const out: (number | "dots")[] = [];
-    out.push(1);
-
+    const out: (number | "dots")[] = [1];
     const left = Math.max(2, current - 1);
     const right = Math.min(total - 1, current + 1);
-
     if (left > 2) out.push("dots");
     for (let p = left; p <= right; p++) out.push(p);
     if (right < total - 1) out.push("dots");
-
     out.push(total);
     return out;
   }, [pickPage, pickTotalPages]);
 
   const goPick = (p: number) => setPickPage(Math.min(pickTotalPages, Math.max(1, p)));
 
-  const handleOverlay = () => closeAll();
-  const handleX = () => closeAll();
-
-  const handleAddToRoute = () => setStep("routeChoice");
-  const handleCreateRoute = () => setStep("createRoute");
-  const handlePickRoute = () => setStep("pickRoute");
-
-  const handleConfirmPick = () => {
-    if (!pickedRouteId) return;
+  const handleConfirmPick = async () => {
+    if (!pickedRouteId || !activePhoto) return;
+    try {
+      await fetch(`/api/routes/${pickedRouteId}/photos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ photoId: activePhoto.id }),
+      });
+    } catch { /* ignore */ }
     closeAll();
   };
 
-  const handleCreateConfirm = () => {
-    const id = routes.length ? Math.max(...routes.map((r) => r.id)) + 1 : 1;
-    const created: RouteItem = {
-      id,
-      title: newTitle.trim() || "Новый маршрут",
-      src: activePhoto ? activePhoto.src : `/images/city/city-1.jpg`,
-    };
-    setRoutes((prev) => [created, ...prev]);
+  const handleCreateConfirm = async () => {
+    if (!activePhoto) return;
+    try {
+      await fetch("/api/routes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newTitle.trim() || "Новый маршрут",
+          description: newDesc.trim(),
+          photoIds: [activePhoto.id],
+        }),
+      });
+    } catch { /* ignore */ }
     closeAll();
   };
 
   if (!open || !photo || !activePhoto) return null;
 
+  const mapsUrl = `https://yandex.ru/maps/?pt=${activePhoto.lng},${activePhoto.lat}&z=17&l=map`;
+
   return (
-    <div className={styles.overlay} onClick={handleOverlay} role="presentation">
+    <div className={styles.overlay} onClick={closeAll} role="presentation">
       {step === "photo" ? (
         <div className={`${styles.modal} ${styles.modalPhoto}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-          <button className={styles.closeBtn} onClick={handleX} aria-label="Закрыть" type="button" />
+          <button className={styles.closeBtn} onClick={closeAll} aria-label="Закрыть" type="button" />
           <div className={styles.photoTitle}>{activePhoto.title}</div>
 
           <div className={styles.photoWrap}>
-            <Image src={activePhoto.src} alt={activePhoto.title} width={300} height={375} className={styles.photoImg} />
+            <Image src={activePhoto.src} alt={activePhoto.title} width={300} height={375} className={styles.photoImg} unoptimized />
             {likedNow ? (
-              <Image
-                src="/images/city/heart_red.png"
-                alt=""
-                width={23}
-                height={23}
-                className={styles.likeIcon}
-                aria-hidden="true"
-              />
+              <Image src="/images/city/heart_red.png" alt="" width={23} height={23} className={styles.likeIcon} aria-hidden="true" />
             ) : null}
           </div>
 
           <div className={styles.meta}>
-            <div>Метро: Василеостровская</div>
-            <div>Адрес: 59.936435, 30.210504</div>
+            <div>Метро: {activePhoto.metro}</div>
+            <div>
+              Адрес:{" "}
+              <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>
+                {activePhoto.coords}
+              </a>
+            </div>
           </div>
 
           <div className={styles.photoPagination}>
@@ -177,9 +185,7 @@ export default function PhotoModals(props: {
             <div className={styles.pages}>
               {photoPagesToShow.map((p, idx) =>
                 p === "dots" ? (
-                  <span key={`d-${idx}`} className={styles.dots}>
-                    …
-                  </span>
+                  <span key={`d-${idx}`} className={styles.dots}>…</span>
                 ) : (
                   <button
                     key={p}
@@ -218,7 +224,7 @@ export default function PhotoModals(props: {
               {likedNow ? "УДАЛИТЬ ИЗ ИЗБРАННОГО" : "ДОБАВИТЬ В ИЗБРАННОЕ"}
             </button>
 
-            <button type="button" className={styles.bigBtn} onClick={handleAddToRoute}>
+            <button type="button" className={styles.bigBtn} onClick={() => setStep("routeChoice")}>
               <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
               ДОБАВИТЬ В МАРШРУТ
             </button>
@@ -228,13 +234,13 @@ export default function PhotoModals(props: {
 
       {step === "routeChoice" ? (
         <div className={`${styles.modal} ${styles.modalChoice}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-          <button className={styles.closeBtn} onClick={handleX} aria-label="Закрыть" type="button" />
+          <button className={styles.closeBtn} onClick={closeAll} aria-label="Закрыть" type="button" />
           <div className={styles.choiceBtns}>
-            <button type="button" className={`${styles.choiceBtn} ${styles.choiceBtn1}`} onClick={handleCreateRoute}>
+            <button type="button" className={`${styles.choiceBtn} ${styles.choiceBtn1}`} onClick={() => setStep("createRoute")}>
               <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
               СОЗДАТЬ НОВЫЙ МАРШРУТ
             </button>
-            <button type="button" className={`${styles.choiceBtn} ${styles.choiceBtn2}`} onClick={handlePickRoute}>
+            <button type="button" className={`${styles.choiceBtn} ${styles.choiceBtn2}`} onClick={() => setStep("pickRoute")}>
               <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
               ДОБАВИТЬ В СОЗДАННЫЙ МАРШРУТ
             </button>
@@ -244,7 +250,7 @@ export default function PhotoModals(props: {
 
       {step === "pickRoute" ? (
         <div className={`${styles.modal} ${styles.modalPick}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-          <button className={styles.closeBtn} onClick={handleX} aria-label="Закрыть" type="button" />
+          <button className={styles.closeBtn} onClick={closeAll} aria-label="Закрыть" type="button" />
 
           <div className={styles.pickTitle}>
             <span className={styles.pickMark}>Выберите</span> маршрут для добавления
@@ -261,7 +267,7 @@ export default function PhotoModals(props: {
                   onClick={() => setPickedRouteId(r.id)}
                 >
                   <div className={styles.pickThumb}>
-                    <Image src={r.src} alt={r.title} width={150} height={200} className={styles.pickImg} />
+                    <Image src={r.src} alt={r.title} width={150} height={200} className={styles.pickImg} unoptimized />
                   </div>
                   <div className={styles.pickCap}>{r.title}</div>
                 </button>
@@ -283,9 +289,7 @@ export default function PhotoModals(props: {
             <div className={styles.pages}>
               {pagesToShow.map((p, idx) =>
                 p === "dots" ? (
-                  <span key={`d-${idx}`} className={styles.dots}>
-                    …
-                  </span>
+                  <span key={`d-${idx}`} className={styles.dots}>…</span>
                 ) : (
                   <button
                     key={p}
@@ -318,7 +322,7 @@ export default function PhotoModals(props: {
 
       {step === "createRoute" ? (
         <div className={`${styles.modal} ${styles.modalCreate}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-          <button className={styles.closeBtn} onClick={handleX} aria-label="Закрыть" type="button" />
+          <button className={styles.closeBtn} onClick={closeAll} aria-label="Закрыть" type="button" />
 
           <div className={styles.createTitle}>Создание маршрута</div>
 
