@@ -48,7 +48,7 @@
 
 .row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, 150px);
   column-gap: 22px;
   row-gap: 24px;
   align-items: start;
@@ -56,8 +56,8 @@
 
 .card {
   margin: 0;
-  width: 100%;
-  max-width: 150px;
+  width: 150px;
+  cursor: pointer;
 }
 
 .thumb {
@@ -224,13 +224,13 @@
     font-size: 24px;
   }
   .row {
-    grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+    grid-template-columns: repeat(auto-fill, 112px);
     column-gap: 17px;
     width: 100%;
     max-width: 100%;
   }
   .card {
-    max-width: 112px;
+    width: 112px;
   }
   .thumb {
     aspect-ratio: 112 / 150;
@@ -279,7 +279,7 @@
     overflow: hidden;
   }
   .row {
-    grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+    grid-template-columns: repeat(auto-fill, 112px);
     column-gap: 17px;
     width: 100%;
     max-width: 100%;
@@ -310,15 +310,13 @@
     font-size: 26px;
   }
   .row {
-    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    grid-template-columns: repeat(auto-fill, 110px);
     column-gap: 17px;
     width: 100%;
     max-width: 100%;
-    justify-content: center;
-    justify-items: center;
   }
   .card {
-    max-width: 120px;
+    width: 110px;
   }
   .thumb {
     aspect-ratio: 120 / 160;
@@ -367,15 +365,13 @@
     overflow: hidden;
   }
   .row {
-    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+    grid-template-columns: repeat(auto-fill, 96px);
     column-gap: 15px;
     width: 100%;
     max-width: 100%;
-    justify-content: center;
-    justify-items: center;
   }
   .card {
-    max-width: 100px;
+    width: 96px;
   }
   .thumb {
     aspect-ratio: 100 / 130;
@@ -411,13 +407,11 @@
     font-size: 21px;
   }
   .row {
-    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+    grid-template-columns: repeat(auto-fill, 96px);
     column-gap: 15px;
-    justify-content: center;
-    justify-items: center;
   }
   .card {
-    max-width: 100px;
+    width: 96px;
   }
   .thumb {
     aspect-ratio: 100 / 130;
@@ -482,15 +476,13 @@
     text-align: center;
   }
   .row {
-    grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+    grid-template-columns: repeat(auto-fill, 104px);
     column-gap: 16px;
-    justify-content: center;
-    justify-items: center;
     width: 100%;
     margin: 0 auto;
   }
   .card {
-    max-width: 108px;
+    width: 104px;
   }
   .thumb {
     aspect-ratio: 108 / 144;

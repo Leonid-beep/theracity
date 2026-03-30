@@ -33,12 +33,15 @@ export async function GET(req: NextRequest) {
       const photos = r.routePhotos.map((rp) => ({
         src: getProxyPhotoUrl(rp.photo.s3Key),
         alt: rp.photo.title,
+        metro: rp.photo.metro,
+        address: `${rp.photo.lat}, ${rp.photo.lng}`,
       }));
       const firstPhoto = r.routePhotos[0]?.photo;
       return {
         id: r.id,
         title: r.title,
         desc: r.description,
+        isPublished: r.isPublished,
         metro: firstPhoto?.metro ?? "",
         address: firstPhoto ? `${firstPhoto.lat}, ${firstPhoto.lng}` : "",
         photos,

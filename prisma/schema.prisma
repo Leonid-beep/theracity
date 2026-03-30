@@ -50,6 +50,7 @@ model Route {
   title       String
   description String
   createdById String
+  isPublished Boolean  @default(false)
   createdAt   DateTime @default(now())
 
   createdBy   User           @relation(fields: [createdById], references: [id], onDelete: Cascade)

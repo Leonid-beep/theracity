@@ -398,7 +398,8 @@
 
 .modalCreate {
   width: 450px;
-  height: 860px;
+  height: auto;
+  min-height: 0;
   max-height: calc(100vh - 40px);
   overflow: auto;
 }
@@ -634,6 +635,7 @@
     width: 360px;
     top: auto;
     bottom: 10px;
+    gap: 16px;
   }
   .bigBtn {
     width: 360px;
@@ -697,7 +699,9 @@
   }
   .modalCreate {
     width: 400px;
-    height: 760px;
+    height: auto;
+    min-height: 0;
+    max-height: calc(100vh - 32px);
   }
   .createTitle {
     font-size: 26px;
@@ -772,6 +776,7 @@
     width: 320px;
     top: auto;
     bottom: 10px;
+    gap: 12px;
   }
   .bigBtn {
     width: 320px;
@@ -835,7 +840,9 @@
   }
   .modalCreate {
     width: 360px;
-    height: 680px;
+    height: auto;
+    min-height: 0;
+    max-height: calc(100vh - 28px);
   }
   .createTitle {
     font-size: 24px;
@@ -935,13 +942,17 @@
     width: min(300px, calc(100% - 24px));
     top: auto;
     bottom: 10px;
-    gap: 10px;
+    gap: 8px;
   }
   .bigBtn {
     width: 100%;
     max-width: 300px;
-    height: 36px;
+    height: 30px;
+    min-height: 30px;
     font-size: 12px;
+    line-height: 1.1;
+    padding: 0 10px;
+    box-sizing: border-box;
   }
   .modalChoice {
     width: min(340px, calc(100vw - 24px));
@@ -1109,8 +1120,12 @@
   .bigBtn {
     width: 100%;
     max-width: none;
-    height: 40px;
+    height: 30px;
+    min-height: 30px;
     font-size: 11px;
+    line-height: 1.1;
+    padding: 0 8px;
+    box-sizing: border-box;
   }
   .modalChoice {
     width: 100%;

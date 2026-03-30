@@ -25,6 +25,8 @@ export default function CabinetPhotoModals({
   onToggleFav,
   onRemoveFav,
   onClose,
+  onRouteCreated,
+  onActionSuccess,
 }: {
   open: boolean;
   photo: CabinetPhotoItem | null;
@@ -33,6 +35,8 @@ export default function CabinetPhotoModals({
   onToggleFav: (photoId: string) => void;
   onRemoveFav: (photoId: string) => void;
   onClose: () => void;
+  onRouteCreated?: () => void;
+  onActionSuccess?: (message: string) => void;
 }) {
   const [step, setStep] = useState<Step>("photo");
 
@@ -45,10 +49,6 @@ export default function CabinetPhotoModals({
 
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
-  const [newSpace, setNewSpace] = useState("Дворы");
-  const [newMood, setNewMood] = useState("Надежда");
-  const [newMetro, setNewMetro] = useState("Удельная");
-  const [newWeather, setNewWeather] = useState("Солнечно");
 
   const isOpen = open && !!photo;
   const pickPageSize = 4;
@@ -98,6 +98,15 @@ export default function CabinetPhotoModals({
 
   const activePhoto = photos[photoPage - 1] ?? photo;
   const isFavNow = !!activePhoto && favIds.has(activePhoto.id);
+  const hasUserRoutes = routes.length > 0;
+
+  const openAddToRoute = () => {
+    if (routesLoaded && !hasUserRoutes) {
+      setStep("create");
+      return;
+    }
+    setStep("choice");
+  };
 
   const pickTotalPages = useMemo(() => {
     if (!isOpen) return 1;
@@ -160,7 +169,7 @@ export default function CabinetPhotoModals({
   const createConfirm = async () => {
     if (!activePhoto) return;
     try {
-      await fetch("/api/routes", {
+      const res = await fetch("/api/routes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -169,6 +178,10 @@ export default function CabinetPhotoModals({
           photoIds: [activePhoto.id],
         }),
       });
+      if (res.ok) {
+        onActionSuccess?.("Маршрут создан, фото добавлено");
+        onRouteCreated?.();
+      }
     } catch { /* ignore */ }
     closeAll();
   };
@@ -176,11 +189,16 @@ export default function CabinetPhotoModals({
   const pickConfirm = async () => {
     if (!pickedRouteId || !activePhoto) return;
     try {
-      await fetch(`/api/routes/${pickedRouteId}/photos`, {
+      const res = await fetch(`/api/routes/${pickedRouteId}/photos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ photoId: activePhoto.id }),
       });
+      if (res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { message?: string };
+        const dup = typeof data.message === "string" && data.message.includes("уже");
+        onActionSuccess?.(dup ? "Фото уже в этом маршруте" : "Фото добавлено в маршрут");
+      }
     } catch { /* ignore */ }
     closeAll();
   };
@@ -266,7 +284,7 @@ export default function CabinetPhotoModals({
           </div>
 
           <div className={styles.actions}>
-            <button type="button" className={styles.bigBtn} onClick={() => setStep("choice")}>
+            <button type="button" className={styles.bigBtn} onClick={openAddToRoute}>
               <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
               ДОБАВИТЬ В МАРШРУТ
             </button>
@@ -294,10 +312,12 @@ export default function CabinetPhotoModals({
               <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
               СОЗДАТЬ НОВЫЙ МАРШРУТ
             </button>
-            <button type="button" className={`${styles.choiceBtn} ${styles.choiceBtn2}`} onClick={() => setStep("pick")}>
-              <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
-              ДОБАВИТЬ В СОЗДАННЫЙ МАРШРУТ
-            </button>
+            {hasUserRoutes ? (
+              <button type="button" className={`${styles.choiceBtn} ${styles.choiceBtn2}`} onClick={() => setStep("pick")}>
+                <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
+                ДОБАВИТЬ В СОЗДАННЫЙ МАРШРУТ
+              </button>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -390,42 +410,6 @@ export default function CabinetPhotoModals({
             <div className={styles.createField}>
               <div className={styles.createLabel}>ПРИДУМАЙТЕ ОПИСАНИЕ</div>
               <textarea className={styles.createTextarea} value={newDesc} onChange={(e) => setNewDesc(e.target.value)} />
-            </div>
-
-            <div className={styles.createSelectField}>
-              <div className={styles.createLabel}>ТИП ПРОСТРАНСТВА</div>
-              <select className={styles.createSelect} value={newSpace} onChange={(e) => setNewSpace(e.target.value)}>
-                <option>Дворы</option>
-                <option>Улицы</option>
-                <option>Брандмауэры</option>
-              </select>
-            </div>
-
-            <div className={styles.createSelectField}>
-              <div className={styles.createLabel}>ЭМОЦИОНАЛЬНЫЙ ФОН</div>
-              <select className={styles.createSelect} value={newMood} onChange={(e) => setNewMood(e.target.value)}>
-                <option>Надежда</option>
-                <option>Спокойствие</option>
-                <option>Тревога</option>
-              </select>
-            </div>
-
-            <div className={styles.createSelectField}>
-              <div className={styles.createLabel}>СТАНЦИЯ МЕТРО</div>
-              <select className={styles.createSelect} value={newMetro} onChange={(e) => setNewMetro(e.target.value)}>
-                <option>Удельная</option>
-                <option>Сенная площадь</option>
-                <option>Чернышевская</option>
-              </select>
-            </div>
-
-            <div className={styles.createSelectField}>
-              <div className={styles.createLabel}>АТМОСФЕРА</div>
-              <select className={styles.createSelect} value={newWeather} onChange={(e) => setNewWeather(e.target.value)}>
-                <option>Солнечно</option>
-                <option>Пасмурно</option>
-                <option>Дождь</option>
-              </select>
             </div>
 
             <button type="button" className={styles.createConfirm} onClick={createConfirm}>

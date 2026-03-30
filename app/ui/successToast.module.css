@@ -1,0 +1,36 @@
+.wrap {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 12000;
+  pointer-events: none;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 0 12px;
+  box-sizing: border-box;
+}
+
+.toast {
+  pointer-events: none;
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: rgba(224, 218, 180, 0.96);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.22);
+  font-family: var(--font-button);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  color: #111;
+  text-align: center;
+  line-height: 1.35;
+}
+
+@media (max-width: 480px) {
+  .wrap {
+    bottom: 16px;
+  }
+
+  .toast {
+    font-size: 12px;
+    padding: 10px 16px;
+  }
+}

@@ -13,8 +13,18 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
 
+    const trimmed = String(login).trim();
+    const asEmail = trimmed.toLowerCase();
+
     const user = await prisma.user.findFirst({
-      where: { OR: [{ email: login }, { username: login }] },
+      where: {
+        OR: [
+          { username: trimmed },
+          { username: { equals: trimmed, mode: "insensitive" } },
+          { email: trimmed },
+          { email: { equals: asEmail, mode: "insensitive" } },
+        ],
+      },
     });
 
     if (!user) {

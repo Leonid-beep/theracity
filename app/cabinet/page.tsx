@@ -8,6 +8,7 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import type { CabinetRouteItem } from "./_components/CabinetRouteModal";
 import type { CabinetPhotoItem } from "./_components/CabinetPhotoModals";
 import ConfirmDeleteModal from "./_components/ConfirmDeleteModal";
+import { SuccessToast, useSuccessToast } from "@/app/ui/SuccessToast";
 
 const CabinetRouteModal = dynamic(() => import("./_components/CabinetRouteModal"), { ssr: false });
 const CabinetPhotoModals = dynamic(() => import("./_components/CabinetPhotoModals"), { ssr: false });
@@ -88,7 +89,12 @@ function Pager({
 }
 
 export default function CabinetPage() {
-  const { user } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
+  const { message: successMsg, showSuccess } = useSuccessToast();
+
+  useEffect(() => {
+    void refreshUser();
+  }, [refreshUser]);
 
   const [myRoutes, setMyRoutes] = useState<CabinetRouteItem[]>([]);
   const [myRoutesTotal, setMyRoutesTotal] = useState(0);
@@ -190,7 +196,8 @@ export default function CabinetPage() {
       const targetId = pendingRouteDeleteId ?? activeRoute?.id ?? null;
       if (targetId != null) {
         try {
-          await fetch(`/api/routes/${targetId}`, { method: "DELETE" });
+          const res = await fetch(`/api/routes/${targetId}`, { method: "DELETE" });
+          if (res.ok) showSuccess("Маршрут удалён");
         } catch { /* ignore */ }
         fetchMyRoutes(myRoutesPage);
       }
@@ -202,11 +209,12 @@ export default function CabinetPage() {
       const targetId = pendingRouteDeleteId ?? activeRoute?.id ?? null;
       if (targetId != null) {
         try {
-          await fetch("/api/routes/favorites", {
+          const res = await fetch("/api/routes/favorites", {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ routeId: String(targetId) }),
           });
+          if (res.ok) showSuccess("Маршрут убран из избранного");
         } catch { /* ignore */ }
         fetchFavRoutes(favRoutesPage);
       }
@@ -218,11 +226,12 @@ export default function CabinetPage() {
       const targetPhotoId = pendingPhotoDeleteId ?? activePhoto?.id ?? null;
       if (targetPhotoId != null) {
         try {
-          await fetch("/api/photos/favorites", {
+          const res = await fetch("/api/photos/favorites", {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ photoId: targetPhotoId }),
           });
+          if (res.ok) showSuccess("Удалено из избранного");
         } catch { /* ignore */ }
         fetchFavPhotos(favPhotosPage);
       }
@@ -241,7 +250,9 @@ export default function CabinetPage() {
 
   return (
     <main className={styles.root}>
-      <h1 className={styles.userName}>{user?.username ?? ""}</h1>
+      <h1 className={styles.userName}>
+        {loading ? "…" : (user?.username ?? "")}
+      </h1>
 
       <div className={styles.sections}>
         {/* Мои маршруты */}
@@ -373,6 +384,19 @@ export default function CabinetPage() {
         <CabinetRouteModal
           open
           route={activeRoute}
+          showPublish={activeSectionKey === "my_routes"}
+          onPublish={async () => {
+            const routeId = activeRoute?.id;
+            if (!routeId) return;
+            try {
+              const res = await fetch(`/api/routes/${routeId}`, { method: "PATCH" });
+              if (res.ok) {
+                showSuccess("Маршрут опубликован");
+                setActiveRoute((prev) => (prev ? { ...prev, isPublished: true } : prev));
+              }
+            } catch { /* ignore */ }
+            await Promise.all([fetchMyRoutes(myRoutesPage), fetchFavRoutes(favRoutesPage)]);
+          }}
           onClose={() => setOpenRoute(false)}
           actionLabel={activeSectionKey === "my_routes" ? "УДАЛИТЬ МАРШРУТ" : "УДАЛИТЬ ИЗ ИЗБРАННОГО"}
           onDelete={() => {
@@ -389,6 +413,11 @@ export default function CabinetPage() {
           photos={favPhotos}
           favIds={favPhotoIds}
           onClose={() => setOpenPhotoFlow(false)}
+          onRouteCreated={() => {
+            if (myRoutesPage === 1) void fetchMyRoutes(1);
+            else setMyRoutesPage(1);
+          }}
+          onActionSuccess={showSuccess}
           onToggleFav={(photoId) => {
             setFavPhotoIds((prev) => {
               const n = new Set(prev);
@@ -406,6 +435,8 @@ export default function CabinetPage() {
       {confirmOpen && (
         <ConfirmDeleteModal open onClose={() => setConfirmOpen(false)} onYes={doDelete} />
       )}
+
+      <SuccessToast message={successMsg} />
     </main>
   );
 }

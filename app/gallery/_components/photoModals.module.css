@@ -108,6 +108,37 @@
   display: block;
 }
 
+.deletePhotoBtn {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.48);
+  color: #fff;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+}
+
+.deletePhotoBtn:hover {
+  background: rgba(180, 30, 30, 0.85);
+}
+
+.deletePhotoIcon {
+  display: block;
+}
+
+.deletePhotoBtn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 1px;
+}
+
 .meta {
   position: absolute;
   left: 15px;
@@ -426,7 +457,8 @@
 
 .modalCreate {
   width: 450px;
-  height: 860px;
+  height: auto;
+  min-height: 0;
   max-height: calc(100vh - 40px);
   overflow: auto;
 }
@@ -639,7 +671,9 @@
   }
   .modalCreate {
     width: 400px;
-    height: 760px;
+    height: auto;
+    min-height: 0;
+    max-height: calc(100vh - 32px);
   }
   .createTitle {
     font-size: 26px;
@@ -784,7 +818,9 @@
   }
   .modalCreate {
     width: 360px;
-    height: 680px;
+    height: auto;
+    min-height: 0;
+    max-height: calc(100vh - 28px);
   }
   .createTitle {
     font-size: 24px;
@@ -881,13 +917,17 @@
     width: min(300px, calc(100% - 24px));
     top: auto;
     bottom: 10px;
-    gap: 10px;
+    gap: 8px;
   }
   .bigBtn {
     width: 100%;
     max-width: 300px;
-    height: 36px;
+    height: 30px;
+    min-height: 30px;
     font-size: 12px;
+    line-height: 1.1;
+    padding: 0 10px;
+    box-sizing: border-box;
   }
   .modalChoice {
     width: min(340px, calc(100vw - 24px));
@@ -1055,8 +1095,12 @@
   .bigBtn {
     width: 100%;
     max-width: none;
-    height: 40px;
+    height: 30px;
+    min-height: 30px;
     font-size: 11px;
+    line-height: 1.1;
+    padding: 0 8px;
+    box-sizing: border-box;
   }
   .modalChoice {
     width: 100%;

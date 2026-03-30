@@ -1,77 +1,152 @@
-// app/(app)/routes/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import styles from "./styles.module.css";
+import createStyles from "../gallery/_components/photoModals.module.css";
+import { useAuth } from "@/app/providers/AuthProvider";
+import { SuccessToast, useSuccessToast } from "@/app/ui/SuccessToast";
+import { useCloseDetailsOnOutsideClick } from "@/lib/useCloseDetailsOnOutsideClick";
 
 const RouteModal = dynamic(() => import("./_components/RouteModal"), { ssr: false });
+
+const ADMIN_EMAIL = "leonidusachev04@yandex.ru";
 
 function useRoutesBreakpoint() {
   const [pageSize, setPageSize] = useState(32);
   useEffect(() => {
-    const w = window.innerWidth;
-    if (w <= 480) setPageSize(8);
-    else if (w <= 700) setPageSize(16);
-    else if (w <= 1024) setPageSize(25);
-    else if (w <= 1440) setPageSize(32);
-    else setPageSize(28);
-    const onResize = () => {
-      const nw = window.innerWidth;
-      if (nw <= 480) setPageSize(8);
-      else if (nw <= 700) setPageSize(16);
-      else if (nw <= 1024) setPageSize(25);
-      else if (nw <= 1440) setPageSize(32);
+    const calc = () => {
+      const w = window.innerWidth;
+      if (w <= 480) setPageSize(8);
+      else if (w <= 700) setPageSize(16);
+      else if (w <= 1024) setPageSize(25);
+      else if (w <= 1440) setPageSize(32);
       else setPageSize(28);
     };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    calc();
+    window.addEventListener("resize", calc);
+    return () => window.removeEventListener("resize", calc);
   }, []);
   return pageSize;
 }
 
-const baseTitles = ["Прогулка по центру", "Песня", "Дворы и колодцы", "За поворотом", "Красиво"];
-const baseMetro = ["Василеостровская", "Чернышевская", "Сенная площадь", "Удельная", "Горный институт"];
+export type RouteItem = {
+  id: string;
+  title: string;
+  desc: string;
+  authorUsername: string;
+  metro: string;
+  address: string;
+  photos: { src: string; alt: string; metro?: string; address?: string }[];
+  coverUrl: string;
+};
 
-const allRoutes = Array.from({ length: 56 }).map((_, i) => {
-  const id = i + 1;
-  const title = baseTitles[i % 5];
-  return {
-    id,
-    src: `/images/city/city-${(i % 7) + 1}.jpg`,
-    title,
-    desc: "Маршрут для любителей дворов, плохой погоды, Невского проспекта, узких улочек и многого другого",
-    metro: baseMetro[i % 5],
-    address: `59.${936000 + i}35, 30.${271000 + i}04`,
-    photos: Array.from({ length: 5 }).map((__, k) => ({
-      src: `/images/city/city-${((i + k) % 7) + 1}.jpg`,
-      alt: `${title} — фото ${k + 1}`,
-    })),
-  };
-});
+type Filters = {
+  metro: string[];
+  spaceType: string[];
+  mood: string[];
+  atmosphere: string[];
+};
 
 export default function RoutesPage() {
   const pageSize = useRoutesBreakpoint();
-  const totalPages = Math.max(1, Math.ceil(allRoutes.length / pageSize));
+  const { user } = useAuth();
+  const isAdmin = user?.email === ADMIN_EMAIL;
+  const { message: successMsg, showSuccess } = useSuccessToast();
+
+  const [routes, setRoutes] = useState<RouteItem[]>([]);
+  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+
+  const [liked, setLiked] = useState<Set<string>>(() => new Set());
 
   const [open, setOpen] = useState(false);
-  const [activeRouteId, setActiveRouteId] = useState<number | null>(null);
-  const [liked, setLiked] = useState<Set<number>>(() => new Set());
+  const [activeRoute, setActiveRoute] = useState<RouteItem | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newDesc, setNewDesc] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [filterOptions, setFilterOptions] = useState<Filters>({
+    metro: [],
+    spaceType: [],
+    mood: [],
+    atmosphere: [],
+  });
+  const [selMetro, setSelMetro] = useState<string[]>([]);
+  const [selSpace, setSelSpace] = useState<string[]>([]);
+  const [selMood, setSelMood] = useState<string[]>([]);
+  const [selAtmo, setSelAtmo] = useState<string[]>([]);
+  const [appliedFilters, setAppliedFilters] = useState<Record<string, string>>({});
 
+  const filterRef = useRef<HTMLElement>(null);
+  useCloseDetailsOnOutsideClick(filterRef, "routes-filters");
+
+  useEffect(() => {
+    fetch("/api/routes/favorites/ids")
+      .then((r) => r.json())
+      .then((d) => setLiked(new Set(d.ids ?? [])))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/filters")
+      .then((r) => r.json())
+      .then((d) => setFilterOptions(d))
+      .catch(() => {});
+  }, []);
+
+  const handleRouteDeleted = useCallback(
+    (id: string) => {
+      showSuccess("Маршрут удалён");
+      setRoutes((prev) => prev.filter((r) => r.id !== id));
+      setTotal((t) => Math.max(0, t - 1));
+      setLiked((prev) => {
+        const n = new Set(prev);
+        n.delete(id);
+        return n;
+      });
+      setOpen(false);
+      setActiveRoute(null);
+    },
+    [showSuccess],
+  );
+
+  const fetchRoutes = useCallback(
+    async (p: number, filters: Record<string, string>) => {
+      setLoading(true);
+      const sp = new URLSearchParams({
+        page: String(p),
+        pageSize: String(pageSize),
+        ...filters,
+      });
+      try {
+        const res = await fetch(`/api/routes?${sp}`);
+        const data = await res.json();
+        setRoutes(data.routes ?? []);
+        setTotal(data.total ?? 0);
+      } catch {
+        setRoutes([]);
+        setTotal(0);
+      }
+      setLoading(false);
+    },
+    [pageSize],
+  );
+
+  useEffect(() => {
+    fetchRoutes(page, appliedFilters);
+  }, [page, appliedFilters, fetchRoutes]);
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const canPrev = page > 1;
   const canNext = page < totalPages;
-
-  const pageItems = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return allRoutes.slice(start, start + pageSize);
-  }, [page]);
+  const go = (p: number) => setPage(Math.min(totalPages, Math.max(1, p)));
 
   const pagesToShow = useMemo(() => {
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-    const out: (number | "dots")[] = [];
-    out.push(1);
+    const out: (number | "dots")[] = [1];
     const left = Math.max(2, page - 1);
     const right = Math.min(totalPages - 1, page + 1);
     if (left > 2) out.push("dots");
@@ -81,22 +156,96 @@ export default function RoutesPage() {
     return out;
   }, [page, totalPages]);
 
-  const go = (p: number) => setPage(Math.min(totalPages, Math.max(1, p)));
-
-  const activeRoute = useMemo(() => allRoutes.find((r) => r.id === activeRouteId) ?? null, [activeRouteId]);
-
-  const openRoute = (id: number) => {
-    setActiveRouteId(id);
+  const openRoute = (r: RouteItem) => {
+    setActiveRoute(r);
     setOpen(true);
   };
 
-  const toggleLike = (id: number) => {
+  const toggleLike = async (routeId: string) => {
+    const was = liked.has(routeId);
     setLiked((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (was) next.delete(routeId);
+      else next.add(routeId);
       return next;
     });
+
+    try {
+      const res = await fetch("/api/routes/favorites", {
+        method: was ? "DELETE" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ routeId }),
+      });
+      if (res.ok) {
+        showSuccess(was ? "Удалено из избранного" : "Маршрут добавлен в избранное");
+      } else {
+        setLiked((prev) => {
+          const next = new Set(prev);
+          if (was) next.add(routeId);
+          else next.delete(routeId);
+          return next;
+        });
+      }
+    } catch {
+      setLiked((prev) => {
+        const next = new Set(prev);
+        if (was) next.add(routeId);
+        else next.delete(routeId);
+        return next;
+      });
+    }
+  };
+
+  const handleApplyFilters = () => {
+    const f: Record<string, string> = {};
+    if (selMetro.length) f.metro = selMetro.join(",");
+    if (selSpace.length) f.spaceType = selSpace.join(",");
+    if (selMood.length) f.mood = selMood.join(",");
+    if (selAtmo.length) f.atmosphere = selAtmo.join(",");
+    setAppliedFilters(f);
+    setPage(1);
+  };
+
+  const handleResetFilters = () => {
+    setSelMetro([]);
+    setSelSpace([]);
+    setSelMood([]);
+    setSelAtmo([]);
+    setAppliedFilters({});
+    setPage(1);
+  };
+
+  const hasAppliedFilters = Object.keys(appliedFilters).length > 0;
+
+  const toggleValue = (value: string, setter: (updater: (prev: string[]) => string[]) => void) => {
+    setter((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
+    );
+  };
+
+  const createEmptyRoute = async () => {
+    if (creating) return;
+    setCreating(true);
+    try {
+      const res = await fetch("/api/routes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newTitle.trim() || "Новый маршрут",
+          description: newDesc.trim(),
+          photoIds: [],
+        }),
+      });
+      if (res.ok) {
+        showSuccess("Маршрут создан");
+        setCreateOpen(false);
+        setNewTitle("");
+        setNewDesc("");
+        await fetchRoutes(page, appliedFilters);
+      }
+    } finally {
+      setCreating(false);
+    }
   };
 
   return (
@@ -104,31 +253,43 @@ export default function RoutesPage() {
       <h1 className={styles.h1}>
         <span className={styles.mark}>Посмотрите</span> маршруты пользователей
       </h1>
+      <button type="button" className={styles.createBtn} onClick={() => setCreateOpen(true)}>
+        СОЗДАТЬ МАРШРУТ
+      </button>
 
       <div className={styles.wrap}>
         <section className={styles.gallery}>
           <div className={styles.grid}>
-            {pageItems.map((r) => {
-              const isLiked = liked.has(r.id);
-              return (
-                <figure key={r.id} className={styles.card} onClick={() => openRoute(r.id)} role="button" tabIndex={0}>
-                  <div className={styles.thumb}>
-                    <Image src={r.src} alt={r.title} fill className={styles.img} />
-                    {isLiked ? (
-                      <Image
-                        src="/images/city/heart_red.png"
-                        alt=""
-                        width={23}
-                        height={23}
-                        className={styles.cardLike}
-                        aria-hidden="true"
-                      />
-                    ) : null}
-                  </div>
-                  <figcaption className={styles.cap}>{r.title}</figcaption>
-                </figure>
-              );
-            })}
+            {loading && routes.length === 0 ? (
+              <p style={{ gridColumn: "1/-1", textAlign: "center", color: "#fff" }}>Загрузка...</p>
+            ) : routes.length === 0 ? (
+              <p style={{ gridColumn: "1/-1", textAlign: "center", color: "#111" }}>Пока нет маршрутов</p>
+            ) : (
+              routes.map((r) => {
+                const isLiked = liked.has(r.id);
+                const cover = r.coverUrl || r.photos[0]?.src;
+                return (
+                  <figure key={r.id} className={styles.card} onClick={() => openRoute(r)} role="button" tabIndex={0}>
+                    <div className={styles.thumb}>
+                      {cover ? (
+                        <Image src={cover} alt={r.title} fill className={styles.img} unoptimized />
+                      ) : null}
+                      {isLiked ? (
+                        <Image
+                          src="/images/city/heart_red.png"
+                          alt=""
+                          width={23}
+                          height={23}
+                          className={styles.cardLike}
+                          aria-hidden="true"
+                        />
+                      ) : null}
+                    </div>
+                    <figcaption className={styles.cap}>{r.title}</figcaption>
+                  </figure>
+                );
+              })
+            )}
           </div>
 
           <div className={styles.pagination}>
@@ -171,64 +332,156 @@ export default function RoutesPage() {
           </div>
         </section>
 
-        <aside className={styles.filter}>
+        <aside ref={filterRef} className={styles.filter}>
           <div className={styles.filterBox}>
             <h2 className={styles.filterTitle}>
               <span className={styles.mark}>Фильтр</span> для маршрутов
             </h2>
 
             <div className={styles.filterFields}>
-            <div className={styles.field}>
-              <div className={styles.fieldLabel}>тип пространства</div>
-              <select className={styles.select} defaultValue="Дворы">
-                <option>Дворы</option>
-                <option>Улицы</option>
-                <option>Брандмауэры</option>
-              </select>
+              <div className={styles.field}>
+                <div className={styles.fieldLabel}>тип пространства</div>
+                <details className={styles.multi} name="routes-filters">
+                  <summary className={styles.select}>
+                    <span className={styles.selectValue}>
+                      {selSpace.length ? selSpace.join(", ") : "Все"}
+                    </span>
+                  </summary>
+                  <div className={styles.multiMenu}>
+                    {filterOptions.spaceType.map((v) => (
+                      <label key={v} className={styles.multiItem}>
+                        <input
+                          type="checkbox"
+                          checked={selSpace.includes(v)}
+                          onChange={() => toggleValue(v, setSelSpace)}
+                        />
+                        {v}
+                      </label>
+                    ))}
+                  </div>
+                </details>
+              </div>
+
+              <div className={styles.field}>
+                <div className={styles.fieldLabel}>эмоциональный фон</div>
+                <details className={styles.multi} name="routes-filters">
+                  <summary className={styles.select}>
+                    <span className={styles.selectValue}>
+                      {selMood.length ? selMood.join(", ") : "Все"}
+                    </span>
+                  </summary>
+                  <div className={styles.multiMenu}>
+                    {filterOptions.mood.map((v) => (
+                      <label key={v} className={styles.multiItem}>
+                        <input
+                          type="checkbox"
+                          checked={selMood.includes(v)}
+                          onChange={() => toggleValue(v, setSelMood)}
+                        />
+                        {v}
+                      </label>
+                    ))}
+                  </div>
+                </details>
+              </div>
+
+              <div className={styles.field}>
+                <div className={styles.fieldLabel}>станция метро</div>
+                <details className={styles.multi} name="routes-filters">
+                  <summary className={styles.select}>
+                    <span className={styles.selectValue}>
+                      {selMetro.length ? selMetro.join(", ") : "Все"}
+                    </span>
+                  </summary>
+                  <div className={styles.multiMenu}>
+                    {filterOptions.metro.map((v) => (
+                      <label key={v} className={styles.multiItem}>
+                        <input
+                          type="checkbox"
+                          checked={selMetro.includes(v)}
+                          onChange={() => toggleValue(v, setSelMetro)}
+                        />
+                        {v}
+                      </label>
+                    ))}
+                  </div>
+                </details>
+              </div>
+
+              <div className={styles.field}>
+                <div className={styles.fieldLabel}>атмосфера</div>
+                <details className={styles.multi} name="routes-filters">
+                  <summary className={styles.select}>
+                    <span className={styles.selectValue}>
+                      {selAtmo.length ? selAtmo.join(", ") : "Все"}
+                    </span>
+                  </summary>
+                  <div className={styles.multiMenu}>
+                    {filterOptions.atmosphere.map((v) => (
+                      <label key={v} className={styles.multiItem}>
+                        <input
+                          type="checkbox"
+                          checked={selAtmo.includes(v)}
+                          onChange={() => toggleValue(v, setSelAtmo)}
+                        />
+                        {v}
+                      </label>
+                    ))}
+                  </div>
+                </details>
+              </div>
             </div>
 
-            <div className={styles.field}>
-              <div className={styles.fieldLabel}>эмоциональный фон</div>
-              <select className={styles.select} defaultValue="Надежда + тоска">
-                <option>Надежда + тоска</option>
-                <option>Спокойно</option>
-                <option>Тревожно</option>
-              </select>
-            </div>
-
-            <div className={styles.field}>
-              <div className={styles.fieldLabel}>станция метро</div>
-              <select className={styles.select} defaultValue="Удельная">
-                <option>Удельная</option>
-                <option>Сенная площадь</option>
-                <option>Чернышевская</option>
-              </select>
-            </div>
-
-            <div className={styles.field}>
-              <div className={styles.fieldLabel}>атмосфера</div>
-              <select className={styles.select} defaultValue="Солнечно">
-                <option>Солнечно</option>
-                <option>Пасмурно</option>
-                <option>Дождь</option>
-              </select>
-            </div>
-            </div>
-
-            <button className={styles.apply}>ПРИМЕНИТЬ</button>
+            <button
+              className={styles.apply}
+              onClick={hasAppliedFilters ? handleResetFilters : handleApplyFilters}
+            >
+              {hasAppliedFilters ? "СБРОСИТЬ" : "ПРИМЕНИТЬ"}
+            </button>
           </div>
         </aside>
       </div>
 
-      {open ? (
-          <RouteModal
-            open={open}
-            route={activeRoute}
-            liked={activeRoute ? liked.has(activeRoute.id) : false}
-            onToggleLike={() => activeRoute && toggleLike(activeRoute.id)}
-            onClose={() => setOpen(false)}
-          />
-        ) : null}
+      {open && activeRoute ? (
+        <RouteModal
+          open={open}
+          route={activeRoute}
+          liked={liked.has(activeRoute.id)}
+          onToggleLike={() => toggleLike(activeRoute.id)}
+          onClose={() => setOpen(false)}
+          isAdmin={isAdmin}
+          onRouteDeleted={handleRouteDeleted}
+        />
+      ) : null}
+
+      {createOpen ? (
+        <div className={createStyles.overlay} onClick={() => setCreateOpen(false)} role="presentation">
+          <div
+            className={`${createStyles.modal} ${createStyles.modalCreate}`}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            <button type="button" className={createStyles.closeBtn} onClick={() => setCreateOpen(false)} aria-label="Закрыть" />
+            <div className={createStyles.createTitle}>Создание маршрута</div>
+            <div className={createStyles.createBody}>
+              <div className={createStyles.createField}>
+                <div className={createStyles.createLabel}>ПРИДУМАЙТЕ НАЗВАНИЕ</div>
+                <input className={createStyles.createInput} value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
+              </div>
+              <div className={createStyles.createField}>
+                <div className={createStyles.createLabel}>ПРИДУМАЙТЕ ОПИСАНИЕ</div>
+                <textarea className={createStyles.createTextarea} value={newDesc} onChange={(e) => setNewDesc(e.target.value)} />
+              </div>
+              <button type="button" className={createStyles.createConfirm} onClick={createEmptyRoute} disabled={creating}>
+              {creating ? "СОЗДАНИЕ..." : "СОЗДАТЬ НОВЫЙ МАРШРУТ"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <SuccessToast message={successMsg} />
     </main>
   );
 }

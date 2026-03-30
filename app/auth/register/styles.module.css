@@ -73,6 +73,15 @@
   flex-shrink: 0;
 }
 
+.fieldError {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 400;
+  color: #c62828;
+}
+
 .input {
   width: 100%;
   max-width: 352px;

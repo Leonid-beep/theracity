@@ -14,6 +14,11 @@ export default function BurgerMenu() {
   const isStart = pathname === "/start";
   const { user, logout } = useAuth();
 
+  const authEntryHref = useMemo(() => {
+    if (!pathname || pathname.startsWith("/auth")) return "/auth/login";
+    return `/auth/login?returnTo=${encodeURIComponent(pathname)}`;
+  }, [pathname]);
+
   const items: Item[] = useMemo(
     () => [
       { label: "ГАЛЕРЕЯ", href: "/gallery" },
@@ -21,17 +26,17 @@ export default function BurgerMenu() {
       { label: "ЛИЧНЫЙ КАБИНЕТ", href: "/cabinet" },
       ...(user
         ? [{ label: "ВЫЙТИ", href: "#", onClick: () => logout() }]
-        : [{ label: "ВОЙТИ/РЕГИСТРАЦИЯ", href: "/auth/login" }]),
+        : [{ label: "ВОЙТИ/РЕГИСТРАЦИЯ", href: authEntryHref }]),
       { label: "О ПРОЕКТЕ", href: "/about" },
     ],
-    [user, logout]
+    [user, logout, authEntryHref]
   );
 
   const activeIndex = useMemo(() => {
     const idx = items.findIndex((i) => {
-      if (i.href === "/auth/login") return pathname?.startsWith("/auth");
+      if (i.href.startsWith("/auth/login")) return pathname?.startsWith("/auth");
       if (i.href === "#") return false;
-      return pathname === i.href || pathname?.startsWith(i.href + "/");
+      return pathname === i.href || pathname?.startsWith(`${i.href}/`);
     });
     return idx >= 0 ? idx : 0;
   }, [items, pathname]);

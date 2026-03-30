@@ -5,6 +5,7 @@ import { prisma } from "@/app/lib/prisma";
 export async function POST(req: NextRequest) {
   try {
     const { email, code, newPassword, confirmPassword } = await req.json();
+    const emailNorm = String(email ?? "").trim().toLowerCase();
 
     if (!newPassword || newPassword.length < 6)
       return NextResponse.json(
@@ -18,7 +19,11 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = emailNorm
+      ? await prisma.user.findFirst({
+          where: { email: { equals: emailNorm, mode: "insensitive" } },
+        })
+      : null;
     if (!user)
       return NextResponse.json(
         { errors: ["Неверный код"] },

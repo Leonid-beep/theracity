@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import styles from "./styles.module.css";
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -12,13 +12,28 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; username?: string }>({});
   const [submitting, setSubmitting] = useState(false);
+  const [returnTo, setReturnTo] = useState<string | null>(null);
+
+  useEffect(() => {
+    setReturnTo(new URLSearchParams(window.location.search).get("returnTo"));
+  }, []);
+
+  const loginHref =
+    returnTo != null && returnTo !== ""
+      ? `/auth/login?returnTo=${encodeURIComponent(returnTo)}`
+      : "/auth/login";
 
   const handleRegister = async () => {
     setErrors([]);
+    setFieldErrors({});
     setSubmitting(true);
-    const errs = await register(username, email, password, confirmPassword);
-    if (errs) setErrors(errs);
+    const fail = await register(username, email, password, confirmPassword, returnTo);
+    if (fail) {
+      setErrors(fail.errors.filter(Boolean));
+      if (fail.fieldErrors) setFieldErrors(fail.fieldErrors);
+    }
     setSubmitting(false);
   };
 
@@ -35,8 +50,15 @@ export default function RegisterPage() {
                 className={styles.input}
                 placeholder="Value"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setFieldErrors((f) => ({ ...f, email: undefined }));
+                }}
+                aria-invalid={!!fieldErrors.email}
               />
+              {fieldErrors.email ? (
+                <span className={styles.fieldError}>{fieldErrors.email}</span>
+              ) : null}
             </label>
 
             <label className={styles.label}>
@@ -45,8 +67,15 @@ export default function RegisterPage() {
                 className={styles.input}
                 placeholder="Value"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  setFieldErrors((f) => ({ ...f, username: undefined }));
+                }}
+                aria-invalid={!!fieldErrors.username}
               />
+              {fieldErrors.username ? (
+                <span className={styles.fieldError}>{fieldErrors.username}</span>
+              ) : null}
             </label>
 
             <label className={styles.label}>
@@ -88,7 +117,7 @@ export default function RegisterPage() {
 
       <p className={styles.switch}>
         Есть аккаунт?{" "}
-        <Link href="/auth/login" className={styles.switchLink}>
+        <Link href={loginHref} className={styles.switchLink}>
           <span className={styles.mark}>Войти</span>
         </Link>
       </p>

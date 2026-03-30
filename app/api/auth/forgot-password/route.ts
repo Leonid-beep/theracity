@@ -4,9 +4,14 @@ import { prisma } from "@/app/lib/prisma";
 
 export async function POST(req: NextRequest) {
   try {
-    const { email } = await req.json();
+    const raw = (await req.json())?.email;
+    const emailNorm = String(raw ?? "").trim().toLowerCase();
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = emailNorm
+      ? await prisma.user.findFirst({
+          where: { email: { equals: emailNorm, mode: "insensitive" } },
+        })
+      : null;
 
     if (user) {
       const code = String(Math.floor(100000 + Math.random() * 900000));
@@ -25,7 +30,7 @@ export async function POST(req: NextRequest) {
 
       await transport.sendMail({
         from: process.env.SMTP_USER,
-        to: email,
+        to: user.email,
         subject: "Восстановление пароля — TheraCity",
         text: `Ваш код восстановления: ${code}\n\nКод действителен 15 минут.`,
       });

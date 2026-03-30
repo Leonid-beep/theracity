@@ -9,26 +9,45 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 
+function safeReturnTo(path: string | null | undefined, fallback = "/gallery"): string {
+  if (path == null || typeof path !== "string") return fallback;
+  const t = path.trim();
+  if (!t.startsWith("/") || t.startsWith("//")) return fallback;
+  return t;
+}
+
 type User = { id: string; username: string; email: string };
+
+export type RegisterFailure = {
+  errors: string[];
+  fieldErrors?: Partial<{ email: string; username: string }>;
+};
 
 type AuthCtx = {
   user: User | null;
   loading: boolean;
-  login: (login: string, password: string) => Promise<string[] | null>;
+  refreshUser: () => Promise<void>;
+  login: (
+    login: string,
+    password: string,
+    returnTo?: string | null,
+  ) => Promise<string[] | null>;
   register: (
     username: string,
     email: string,
     password: string,
     confirmPassword: string,
-  ) => Promise<string[] | null>;
+    returnTo?: string | null,
+  ) => Promise<RegisterFailure | null>;
   logout: () => Promise<void>;
 };
 
 const Ctx = createContext<AuthCtx>({
   user: null,
   loading: true,
+  refreshUser: async () => {},
   login: async () => null,
-  register: async () => null,
+  register: async () => ({ errors: ["Ошибка регистрации"] }) as RegisterFailure,
   logout: async () => {},
 });
 
@@ -45,16 +64,27 @@ export default function AuthProvider({
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then((d) => setUser(d.user ?? null))
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
+  const refreshUser = useCallback(async () => {
+    try {
+      const r = await fetch("/api/auth/me");
+      const d = await r.json();
+      setUser(d.user ?? null);
+    } catch {
+      setUser(null);
+    }
   }, []);
 
+  useEffect(() => {
+    setLoading(true);
+    refreshUser().finally(() => setLoading(false));
+  }, [refreshUser]);
+
   const login = useCallback(
-    async (loginVal: string, password: string): Promise<string[] | null> => {
+    async (
+      loginVal: string,
+      password: string,
+      returnTo?: string | null,
+    ): Promise<string[] | null> => {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -63,7 +93,7 @@ export default function AuthProvider({
       const data = await res.json();
       if (!res.ok) return data.errors ?? ["Ошибка входа"];
       setUser(data.user);
-      router.push("/gallery");
+      router.push(safeReturnTo(returnTo));
       return null;
     },
     [router],
@@ -75,16 +105,22 @@ export default function AuthProvider({
       email: string,
       password: string,
       confirmPassword: string,
-    ): Promise<string[] | null> => {
+      returnTo?: string | null,
+    ): Promise<RegisterFailure | null> => {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, email, password, confirmPassword }),
       });
       const data = await res.json();
-      if (!res.ok) return data.errors ?? ["Ошибка регистрации"];
+      if (!res.ok) {
+        return {
+          errors: Array.isArray(data.errors) ? data.errors : ["Ошибка регистрации"],
+          fieldErrors: data.fieldErrors ?? undefined,
+        };
+      }
       setUser(data.user);
-      router.push("/gallery");
+      router.push(safeReturnTo(returnTo));
       return null;
     },
     [router],
@@ -97,7 +133,7 @@ export default function AuthProvider({
   }, [router]);
 
   return (
-    <Ctx.Provider value={{ user, loading, login, register, logout }}>
+    <Ctx.Provider value={{ user, loading, refreshUser, login, register, logout }}>
       {children}
     </Ctx.Provider>
   );

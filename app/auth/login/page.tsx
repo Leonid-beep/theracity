@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import styles from "./styles.module.css";
 import ForgotPasswordModal from "./_components/ForgotPasswordModal";
@@ -13,14 +13,24 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [returnTo, setReturnTo] = useState<string | null>(null);
+
+  useEffect(() => {
+    setReturnTo(new URLSearchParams(window.location.search).get("returnTo"));
+  }, []);
 
   const handleLogin = async () => {
     setErrors([]);
     setSubmitting(true);
-    const errs = await login(loginVal, password);
+    const errs = await login(loginVal, password, returnTo);
     if (errs) setErrors(errs);
     setSubmitting(false);
   };
+
+  const registerHref =
+    returnTo != null && returnTo !== ""
+      ? `/auth/register?returnTo=${encodeURIComponent(returnTo)}`
+      : "/auth/register";
 
   return (
     <main className={styles.root}>
@@ -75,7 +85,7 @@ export default function LoginPage() {
 
       <p className={styles.switch}>
         Нет аккаунта?{" "}
-        <Link href="/auth/register" className={styles.switchLink}>
+        <Link href={registerHref} className={styles.switchLink}>
           <span className={styles.mark}>Зарегистрироваться</span>
         </Link>
       </p>

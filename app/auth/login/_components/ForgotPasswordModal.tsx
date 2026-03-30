@@ -53,16 +53,21 @@ export default function ForgotPasswordModal({
     setError("");
     setSubmitting(true);
     try {
-      await fetch("/api/auth/forgot-password", {
+      const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: email.trim() }),
       });
+      if (!res.ok) {
+        setError("Не удалось отправить код");
+        return;
+      }
       setStep("code");
     } catch {
       setError("Ошибка отправки");
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   const goNewPass = () => {
@@ -111,12 +116,20 @@ export default function ForgotPasswordModal({
         <button type="button" className={styles.closeBtn} aria-label="Закрыть" onClick={onClose} />
 
         {step === "email" && (
-          <div className={styles.body200}>
+          <form
+            className={styles.body200}
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!submitting) void sendCode();
+            }}
+          >
             <div className={styles.block200}>
               <div className={styles.title}>ВВЕДИТЕ ПОЧТУ ДЛЯ ВОССТАНОВЛЕНИЯ ПАРОЛЯ</div>
               <input
                 className={styles.input}
                 placeholder="Value"
+                type="email"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -124,19 +137,27 @@ export default function ForgotPasswordModal({
 
             {error && <p className={styles.error}>{error}</p>}
 
-            <button type="button" className={styles.btn} onClick={sendCode} disabled={submitting}>
+            <button type="submit" className={styles.btn} disabled={submitting}>
               {submitting ? "ОТПРАВКА..." : "ОТПРАВИТЬ КОД"}
             </button>
-          </div>
+          </form>
         )}
 
         {step === "code" && (
-          <div className={styles.body200}>
+          <form
+            className={styles.body200}
+            onSubmit={(e) => {
+              e.preventDefault();
+              goNewPass();
+            }}
+          >
             <div className={styles.block200}>
               <div className={styles.title}>ВВЕДИТЕ КОД, ВЫСЛАННЫЙ НА ПОЧТУ</div>
               <input
                 className={styles.input}
                 placeholder="Value"
+                inputMode="numeric"
+                autoComplete="one-time-code"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
               />
@@ -144,20 +165,27 @@ export default function ForgotPasswordModal({
 
             {error && <p className={styles.error}>{error}</p>}
 
-            <button type="button" className={styles.btn} onClick={goNewPass}>
+            <button type="submit" className={styles.btn}>
               ВОССТАНОВИТЬ ПАРОЛЬ
             </button>
-          </div>
+          </form>
         )}
 
         {step === "newpass" && (
-          <div className={styles.body300}>
+          <form
+            className={styles.body300}
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!submitting) void changePass();
+            }}
+          >
             <div className={styles.field300}>
               <div className={styles.title}>ВВЕДИТЕ НОВЫЙ ПАРОЛЬ</div>
               <input
                 className={styles.input}
                 placeholder="Value"
                 type="password"
+                autoComplete="new-password"
                 value={p1}
                 onChange={(e) => setP1(e.target.value)}
               />
@@ -169,6 +197,7 @@ export default function ForgotPasswordModal({
                 className={styles.input}
                 placeholder="Value"
                 type="password"
+                autoComplete="new-password"
                 value={p2}
                 onChange={(e) => setP2(e.target.value)}
               />
@@ -176,10 +205,10 @@ export default function ForgotPasswordModal({
 
             {error && <p className={styles.error}>{error}</p>}
 
-            <button type="button" className={styles.btn} onClick={changePass} disabled={submitting}>
+            <button type="submit" className={styles.btn} disabled={submitting}>
               {submitting ? "СМЕНА..." : "СМЕНИТЬ ПАРОЛЬ"}
             </button>
-          </div>
+          </form>
         )}
       </div>
     </div>

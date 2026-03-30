@@ -1,10 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import styles from "./styles.module.css";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { SuccessToast, useSuccessToast } from "@/app/ui/SuccessToast";
+import { useCloseDetailsOnOutsideClick } from "@/lib/useCloseDetailsOnOutsideClick";
 
 const PhotoModals = dynamic(() => import("./_components/PhotoModals"), { ssr: false });
 const UploadPhotoModal = dynamic(() => import("./_components/UploadPhotoModal"), { ssr: false });
@@ -51,8 +54,11 @@ type Filters = {
 
 export default function GalleryPage() {
   const pageSize = useGalleryBreakpoint();
-  const { user } = useAuth();
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const isAdmin = user?.email === ADMIN_EMAIL;
+
+  const returnToGallery = "/gallery";
 
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -68,14 +74,30 @@ export default function GalleryPage() {
     mood: [],
     atmosphere: [],
   });
-  const [selMetro, setSelMetro] = useState("");
-  const [selSpace, setSelSpace] = useState("");
-  const [selMood, setSelMood] = useState("");
-  const [selAtmo, setSelAtmo] = useState("");
+  const [selMetro, setSelMetro] = useState<string[]>([]);
+  const [selSpace, setSelSpace] = useState<string[]>([]);
+  const [selMood, setSelMood] = useState<string[]>([]);
+  const [selAtmo, setSelAtmo] = useState<string[]>([]);
 
   const [appliedFilters, setAppliedFilters] = useState<Record<string, string>>({});
 
   const [selected, setSelected] = useState<PhotoItem | null>(null);
+  const { message: successMsg, showSuccess } = useSuccessToast();
+
+  const filterRef = useRef<HTMLElement>(null);
+  useCloseDetailsOnOutsideClick(filterRef, "gallery-filters");
+
+  const openPhoto = useCallback(
+    (p: PhotoItem) => {
+      if (authLoading) return;
+      if (!user) {
+        router.push(`/auth/login?returnTo=${encodeURIComponent(returnToGallery)}`);
+        return;
+      }
+      setSelected(p);
+    },
+    [authLoading, user, router],
+  );
 
   useEffect(() => {
     fetch("/api/filters")
@@ -136,15 +158,48 @@ export default function GalleryPage() {
 
   const handleApplyFilters = () => {
     const f: Record<string, string> = {};
-    if (selMetro) f.metro = selMetro;
-    if (selSpace) f.spaceType = selSpace;
-    if (selMood) f.mood = selMood;
-    if (selAtmo) f.atmosphere = selAtmo;
+    if (selMetro.length) f.metro = selMetro.join(",");
+    if (selSpace.length) f.spaceType = selSpace.join(",");
+    if (selMood.length) f.mood = selMood.join(",");
+    if (selAtmo.length) f.atmosphere = selAtmo.join(",");
     setAppliedFilters(f);
     setPage(1);
   };
 
+  const handleResetFilters = () => {
+    setSelMetro([]);
+    setSelSpace([]);
+    setSelMood([]);
+    setSelAtmo([]);
+    setAppliedFilters({});
+    setPage(1);
+  };
+
+  const hasAppliedFilters = Object.keys(appliedFilters).length > 0;
+
+  const toggleValue = (value: string, setter: (updater: (prev: string[]) => string[]) => void) => {
+    setter((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
+    );
+  };
+
+  const handlePhotoDeleted = useCallback((id: string) => {
+    setPhotos((p) => p.filter((x) => x.id !== id));
+    setTotal((t) => Math.max(0, t - 1));
+    setLiked((prev) => {
+      const n = new Set(prev);
+      n.delete(id);
+      return n;
+    });
+    setSelected(null);
+  }, []);
+
   const toggleLike = async (photoId: string) => {
+    if (authLoading) return;
+    if (!user) {
+      router.push(`/auth/login?returnTo=${encodeURIComponent(returnToGallery)}`);
+      return;
+    }
     const was = liked.has(photoId);
     setLiked((prev) => {
       const next = new Set(prev);
@@ -154,11 +209,21 @@ export default function GalleryPage() {
     });
 
     try {
-      await fetch("/api/photos/favorites", {
+      const res = await fetch("/api/photos/favorites", {
         method: was ? "DELETE" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ photoId }),
       });
+      if (res.ok) {
+        showSuccess(was ? "Удалено из избранного" : "Добавлено в избранное");
+      } else {
+        setLiked((prev) => {
+          const next = new Set(prev);
+          if (was) next.add(photoId);
+          else next.delete(photoId);
+          return next;
+        });
+      }
     } catch {
       setLiked((prev) => {
         const next = new Set(prev);
@@ -192,7 +257,19 @@ export default function GalleryPage() {
               <p style={{ gridColumn: "1/-1", textAlign: "center", color: "#fff" }}>Загрузка...</p>
             ) : (
               photos.map((p) => (
-                <figure key={p.id} className={styles.card} onClick={() => setSelected(p)} role="button" tabIndex={0}>
+                <figure
+                  key={p.id}
+                  className={styles.card}
+                  onClick={() => openPhoto(p)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      openPhoto(p);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                >
                   <div className={styles.thumb}>
                     <Image src={p.src} alt={p.title} fill className={styles.img} unoptimized />
                     {liked.has(p.id) ? (
@@ -252,7 +329,7 @@ export default function GalleryPage() {
           </div>
         </section>
 
-        <aside className={styles.filter}>
+        <aside ref={filterRef} className={styles.filter}>
           <div className={styles.filterBox}>
             <h2 className={styles.filterTitle}>
               <span className={styles.mark}>Фильтр</span> для фотографий
@@ -261,46 +338,103 @@ export default function GalleryPage() {
             <div className={styles.filterFields}>
               <div className={styles.field}>
                 <div className={styles.fieldLabel}>тип пространства</div>
-                <select className={styles.select} value={selSpace} onChange={(e) => setSelSpace(e.target.value)}>
-                  <option value="">Все</option>
-                  {filterOptions.spaceType.map((v) => (
-                    <option key={v}>{v}</option>
-                  ))}
-                </select>
+                <details className={styles.multi} name="gallery-filters">
+                  <summary className={styles.select}>
+                    <span className={styles.selectValue}>
+                      {selSpace.length ? selSpace.join(", ") : "Все"}
+                    </span>
+                  </summary>
+                  <div className={styles.multiMenu}>
+                    {filterOptions.spaceType.map((v) => (
+                      <label key={v} className={styles.multiItem}>
+                        <input
+                          type="checkbox"
+                          checked={selSpace.includes(v)}
+                          onChange={() => toggleValue(v, setSelSpace)}
+                        />
+                        {v}
+                      </label>
+                    ))}
+                  </div>
+                </details>
               </div>
 
               <div className={styles.field}>
                 <div className={styles.fieldLabel}>эмоциональный фон</div>
-                <select className={styles.select} value={selMood} onChange={(e) => setSelMood(e.target.value)}>
-                  <option value="">Все</option>
-                  {filterOptions.mood.map((v) => (
-                    <option key={v}>{v}</option>
-                  ))}
-                </select>
+                <details className={styles.multi} name="gallery-filters">
+                  <summary className={styles.select}>
+                    <span className={styles.selectValue}>
+                      {selMood.length ? selMood.join(", ") : "Все"}
+                    </span>
+                  </summary>
+                  <div className={styles.multiMenu}>
+                    {filterOptions.mood.map((v) => (
+                      <label key={v} className={styles.multiItem}>
+                        <input
+                          type="checkbox"
+                          checked={selMood.includes(v)}
+                          onChange={() => toggleValue(v, setSelMood)}
+                        />
+                        {v}
+                      </label>
+                    ))}
+                  </div>
+                </details>
               </div>
 
               <div className={styles.field}>
                 <div className={styles.fieldLabel}>станция метро</div>
-                <select className={styles.select} value={selMetro} onChange={(e) => setSelMetro(e.target.value)}>
-                  <option value="">Все</option>
-                  {filterOptions.metro.map((v) => (
-                    <option key={v}>{v}</option>
-                  ))}
-                </select>
+                <details className={styles.multi} name="gallery-filters">
+                  <summary className={styles.select}>
+                    <span className={styles.selectValue}>
+                      {selMetro.length ? selMetro.join(", ") : "Все"}
+                    </span>
+                  </summary>
+                  <div className={styles.multiMenu}>
+                    {filterOptions.metro.map((v) => (
+                      <label key={v} className={styles.multiItem}>
+                        <input
+                          type="checkbox"
+                          checked={selMetro.includes(v)}
+                          onChange={() => toggleValue(v, setSelMetro)}
+                        />
+                        {v}
+                      </label>
+                    ))}
+                  </div>
+                </details>
               </div>
 
               <div className={styles.field}>
                 <div className={styles.fieldLabel}>атмосфера</div>
-                <select className={styles.select} value={selAtmo} onChange={(e) => setSelAtmo(e.target.value)}>
-                  <option value="">Все</option>
-                  {filterOptions.atmosphere.map((v) => (
-                    <option key={v}>{v}</option>
-                  ))}
-                </select>
+                <details className={styles.multi} name="gallery-filters">
+                  <summary className={styles.select}>
+                    <span className={styles.selectValue}>
+                      {selAtmo.length ? selAtmo.join(", ") : "Все"}
+                    </span>
+                  </summary>
+                  <div className={styles.multiMenu}>
+                    {filterOptions.atmosphere.map((v) => (
+                      <label key={v} className={styles.multiItem}>
+                        <input
+                          type="checkbox"
+                          checked={selAtmo.includes(v)}
+                          onChange={() => toggleValue(v, setSelAtmo)}
+                        />
+                        {v}
+                      </label>
+                    ))}
+                  </div>
+                </details>
               </div>
             </div>
 
-            <button className={styles.apply} onClick={handleApplyFilters}>ПРИМЕНИТЬ</button>
+            <button
+              className={styles.apply}
+              onClick={hasAppliedFilters ? handleResetFilters : handleApplyFilters}
+            >
+              {hasAppliedFilters ? "СБРОСИТЬ" : "ПРИМЕНИТЬ"}
+            </button>
           </div>
         </aside>
       </div>
@@ -312,6 +446,9 @@ export default function GalleryPage() {
           onClose={() => setSelected(null)}
           liked={liked}
           onToggleLike={toggleLike}
+          isAdmin={isAdmin}
+          onPhotoDeleted={handlePhotoDeleted}
+          onActionSuccess={showSuccess}
         />
       ) : null}
 
@@ -319,9 +456,14 @@ export default function GalleryPage() {
         <UploadPhotoModal
           open
           onClose={() => setUploadOpen(false)}
-          onUploaded={() => fetchPhotos(page, appliedFilters)}
+          onUploaded={() => {
+            void fetchPhotos(page, appliedFilters);
+            showSuccess("Фото загружено");
+          }}
         />
       )}
+
+      <SuccessToast message={successMsg} />
     </main>
   );
 }

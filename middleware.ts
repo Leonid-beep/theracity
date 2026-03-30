@@ -3,29 +3,67 @@ import { jwtVerify } from "jose";
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
-const PUBLIC = ["/start", "/about", "/auth", "/api/auth", "/api/s3", "/api/test-url"];
+const PUBLIC_PREFIXES = [
+  "/start",
+  "/about",
+  "/auth",
+  "/api/auth",
+  "/api/s3",
+  "/api/test-url",
+  "/api/filters",
+];
 
-function isPublic(pathname: string) {
-  return PUBLIC.some((p) => pathname === p || pathname.startsWith(p + "/"));
+function isPublicPath(pathname: string, req: NextRequest): boolean {
+  if (pathname === "/") return true;
+  if (pathname === "/gallery" || pathname.startsWith("/gallery/")) return true;
+  if (PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return true;
+
+  const m = req.method;
+  if (m === "GET" || m === "HEAD") {
+    if (pathname === "/api/photos") return true;
+    if (
+      pathname.startsWith("/api/photos/") &&
+      !pathname.startsWith("/api/photos/favorites")
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function redirectToLogin(req: NextRequest) {
+  const url = new URL("/auth/login", req.url);
+  url.searchParams.set("returnTo", `${req.nextUrl.pathname}${req.nextUrl.search}`);
+  return NextResponse.redirect(url);
 }
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  if (isPublic(pathname) || pathname.startsWith("/_next") || pathname.startsWith("/images") || pathname.startsWith("/fonts") || pathname === "/") {
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/images") ||
+    pathname.startsWith("/icons") ||
+    pathname.startsWith("/fonts")
+  ) {
+    return NextResponse.next();
+  }
+
+  if (isPublicPath(pathname, req)) {
     return NextResponse.next();
   }
 
   const token = req.cookies.get("token")?.value;
   if (!token) {
-    return NextResponse.redirect(new URL("/auth/login", req.url));
+    return redirectToLogin(req);
   }
 
   try {
     await jwtVerify(token, secret);
     return NextResponse.next();
   } catch {
-    return NextResponse.redirect(new URL("/auth/login", req.url));
+    return redirectToLogin(req);
   }
 }
 

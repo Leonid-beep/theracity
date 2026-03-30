@@ -6,29 +6,35 @@ import Image from "next/image";
 import styles from "../../routes/_components/routeModal.module.css";
 
 export type CabinetRouteItem = {
-  id: number;
+  id: string;
   title: string;
   desc: string;
+  isPublished?: boolean;
   metro: string;
   address: string;
-  photos: { src: string; alt: string }[];
+  photos: { src: string; alt: string; metro?: string; address?: string }[];
 };
 
 export default function CabinetRouteModal({
   open,
   route,
+  showPublish,
+  onPublish,
   onClose,
   actionLabel,
   onDelete,
 }: {
   open: boolean;
   route: CabinetRouteItem | null;
+  showPublish?: boolean;
+  onPublish?: () => void;
   onClose: () => void;
   actionLabel: string;
   onDelete: () => void;
 }) {
   const photos = route?.photos ?? [];
-  const totalPages = Math.max(1, photos.length);
+  const hasPhotos = photos.length > 0;
+  const totalPages = photos.length;
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -49,11 +55,15 @@ export default function CabinetRouteModal({
     };
   }, [open, onClose]);
 
-  const canPrev = page > 1;
-  const canNext = page < totalPages;
-  const go = (p: number) => setPage(Math.min(totalPages, Math.max(1, p)));
+  const canPrev = hasPhotos && page > 1;
+  const canNext = hasPhotos && page < totalPages;
+  const go = (p: number) => {
+    if (!hasPhotos) return;
+    setPage(Math.min(totalPages, Math.max(1, p)));
+  };
 
   const pagesToShow = useMemo(() => {
+    if (!hasPhotos || totalPages === 0) return [];
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
     const out: (number | "dots")[] = [1];
     const left = Math.max(2, page - 1);
@@ -63,14 +73,14 @@ export default function CabinetRouteModal({
     if (right < totalPages - 1) out.push("dots");
     out.push(totalPages);
     return out;
-  }, [page, totalPages]);
+  }, [page, totalPages, hasPhotos]);
 
   if (!open || !route) return null;
 
-  const idx = page - 1;
-  const main = photos[idx] ?? photos[0];
-  const prev = idx - 1 >= 0 ? photos[idx - 1] : null;
-  const next = idx + 1 < photos.length ? photos[idx + 1] : null;
+  const idx = hasPhotos ? page - 1 : 0;
+  const main = hasPhotos ? (photos[idx] ?? photos[0]) : undefined;
+  const prev = hasPhotos && idx - 1 >= 0 ? photos[idx - 1] : null;
+  const next = hasPhotos && idx + 1 < photos.length ? photos[idx + 1] : null;
 
   return (
     <div className={styles.overlay} onClick={onClose} role="presentation">
@@ -96,14 +106,18 @@ export default function CabinetRouteModal({
               aria-label="Предыдущее фото"
               onClick={() => go(page - 1)}
             >
-              <Image src={prev.src} alt={prev.alt} width={112} height={141} className={styles.sideImg} />
+              <Image src={prev.src} alt={prev.alt} width={88} height={111} className={styles.sideImg} unoptimized />
             </button>
           ) : (
             <div className={`${styles.sideThumb} ${styles.sideThumbEmpty}`} aria-hidden="true" />
           )}
 
           <div className={styles.mainPhoto}>
-            <Image src={main.src} alt={main.alt} width={225} height={280} className={styles.mainImg} />
+            {hasPhotos && main ? (
+              <Image src={main.src} alt={main.alt} width={300} height={375} className={styles.mainImg} unoptimized />
+            ) : (
+              <p className={styles.emptyRoutePhotos}>В этом маршруте пока нет фотографий</p>
+            )}
           </div>
 
           {next ? (
@@ -113,7 +127,7 @@ export default function CabinetRouteModal({
               aria-label="Следующее фото"
               onClick={() => go(page + 1)}
             >
-              <Image src={next.src} alt={next.alt} width={112} height={141} className={styles.sideImg} />
+              <Image src={next.src} alt={next.alt} width={88} height={111} className={styles.sideImg} unoptimized />
             </button>
           ) : (
             <div className={`${styles.sideThumb} ${styles.sideThumbEmpty}`} aria-hidden="true" />
@@ -121,10 +135,11 @@ export default function CabinetRouteModal({
         </div>
 
         <div className={styles.meta}>
-          <div>Метро: {route.metro}</div>
-          <div>Адрес: {route.address}</div>
+          <div>Метро: {(main?.metro ?? route.metro) || "—"}</div>
+          <div>Адрес: {(main?.address ?? route.address) || "—"}</div>
         </div>
 
+        {hasPhotos ? (
         <div className={styles.pagination}>
           <button
             className={`${styles.pagBtn} ${!canPrev ? styles.pagBtnDisabled : ""}`}
@@ -160,12 +175,20 @@ export default function CabinetRouteModal({
             →
           </button>
         </div>
+        ) : null}
 
         <div className={styles.actions}>
-          <button type="button" className={styles.bigBtn} onClick={() => {}}>
-            <Image src="/images/city/share.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
-            ПОДЕЛИТЬСЯ МАРШРУТОМ
-          </button>
+          {showPublish && !route.isPublished ? (
+            <button type="button" className={styles.bigBtn} onClick={onPublish}>
+              <Image src="/images/city/share.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
+              ОПУБЛИКОВАТЬ МАРШРУТ
+            </button>
+          ) : (
+            <button type="button" className={styles.bigBtn} onClick={() => {}}>
+              <Image src="/images/city/share.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
+              ПОДЕЛИТЬСЯ МАРШРУТОМ
+            </button>
+          )}
 
           <button type="button" className={`${styles.bigBtn} ${styles.bigBtnDanger}`} onClick={onDelete}>
             <Image src="/images/city/trash.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />

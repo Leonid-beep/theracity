@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import styles from "./photoModals.module.css";
 import type { PhotoItem } from "../page";
+import ConfirmDeleteModal from "@/app/cabinet/_components/ConfirmDeleteModal";
 
 type RouteItem = { id: string; title: string; src: string };
 type Step = "photo" | "routeChoice" | "pickRoute" | "createRoute";
@@ -14,10 +15,15 @@ export default function PhotoModals(props: {
   onClose: () => void;
   liked: Set<string>;
   onToggleLike: (photoId: string) => void;
+  isAdmin?: boolean;
+  onPhotoDeleted?: (photoId: string) => void;
+  onActionSuccess?: (message: string) => void;
 }) {
-  const { photo, photos, onClose, liked, onToggleLike } = props;
+  const { photo, photos, onClose, liked, onToggleLike, isAdmin, onPhotoDeleted, onActionSuccess } = props;
 
   const [step, setStep] = useState<Step>("photo");
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
   const [routes, setRoutes] = useState<RouteItem[]>([]);
   const [routesLoaded, setRoutesLoaded] = useState(false);
@@ -28,10 +34,6 @@ export default function PhotoModals(props: {
 
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
-  const [newSpace, setNewSpace] = useState("Дворы");
-  const [newMood, setNewMood] = useState("Надежда");
-  const [newMetro, setNewMetro] = useState("Удельная");
-  const [newWeather, setNewWeather] = useState("Солнечно");
 
   const totalPhotoPages = Math.max(1, photos.length);
   const initialPhotoPage = useMemo(() => {
@@ -79,12 +81,42 @@ export default function PhotoModals(props: {
 
   const activePhoto = photos[photoPage - 1] ?? photo;
   const likedNow = !!activePhoto && liked.has(activePhoto.id);
+  const hasUserRoutes = routes.length > 0;
+
+  const openAddToRoute = () => {
+    if (routesLoaded && !hasUserRoutes) {
+      setStep("createRoute");
+      return;
+    }
+    setStep("routeChoice");
+  };
 
   const closeAll = () => {
     setStep("photo");
     setPickPage(1);
     setPickedRouteId(null);
+    setConfirmDeleteOpen(false);
     onClose();
+  };
+
+  const performDelete = async () => {
+    if (!activePhoto || deleteSubmitting) return;
+    setDeleteSubmitting(true);
+    try {
+      const res = await fetch(`/api/photos/${activePhoto.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        setConfirmDeleteOpen(false);
+        return;
+      }
+      onActionSuccess?.("Фото удалено");
+      onPhotoDeleted?.(activePhoto.id);
+      setConfirmDeleteOpen(false);
+      closeAll();
+    } catch {
+      setConfirmDeleteOpen(false);
+    } finally {
+      setDeleteSubmitting(false);
+    }
   };
 
   const open = !!photo;
@@ -118,11 +150,16 @@ export default function PhotoModals(props: {
   const handleConfirmPick = async () => {
     if (!pickedRouteId || !activePhoto) return;
     try {
-      await fetch(`/api/routes/${pickedRouteId}/photos`, {
+      const res = await fetch(`/api/routes/${pickedRouteId}/photos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ photoId: activePhoto.id }),
       });
+      if (res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { message?: string };
+        const dup = typeof data.message === "string" && data.message.includes("уже");
+        onActionSuccess?.(dup ? "Фото уже в этом маршруте" : "Фото добавлено в маршрут");
+      }
     } catch { /* ignore */ }
     closeAll();
   };
@@ -130,7 +167,7 @@ export default function PhotoModals(props: {
   const handleCreateConfirm = async () => {
     if (!activePhoto) return;
     try {
-      await fetch("/api/routes", {
+      const res = await fetch("/api/routes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -139,6 +176,9 @@ export default function PhotoModals(props: {
           photoIds: [activePhoto.id],
         }),
       });
+      if (res.ok) {
+        onActionSuccess?.("Маршрут создан, фото добавлено");
+      }
     } catch { /* ignore */ }
     closeAll();
   };
@@ -148,6 +188,7 @@ export default function PhotoModals(props: {
   const mapsUrl = `https://yandex.ru/maps/?pt=${activePhoto.lng},${activePhoto.lat}&z=17&l=map`;
 
   return (
+    <>
     <div className={styles.overlay} onClick={closeAll} role="presentation">
       {step === "photo" ? (
         <div className={`${styles.modal} ${styles.modalPhoto}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
@@ -156,6 +197,21 @@ export default function PhotoModals(props: {
 
           <div className={styles.photoWrap}>
             <Image src={activePhoto.src} alt={activePhoto.title} width={300} height={375} className={styles.photoImg} unoptimized />
+            {isAdmin ? (
+              <button
+                type="button"
+                className={styles.deletePhotoBtn}
+                aria-label="Удалить фото"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConfirmDeleteOpen(true);
+                }}
+              >
+                <svg className={styles.deletePhotoIcon} width="18" height="18" viewBox="0 0 24 24" aria-hidden fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" strokeLinecap="round" />
+                </svg>
+              </button>
+            ) : null}
             {likedNow ? (
               <Image src="/images/city/heart_red.png" alt="" width={23} height={23} className={styles.likeIcon} aria-hidden="true" />
             ) : null}
@@ -224,7 +280,7 @@ export default function PhotoModals(props: {
               {likedNow ? "УДАЛИТЬ ИЗ ИЗБРАННОГО" : "ДОБАВИТЬ В ИЗБРАННОЕ"}
             </button>
 
-            <button type="button" className={styles.bigBtn} onClick={() => setStep("routeChoice")}>
+            <button type="button" className={styles.bigBtn} onClick={openAddToRoute}>
               <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
               ДОБАВИТЬ В МАРШРУТ
             </button>
@@ -240,10 +296,12 @@ export default function PhotoModals(props: {
               <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
               СОЗДАТЬ НОВЫЙ МАРШРУТ
             </button>
-            <button type="button" className={`${styles.choiceBtn} ${styles.choiceBtn2}`} onClick={() => setStep("pickRoute")}>
-              <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
-              ДОБАВИТЬ В СОЗДАННЫЙ МАРШРУТ
-            </button>
+            {hasUserRoutes ? (
+              <button type="button" className={`${styles.choiceBtn} ${styles.choiceBtn2}`} onClick={() => setStep("pickRoute")}>
+                <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
+                ДОБАВИТЬ В СОЗДАННЫЙ МАРШРУТ
+              </button>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -337,42 +395,6 @@ export default function PhotoModals(props: {
               <textarea className={styles.createTextarea} value={newDesc} onChange={(e) => setNewDesc(e.target.value)} />
             </div>
 
-            <div className={styles.createSelectField}>
-              <div className={styles.createLabel}>ТИП ПРОСТРАНСТВА</div>
-              <select className={styles.createSelect} value={newSpace} onChange={(e) => setNewSpace(e.target.value)}>
-                <option>Дворы</option>
-                <option>Улицы</option>
-                <option>Брандмауэры</option>
-              </select>
-            </div>
-
-            <div className={styles.createSelectField}>
-              <div className={styles.createLabel}>ЭМОЦИОНАЛЬНЫЙ ФОН</div>
-              <select className={styles.createSelect} value={newMood} onChange={(e) => setNewMood(e.target.value)}>
-                <option>Надежда</option>
-                <option>Спокойствие</option>
-                <option>Тревога</option>
-              </select>
-            </div>
-
-            <div className={styles.createSelectField}>
-              <div className={styles.createLabel}>СТАНЦИЯ МЕТРО</div>
-              <select className={styles.createSelect} value={newMetro} onChange={(e) => setNewMetro(e.target.value)}>
-                <option>Удельная</option>
-                <option>Сенная площадь</option>
-                <option>Чернышевская</option>
-              </select>
-            </div>
-
-            <div className={styles.createSelectField}>
-              <div className={styles.createLabel}>АТМОСФЕРА</div>
-              <select className={styles.createSelect} value={newWeather} onChange={(e) => setNewWeather(e.target.value)}>
-                <option>Солнечно</option>
-                <option>Пасмурно</option>
-                <option>Дождь</option>
-              </select>
-            </div>
-
             <button type="button" className={styles.createConfirm} onClick={handleCreateConfirm}>
               СОЗДАТЬ НОВЫЙ МАРШРУТ
             </button>
@@ -380,5 +402,15 @@ export default function PhotoModals(props: {
         </div>
       ) : null}
     </div>
+    {isAdmin ? (
+      <ConfirmDeleteModal
+        open={confirmDeleteOpen}
+        onClose={() => {
+          if (!deleteSubmitting) setConfirmDeleteOpen(false);
+        }}
+        onYes={() => void performDelete()}
+      />
+    ) : null}
+    </>
   );
 }
