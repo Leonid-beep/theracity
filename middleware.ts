@@ -1,8 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
-import { requireEnv } from "@/app/lib/env";
-
-const secret = new TextEncoder().encode(requireEnv("JWT_SECRET"));
 
 const PUBLIC_PREFIXES = [
   "/start",
@@ -59,12 +55,7 @@ export async function middleware(req: NextRequest) {
     return redirectToLogin(req);
   }
 
-  try {
-    await jwtVerify(token, secret);
-    return NextResponse.next();
-  } catch {
-    return redirectToLogin(req);
-  }
+  return NextResponse.next();
 }
 
 export const config = {
