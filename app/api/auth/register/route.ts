@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hash } from "bcrypt";
-import { Prisma } from "@/app/generated/prisma/client";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/app/lib/prisma";
 import { isAdminUserEmail } from "@/app/lib/admin";
 import { setAuthCookie } from "@/app/lib/auth";
