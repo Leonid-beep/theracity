@@ -17,3 +17,4 @@ export const buttonFont = localFont({
   variable: "--font-button",
   display: "swap",
 });
+
