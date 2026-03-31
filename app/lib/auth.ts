@@ -1,11 +1,14 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
 import { requireEnv } from "@/app/lib/env";
 
 const secret = new TextEncoder().encode(requireEnv("JWT_SECRET"));
 const ALG = "HS256";
 const COOKIE = "token";
 const MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+
+type RequestLike = Pick<NextRequest, "headers" | "nextUrl" | "url"> | Request;
 
 export type TokenPayload = { userId: string; username: string };
 
@@ -26,21 +29,65 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
   }
 }
 
-export async function setAuthCookie(payload: TokenPayload) {
-  const token = await signToken(payload);
-  const store = await cookies();
-  store.set(COOKIE, token, {
+function isSecureCookieRequest(req?: RequestLike): boolean {
+  const forced = process.env.AUTH_COOKIE_SECURE?.trim().toLowerCase();
+  if (forced === "true") return true;
+  if (forced === "false") return false;
+
+  const forwardedProto = req?.headers.get("x-forwarded-proto");
+  if (forwardedProto) {
+    return forwardedProto.split(",")[0]?.trim() === "https";
+  }
+
+  const protocol =
+    req && "nextUrl" in req
+      ? req.nextUrl.protocol
+      : req?.url
+        ? new URL(req.url).protocol
+        : null;
+
+  return protocol === "https:";
+}
+
+function getAuthCookieOptions(req?: RequestLike) {
+  return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isSecureCookieRequest(req),
     sameSite: "lax",
     path: "/",
     maxAge: MAX_AGE,
-  });
+  } as const;
+}
+
+export async function setAuthCookie(payload: TokenPayload) {
+  const token = await signToken(payload);
+  const store = await cookies();
+  store.set(COOKIE, token, getAuthCookieOptions());
 }
 
 export async function clearAuthCookie() {
   const store = await cookies();
-  store.set(COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });
+  store.set(COOKIE, "", {
+    ...getAuthCookieOptions(),
+    maxAge: 0,
+  });
+}
+
+export async function applyAuthCookie(
+  response: NextResponse,
+  payload: TokenPayload,
+  req?: RequestLike,
+) {
+  response.cookies.set(COOKIE, await signToken(payload), getAuthCookieOptions(req));
+  return response;
+}
+
+export function applyClearedAuthCookie(response: NextResponse, req?: RequestLike) {
+  response.cookies.set(COOKIE, "", {
+    ...getAuthCookieOptions(req),
+    maxAge: 0,
+  });
+  return response;
 }
 
 export async function getSessionUser(): Promise<TokenPayload | null> {

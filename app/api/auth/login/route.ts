@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { compare } from "bcrypt";
 import { prisma } from "@/app/lib/prisma";
 import { isAdminUserEmail } from "@/app/lib/admin";
-import { setAuthCookie } from "@/app/lib/auth";
+import { applyAuthCookie } from "@/app/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -57,10 +57,7 @@ export async function POST(req: NextRequest) {
     }
 
     console.log("[/api/auth/login] token/session creation started", { userId: user.id });
-    await setAuthCookie({ userId: user.id, username: user.username });
-    console.log("[/api/auth/login] token/session creation finished", { userId: user.id });
-
-    return NextResponse.json({
+    const response = NextResponse.json({
       user: {
         id: user.id,
         username: user.username,
@@ -68,6 +65,10 @@ export async function POST(req: NextRequest) {
         isAdmin: isAdminUserEmail(user.email),
       },
     });
+    await applyAuthCookie(response, { userId: user.id, username: user.username }, req);
+    console.log("[/api/auth/login] token/session creation finished", { userId: user.id });
+
+    return response;
   } catch (error) {
     if (error instanceof Error) {
       console.error("[/api/auth/login] unhandled error", {

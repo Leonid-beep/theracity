@@ -31,6 +31,8 @@
    npm run dev
    ```
 
+Если вы запускаете production-сборку локально через `npm run build && npm run start` по обычному `http://`, при проблемах с повторной авторизацией задайте `AUTH_COOKIE_SECURE=false`.
+
 ## Обязательные env-переменные
 
 См. `.env.example`.
@@ -122,6 +124,9 @@
 
 - **Missing `JWT_SECRET`**  
   Добавьте сильный случайный `JWT_SECRET` в env.
+
+- **Повторно запрашивает авторизацию после входа**  
+  Если production-сервер открыт по `http://`, проверьте `AUTH_COOKIE_SECURE`. Для локального `next start` без HTTPS используйте `AUTH_COOKIE_SECURE=false`.
 
 - **Missing S3 env (`S3_*`)**  
   Заполните `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET`.

@@ -66,7 +66,10 @@ export default function AuthProvider({
 
   const refreshUser = useCallback(async () => {
     try {
-      const r = await fetch("/api/auth/me");
+      const r = await fetch("/api/auth/me", {
+        credentials: "include",
+        cache: "no-store",
+      });
       const d = await r.json();
       const u = d.user;
       setUser(
@@ -98,6 +101,7 @@ export default function AuthProvider({
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ login: loginVal, password }),
       });
       const data = await res.json();
@@ -109,7 +113,8 @@ export default function AuthProvider({
         email: u.email,
         isAdmin: Boolean(u.isAdmin),
       });
-      router.push(safeReturnTo(returnTo));
+      router.replace(safeReturnTo(returnTo));
+      router.refresh();
       return null;
     },
     [router],
@@ -126,6 +131,7 @@ export default function AuthProvider({
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ username, email, password, confirmPassword }),
       });
       const data = await res.json();
@@ -142,16 +148,21 @@ export default function AuthProvider({
         email: u.email,
         isAdmin: Boolean(u.isAdmin),
       });
-      router.push(safeReturnTo(returnTo));
+      router.replace(safeReturnTo(returnTo));
+      router.refresh();
       return null;
     },
     [router],
   );
 
   const logout = useCallback(async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    });
     setUser(null);
-    router.push("/auth/login");
+    router.replace("/auth/login");
+    router.refresh();
   }, [router]);
 
   return (

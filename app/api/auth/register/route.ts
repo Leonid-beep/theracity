@@ -3,7 +3,7 @@ import { hash } from "bcrypt";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/app/lib/prisma";
 import { isAdminUserEmail } from "@/app/lib/admin";
-import { setAuthCookie } from "@/app/lib/auth";
+import { applyAuthCookie } from "@/app/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
@@ -47,9 +47,7 @@ export async function POST(req: NextRequest) {
       data: { username: usernameTrim, email: emailNorm, passwordHash },
     });
 
-    await setAuthCookie({ userId: user.id, username: user.username });
-
-    return NextResponse.json({
+    const response = NextResponse.json({
       user: {
         id: user.id,
         username: user.username,
@@ -57,6 +55,9 @@ export async function POST(req: NextRequest) {
         isAdmin: isAdminUserEmail(user.email),
       },
     });
+    await applyAuthCookie(response, { userId: user.id, username: user.username }, req);
+
+    return response;
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       const targets = e.meta?.target;
