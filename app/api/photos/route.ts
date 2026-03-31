@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/lib/prisma";
 import { getProxyPhotoUrl, getSignedPhotoUrl, uploadToS3 } from "@/app/lib/s3";
 import { getSessionUser } from "@/app/lib/auth";
+import { isAdminUserEmail } from "@/app/lib/admin";
+import { ALLOWED_IMAGE_MIME_TYPES, MAX_UPLOAD_FILE_BYTES, MAX_UPLOAD_FILE_LABEL } from "@/app/lib/upload";
 import crypto from "crypto";
 
 export async function GET(req: NextRequest) {
@@ -49,10 +51,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const MAX_SIZE = 10 * 1024 * 1024;
-const ADMIN_EMAIL = "leonidusachev04@yandex.ru";
-
 export async function POST(req: NextRequest) {
   try {
     const session = await getSessionUser();
@@ -63,7 +61,7 @@ export async function POST(req: NextRequest) {
       where: { id: session.userId },
       select: { email: true },
     });
-    if (!user || user.email !== ADMIN_EMAIL)
+    if (!user || !isAdminUserEmail(user.email))
       return NextResponse.json({ error: "Нет прав на загрузку" }, { status: 403 });
 
     const form = await req.formData();
@@ -80,10 +78,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Заполните все поля" }, { status: 400 });
     }
 
-    if (!ALLOWED_TYPES.includes(file.type))
+    if (!ALLOWED_IMAGE_MIME_TYPES.includes(file.type as (typeof ALLOWED_IMAGE_MIME_TYPES)[number]))
       return NextResponse.json({ error: "Допустимые форматы: JPEG, PNG, WebP" }, { status: 400 });
-    if (file.size > MAX_SIZE)
-      return NextResponse.json({ error: "Максимальный размер файла: 10MB" }, { status: 400 });
+    if (file.size > MAX_UPLOAD_FILE_BYTES)
+      return NextResponse.json(
+        { error: `Максимальный размер файла для серверной загрузки: ${MAX_UPLOAD_FILE_LABEL}` },
+        { status: 400 },
+      );
 
     const ext = file.name.split(".").pop() || "jpg";
     const s3Key = `photos/${crypto.randomUUID()}.${ext}`;

@@ -3,6 +3,10 @@ import { s3, s3Bucket, getSignedPhotoUrl } from "@/app/lib/s3";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 
 export async function GET() {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   const key = "1000045551.jpg";
 
   let sdkGetStatus = "unknown";

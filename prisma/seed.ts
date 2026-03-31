@@ -68,13 +68,15 @@ const photoData = [
 ];
 
 async function main() {
+  const adminEmail =
+    process.env.ADMIN_EMAIL?.trim().toLowerCase() || "leonidusachev04@yandex.ru";
   const adminHash = await hash("leonusik", 12);
   const admin = await prisma.user.upsert({
-    where: { email: "leonidusachev04@yandex.ru" },
+    where: { email: adminEmail },
     update: {},
     create: {
       username: "leonid",
-      email: "leonidusachev04@yandex.ru",
+      email: adminEmail,
       passwordHash: adminHash,
     },
   });

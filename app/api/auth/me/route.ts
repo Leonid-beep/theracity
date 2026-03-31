@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/app/lib/auth";
+import { isAdminUserEmail } from "@/app/lib/admin";
 import { prisma } from "@/app/lib/prisma";
 
 export async function GET() {
@@ -11,5 +12,9 @@ export async function GET() {
     select: { id: true, username: true, email: true },
   });
 
-  return NextResponse.json({ user: user ?? null });
+  if (!user) return NextResponse.json({ user: null });
+
+  return NextResponse.json({
+    user: { ...user, isAdmin: isAdminUserEmail(user.email) },
+  });
 }

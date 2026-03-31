@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/lib/prisma";
 import { getProxyPhotoUrl, deletePhoto } from "@/app/lib/s3";
 import { getSessionUser } from "@/app/lib/auth";
-
-const ADMIN_EMAIL = "leonidusachev04@yandex.ru";
+import { isAdminUserEmail } from "@/app/lib/admin";
 
 export async function GET(
   _req: NextRequest,
@@ -52,7 +51,7 @@ export async function DELETE(
       where: { id: session.userId },
       select: { email: true },
     });
-    const isAdmin = actor?.email === ADMIN_EMAIL;
+    const isAdmin = isAdminUserEmail(actor?.email);
     if (!isAdmin && photo.uploadedById !== session.userId)
       return NextResponse.json({ error: "Нет прав" }, { status: 403 });
 

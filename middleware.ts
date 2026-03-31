@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
+import { requireEnv } from "@/app/lib/env";
 
-const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+const secret = new TextEncoder().encode(requireEnv("JWT_SECRET"));
 
 const PUBLIC_PREFIXES = [
   "/start",
@@ -9,7 +10,6 @@ const PUBLIC_PREFIXES = [
   "/auth",
   "/api/auth",
   "/api/s3",
-  "/api/test-url",
   "/api/filters",
 ];
 

@@ -11,8 +11,6 @@ import { useCloseDetailsOnOutsideClick } from "@/lib/useCloseDetailsOnOutsideCli
 
 const RouteModal = dynamic(() => import("./_components/RouteModal"), { ssr: false });
 
-const ADMIN_EMAIL = "leonidusachev04@yandex.ru";
-
 function useRoutesBreakpoint() {
   const [pageSize, setPageSize] = useState(32);
   useEffect(() => {
@@ -52,7 +50,7 @@ type Filters = {
 export default function RoutesPage() {
   const pageSize = useRoutesBreakpoint();
   const { user } = useAuth();
-  const isAdmin = user?.email === ADMIN_EMAIL;
+  const isAdmin = user?.isAdmin ?? false;
   const { message: successMsg, showSuccess } = useSuccessToast();
 
   const [routes, setRoutes] = useState<RouteItem[]>([]);

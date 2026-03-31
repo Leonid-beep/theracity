@@ -12,8 +12,6 @@ import { useCloseDetailsOnOutsideClick } from "@/lib/useCloseDetailsOnOutsideCli
 const PhotoModals = dynamic(() => import("./_components/PhotoModals"), { ssr: false });
 const UploadPhotoModal = dynamic(() => import("./_components/UploadPhotoModal"), { ssr: false });
 
-const ADMIN_EMAIL = "leonidusachev04@yandex.ru";
-
 function useGalleryBreakpoint() {
   const [pageSize, setPageSize] = useState(32);
   useEffect(() => {
@@ -56,7 +54,7 @@ export default function GalleryPage() {
   const pageSize = useGalleryBreakpoint();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const isAdmin = user?.email === ADMIN_EMAIL;
+  const isAdmin = user?.isAdmin ?? false;
 
   const returnToGallery = "/gallery";
 

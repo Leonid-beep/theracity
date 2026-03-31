@@ -1,7 +1,8 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { requireEnv } from "@/app/lib/env";
 
-const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+const secret = new TextEncoder().encode(requireEnv("JWT_SECRET"));
 const ALG = "HS256";
 const COOKIE = "token";
 const MAX_AGE = 60 * 60 * 24 * 7; // 7 days

@@ -16,7 +16,7 @@ function safeReturnTo(path: string | null | undefined, fallback = "/gallery"): s
   return t;
 }
 
-type User = { id: string; username: string; email: string };
+type User = { id: string; username: string; email: string; isAdmin: boolean };
 
 export type RegisterFailure = {
   errors: string[];
@@ -68,7 +68,17 @@ export default function AuthProvider({
     try {
       const r = await fetch("/api/auth/me");
       const d = await r.json();
-      setUser(d.user ?? null);
+      const u = d.user;
+      setUser(
+        u
+          ? {
+              id: u.id,
+              username: u.username,
+              email: u.email,
+              isAdmin: Boolean(u.isAdmin),
+            }
+          : null,
+      );
     } catch {
       setUser(null);
     }
@@ -92,7 +102,13 @@ export default function AuthProvider({
       });
       const data = await res.json();
       if (!res.ok) return data.errors ?? ["Ошибка входа"];
-      setUser(data.user);
+      const u = data.user;
+      setUser({
+        id: u.id,
+        username: u.username,
+        email: u.email,
+        isAdmin: Boolean(u.isAdmin),
+      });
       router.push(safeReturnTo(returnTo));
       return null;
     },
@@ -119,7 +135,13 @@ export default function AuthProvider({
           fieldErrors: data.fieldErrors ?? undefined,
         };
       }
-      setUser(data.user);
+      const u = data.user;
+      setUser({
+        id: u.id,
+        username: u.username,
+        email: u.email,
+        isAdmin: Boolean(u.isAdmin),
+      });
       router.push(safeReturnTo(returnTo));
       return null;
     },

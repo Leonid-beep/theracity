@@ -1,36 +1,139 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TheraCity
 
-## Getting Started
+Городской фотопроект на Next.js (App Router) с авторизацией, галереей, маршрутами и загрузкой фото.
 
-First, run the development server:
+## Стек
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- `next` (App Router) + `react`
+- Route Handlers в `app/api/**`
+- `prisma` + PostgreSQL
+- S3-совместимое хранилище (Yandex Object Storage)
+- JWT-сессии через `jose` + cookie
+- SMTP для восстановления пароля (опционально)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Локальный запуск
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Установите зависимости:
+   ```bash
+   npm install
+   ```
+2. Создайте `.env` на основе `.env.example`.
+3. Сгенерируйте Prisma Client:
+   ```bash
+   npm run prisma:generate
+   ```
+4. Примените миграции:
+   ```bash
+   npm run db:migrate
+   ```
+5. Запустите проект:
+   ```bash
+   npm run dev
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Обязательные env-переменные
 
-## Learn More
+См. `.env.example`.
 
-To learn more about Next.js, take a look at the following resources:
+Обязательно для production:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `S3_ENDPOINT`
+- `S3_REGION`
+- `S3_ACCESS_KEY`
+- `S3_SECRET_KEY`
+- `S3_BUCKET`
+- `ADMIN_EMAIL`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Опционально (только для восстановления пароля):
 
-## Deploy on Vercel
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_USER`
+- `SMTP_PASS`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Подготовка PostgreSQL
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Создайте удаленную PostgreSQL БД.
+2. Возьмите connection string и заполните `DATABASE_URL`.
+3. Для облачных БД обычно нужен SSL (`sslmode=require`).
+4. Примените миграции:
+   ```bash
+   npm run prisma:migrate:deploy
+   ```
+
+## Подготовка S3
+
+1. Создайте bucket в S3-совместимом хранилище.
+2. Создайте ключ доступа (Access Key / Secret Key).
+3. Заполните:
+   - `S3_ENDPOINT`
+   - `S3_REGION`
+   - `S3_ACCESS_KEY`
+   - `S3_SECRET_KEY`
+   - `S3_BUCKET`
+4. Проверьте права ключа: чтение/запись/удаление объектов в выбранном bucket.
+
+## Prisma generate и migrations
+
+- Build уже настроен:
+  ```bash
+  prisma generate && next build
+  ```
+- Это гарантирует генерацию Prisma Client перед сборкой.
+- Production-миграции запускаются отдельно:
+  ```bash
+  npm run prisma:migrate:deploy
+  ```
+
+## Деплой на Vercel через GitHub
+
+1. Запушьте репозиторий на GitHub.
+2. В Vercel: **New Project** -> импортируйте репозиторий.
+3. В **Environment Variables** добавьте все обязательные env.
+4. Build command (если автоопределение не сработает):
+   ```bash
+   npm run build
+   ```
+5. Deploy.
+6. После успешного деплоя выполните production-миграции (если еще не выполнены):
+   ```bash
+   npm run prisma:migrate:deploy
+   ```
+
+## Что проверить сразу после первого деплоя
+
+- Открывается главная страница и базовая навигация.
+- Регистрация / логин / logout работают.
+- `/api/auth/me` возвращает пользователя.
+- Галерея загружается, фото отдаются через `/api/s3`.
+- Админ может загрузить фото (до 4MB), не-админ получает 403.
+- Фильтры/маршруты читаются из БД.
+- (Опционально) восстановление пароля, если настроен SMTP.
+
+## Типовые ошибки
+
+- **Prisma Client not generated**  
+  Проверьте, что build выполняет `prisma generate` (в проекте уже настроено через `npm run build`).
+
+- **Missing `DATABASE_URL`**  
+  Добавьте `DATABASE_URL` в env (локально и в Vercel). Проверьте формат строки подключения.
+
+- **Missing `JWT_SECRET`**  
+  Добавьте сильный случайный `JWT_SECRET` в env.
+
+- **Missing S3 env (`S3_*`)**  
+  Заполните `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET`.
+
+- **Upload error / body too large**  
+  В MVP серверная загрузка ограничена 4MB. Уменьшите файл или переходите на presigned upload.
+
+- **SMTP not configured**  
+  Функция восстановления пароля не отправит письмо без `SMTP_*`.
+
+## Ограничения текущей MVP-версии
+
+- Загрузка файлов идет через серверный `POST /api/photos`.
+- Текущий лимит загрузки: **4MB**.
+- Для масштабирования следующий шаг: **прямой upload в S3 через presigned URL** (сервер только выдает URL и сохраняет метаданные).

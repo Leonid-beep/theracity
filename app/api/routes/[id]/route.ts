@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/lib/prisma";
 import { getSessionUser } from "@/app/lib/auth";
-
-const ADMIN_EMAIL = "leonidusachev04@yandex.ru";
+import { isAdminUserEmail } from "@/app/lib/admin";
 
 export async function DELETE(
   _req: NextRequest,
@@ -23,7 +22,7 @@ export async function DELETE(
       where: { id: session.userId },
       select: { email: true },
     });
-    const isAdmin = actor?.email === ADMIN_EMAIL;
+    const isAdmin = isAdminUserEmail(actor?.email);
     if (!isAdmin && route.createdById !== session.userId)
       return NextResponse.json({ error: "Нет доступа" }, { status: 403 });
 

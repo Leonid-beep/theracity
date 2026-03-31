@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { compare } from "bcrypt";
 import { prisma } from "@/app/lib/prisma";
+import { isAdminUserEmail } from "@/app/lib/admin";
 import { setAuthCookie } from "@/app/lib/auth";
 
 export async function POST(req: NextRequest) {
@@ -45,7 +46,12 @@ export async function POST(req: NextRequest) {
     await setAuthCookie({ userId: user.id, username: user.username });
 
     return NextResponse.json({
-      user: { id: user.id, username: user.username, email: user.email },
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        isAdmin: isAdminUserEmail(user.email),
+      },
     });
   } catch {
     return NextResponse.json(

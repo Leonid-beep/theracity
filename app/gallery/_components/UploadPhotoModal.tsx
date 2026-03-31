@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "./uploadPhotoModal.module.css";
+import { ALLOWED_IMAGE_MIME_TYPES, MAX_UPLOAD_FILE_BYTES, MAX_UPLOAD_FILE_LABEL } from "@/app/lib/upload";
 
 type Filters = {
   metro: string[];
@@ -84,13 +85,12 @@ export default function UploadPhotoModal({
   }, [open, resetForm]);
 
   const handleFile = (f: File) => {
-    const allowed = ["image/jpeg", "image/png", "image/webp"];
-    if (!allowed.includes(f.type)) {
+    if (!ALLOWED_IMAGE_MIME_TYPES.includes(f.type as (typeof ALLOWED_IMAGE_MIME_TYPES)[number])) {
       setError("Допустимые форматы: JPEG, PNG, WebP");
       return;
     }
-    if (f.size > 10 * 1024 * 1024) {
-      setError("Максимальный размер файла: 10MB");
+    if (f.size > MAX_UPLOAD_FILE_BYTES) {
+      setError(`Максимальный размер файла: ${MAX_UPLOAD_FILE_LABEL}`);
       return;
     }
     setError("");
@@ -193,7 +193,9 @@ export default function UploadPhotoModal({
               <div className={styles.dropzoneHint}>
                 Перетащите фото сюда или нажмите для выбора
               </div>
-              <div className={styles.dropzoneFormats}>JPEG, PNG, WebP — до 10MB</div>
+              <div className={styles.dropzoneFormats}>
+                JPEG, PNG, WebP — до {MAX_UPLOAD_FILE_LABEL}
+              </div>
               <input
                 ref={inputRef}
                 type="file"
