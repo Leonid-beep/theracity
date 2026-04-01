@@ -381,8 +381,9 @@
   margin-top: 24px;
   width: 100%;
   max-width: 236px;
-  display: flex;
-  align-items: center;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   flex-shrink: 0;
 }
@@ -390,8 +391,11 @@
 .findBtn,
 .resetBtn {
   position: relative;
-  flex: 1 1 0;
+  width: 100%;
+  min-width: 0;
   height: 32px;
+  padding: 0 12px;
+  box-sizing: border-box;
   border: none;
   border-radius: 999px;
   background: #e0dab4;
@@ -411,6 +415,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 0;
+  padding: 0 12px;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: #111;
   content: "";
 }
