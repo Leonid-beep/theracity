@@ -10,13 +10,15 @@
   padding: 12px;
   box-sizing: border-box;
   overflow-y: auto;
-  min-height: 100vh;
+  min-height: 100dvh;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .modal {
   position: relative;
   width: 480px;
-  max-height: calc(100vh - 24px);
+  max-height: calc(100dvh - 24px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -70,7 +72,10 @@
   padding: 18px 15px 18px;
   display: grid;
   gap: 16px;
+  min-height: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .formFields {
@@ -256,6 +261,7 @@
 .submitBar {
   position: sticky;
   bottom: 0;
+  z-index: 1;
   display: grid;
   gap: 10px;
   padding-top: 12px;
@@ -440,13 +446,13 @@
 @media (max-width: 480px) {
   .overlay {
     padding: 10px;
-    align-items: flex-end;
+    align-items: flex-start;
   }
 
   .modal {
     width: 100%;
     max-width: calc(100vw - 20px);
-    max-height: calc(100vh - 20px);
+    max-height: calc(100dvh - 20px);
   }
 
   .title {

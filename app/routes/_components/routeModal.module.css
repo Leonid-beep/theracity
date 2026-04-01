@@ -10,7 +10,9 @@
   padding: 12px;
   box-sizing: border-box;
   overflow-y: auto;
-  min-height: 100vh;
+  min-height: 100dvh;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .modal {
@@ -442,7 +444,7 @@
   .modalRoute {
     width: 360px;
     height: 620px;
-    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
     padding-right: 42px;
     overflow-x: hidden;
     overflow-y: auto;
@@ -525,6 +527,8 @@
     align-items: center;
     overflow-x: hidden;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     box-sizing: border-box;
   }
 
@@ -672,12 +676,13 @@
 @media (max-width: 480px) {
   .overlay {
     padding: 10px;
+    align-items: flex-start;
   }
 
   .modalRoute {
     width: 100%;
     max-width: calc(100vw - 20px);
-    max-height: calc(100vh - 20px);
+    max-height: calc(100dvh - 20px);
     padding: 12px 38px 12px 10px;
   }
 
