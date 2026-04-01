@@ -5,6 +5,7 @@ const PUBLIC_PREFIXES = [
   "/about",
   "/auth",
   "/api/auth",
+  "/api/photo",
   "/api/s3",
   "/api/filters",
 ];

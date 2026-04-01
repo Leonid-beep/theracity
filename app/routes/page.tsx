@@ -8,6 +8,7 @@ import styles from "./styles.module.css";
 import createStyles from "../gallery/_components/photoModals.module.css";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { SuccessToast, useSuccessToast } from "@/app/ui/SuccessToast";
+import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
 import { useCloseDetailsOnOutsideClick } from "@/lib/useCloseDetailsOnOutsideClick";
 
 const RouteModal = dynamic(() => import("./_components/RouteModal"), { ssr: false });
@@ -271,7 +272,14 @@ export default function RoutesPage() {
                   <figure key={r.id} className={styles.card} onClick={() => openRoute(r)} role="button" tabIndex={0}>
                     <div className={styles.thumb}>
                       {cover ? (
-                        <Image src={cover} alt={r.title} fill className={styles.img} unoptimized />
+                        <OptimizedPhoto
+                          src={cover}
+                          alt={r.title}
+                          fill
+                          sizes="150px"
+                          className={styles.img}
+                          quality={70}
+                        />
                       ) : null}
                       {isLiked ? (
                         <Image

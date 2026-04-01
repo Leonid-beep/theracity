@@ -5,6 +5,7 @@ import Image from "next/image";
 import styles from "./photoModals.module.css";
 import type { PhotoItem } from "../page";
 import ConfirmDeleteModal from "@/app/cabinet/_components/ConfirmDeleteModal";
+import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
 
 type RouteItem = { id: string; title: string; src: string };
 type Step = "photo" | "routeChoice" | "pickRoute" | "createRoute";
@@ -196,7 +197,15 @@ export default function PhotoModals(props: {
           <div className={styles.photoTitle}>{activePhoto.title}</div>
 
           <div className={styles.photoWrap}>
-            <Image src={activePhoto.src} alt={activePhoto.title} width={300} height={375} className={styles.photoImg} unoptimized />
+            <OptimizedPhoto
+              src={activePhoto.src}
+              alt={activePhoto.title}
+              width={300}
+              height={375}
+              sizes="300px"
+              className={styles.photoImg}
+              quality={78}
+            />
             {isAdmin ? (
               <button
                 type="button"
@@ -325,7 +334,15 @@ export default function PhotoModals(props: {
                   onClick={() => setPickedRouteId(r.id)}
                 >
                   <div className={styles.pickThumb}>
-                    <Image src={r.src} alt={r.title} width={150} height={200} className={styles.pickImg} unoptimized />
+                    <OptimizedPhoto
+                      src={r.src}
+                      alt={r.title}
+                      width={150}
+                      height={200}
+                      sizes="150px"
+                      className={styles.pickImg}
+                      quality={70}
+                    />
                   </div>
                   <div className={styles.pickCap}>{r.title}</div>
                 </button>

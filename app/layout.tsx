@@ -1,7 +1,6 @@
 import "normalize.css";
 import "./globals.css";
 import { buttonFont, textFont, logoFont } from "./fonts";
-import Image from "next/image";
 import BurgerMenu from "./ui/BurgerMenu/BurgerMenuDynamic";
 import AuthProvider from "./providers/AuthProvider";
 
@@ -12,16 +11,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <div className="appShell">
             <div className="appMapBg" aria-hidden="true">
-              <div className="appMapBgImg">
-                <Image
-                  src="/images/map-bg.jpg"
-                  alt=""
-                  fill
-                  sizes="100vw"
-                  priority
-                  className="object-cover object-center"
-                />
-              </div>
+              <div className="appMapBgImg" />
               <div className="appMapBgOverlay" />
             </div>
             <BurgerMenu />

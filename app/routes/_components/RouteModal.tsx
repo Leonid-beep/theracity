@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import styles from "./routeModal.module.css";
 import ConfirmDeleteModal from "@/app/cabinet/_components/ConfirmDeleteModal";
+import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
 
 type RouteItem = {
   id: string;
@@ -131,7 +132,15 @@ export default function RouteModal({
         <div className={styles.photoRow}>
           {prev ? (
             <button type="button" className={styles.sideThumb} aria-label="Предыдущее фото" onClick={() => go(page - 1)}>
-              <Image src={prev.src} alt={prev.alt} width={88} height={111} className={styles.sideImg} unoptimized />
+              <OptimizedPhoto
+                src={prev.src}
+                alt={prev.alt}
+                width={88}
+                height={111}
+                sizes="88px"
+                className={styles.sideImg}
+                quality={68}
+              />
             </button>
           ) : (
             <div className={`${styles.sideThumb} ${styles.sideThumbEmpty}`} aria-hidden="true" />
@@ -139,7 +148,15 @@ export default function RouteModal({
 
           <div className={styles.mainPhoto}>
             {main ? (
-              <Image src={main.src} alt={main.alt} width={300} height={375} className={styles.mainImg} unoptimized />
+              <OptimizedPhoto
+                src={main.src}
+                alt={main.alt}
+                width={300}
+                height={375}
+                sizes="300px"
+                className={styles.mainImg}
+                quality={78}
+              />
             ) : null}
             {isAdmin ? (
               <button
@@ -170,7 +187,15 @@ export default function RouteModal({
 
           {next ? (
             <button type="button" className={styles.sideThumb} aria-label="Следующее фото" onClick={() => go(page + 1)}>
-              <Image src={next.src} alt={next.alt} width={88} height={111} className={styles.sideImg} unoptimized />
+              <OptimizedPhoto
+                src={next.src}
+                alt={next.alt}
+                width={88}
+                height={111}
+                sizes="88px"
+                className={styles.sideImg}
+                quality={68}
+              />
             </button>
           ) : (
             <div className={`${styles.sideThumb} ${styles.sideThumbEmpty}`} aria-hidden="true" />

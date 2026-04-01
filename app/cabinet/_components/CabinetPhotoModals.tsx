@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import styles from "./cabinetPhotoModals.module.css";
+import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
 
 export type CabinetPhotoItem = {
   id: string;
@@ -223,7 +224,15 @@ export default function CabinetPhotoModals({
           </div>
 
           <div className={styles.photoWrap}>
-            <Image src={activePhoto.src} alt={activePhoto.title} width={300} height={375} className={styles.photoImg} unoptimized />
+            <OptimizedPhoto
+              src={activePhoto.src}
+              alt={activePhoto.title}
+              width={300}
+              height={375}
+              sizes="300px"
+              className={styles.photoImg}
+              quality={78}
+            />
             {isFavNow ? (
               <Image src="/images/city/heart_red.png" alt="" width={23} height={23} className={styles.likeIcon} aria-hidden="true" />
             ) : null}
@@ -341,7 +350,15 @@ export default function CabinetPhotoModals({
                   onClick={() => setPickedRouteId(r.id)}
                 >
                   <div className={styles.pickThumb}>
-                    <Image src={r.src} alt={r.title} width={150} height={200} className={styles.pickImg} unoptimized />
+                    <OptimizedPhoto
+                      src={r.src}
+                      alt={r.title}
+                      width={150}
+                      height={200}
+                      sizes="150px"
+                      className={styles.pickImg}
+                      quality={70}
+                    />
                   </div>
                   <div className={styles.pickCap}>{r.title}</div>
                 </button>

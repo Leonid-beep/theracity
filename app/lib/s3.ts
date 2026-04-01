@@ -6,6 +6,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { requireEnv } from "@/app/lib/env";
+import { getPhotoUrl } from "@/app/lib/photo-url";
 
 export const s3 = new S3Client({
   endpoint: requireEnv("S3_ENDPOINT"),
@@ -28,7 +29,7 @@ export async function getSignedPhotoUrl(key: string): Promise<string> {
 }
 
 export function getProxyPhotoUrl(key: string): string {
-  return `/api/s3?key=${encodeURIComponent(key)}`;
+  return getPhotoUrl(key);
 }
 
 export async function uploadToS3(

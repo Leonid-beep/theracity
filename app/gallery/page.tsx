@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import styles from "./styles.module.css";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { SuccessToast, useSuccessToast } from "@/app/ui/SuccessToast";
+import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
 import { useCloseDetailsOnOutsideClick } from "@/lib/useCloseDetailsOnOutsideClick";
 
 const PhotoModals = dynamic(() => import("./_components/PhotoModals"), { ssr: false });
@@ -269,7 +270,14 @@ export default function GalleryPage() {
                   tabIndex={0}
                 >
                   <div className={styles.thumb}>
-                    <Image src={p.src} alt={p.title} fill className={styles.img} unoptimized />
+                    <OptimizedPhoto
+                      src={p.src}
+                      alt={p.title}
+                      fill
+                      sizes="150px"
+                      className={styles.img}
+                      quality={70}
+                    />
                     {liked.has(p.id) ? (
                       <Image
                         src="/images/city/heart_red.png"

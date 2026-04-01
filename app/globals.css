@@ -33,12 +33,12 @@ body {
 .appMapBgImg {
   position: absolute;
   inset: 0;
-  transform: scale(1.5);
-}
-
-.appMapBgImg > * {
-  position: absolute !important;
-  inset: 0;
+  transform: scale(1.22);
+  transform-origin: center;
+  background-image: url("/images/map-bg-960.webp");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 .appMapBgOverlay {
@@ -52,4 +52,22 @@ body {
   position: relative;
   z-index: 1;
   min-height: 100vh;
+}
+
+@media (min-width: 768px) {
+  .appMapBgImg {
+    background-image: url("/images/map-bg-1600.webp");
+  }
+}
+
+@media (min-width: 1440px) {
+  .appMapBgImg {
+    background-image: url("/images/map-bg-2400.webp");
+  }
+}
+
+@media (prefers-reduced-data: reduce) {
+  .appMapBgImg {
+    transform: none;
+  }
 }

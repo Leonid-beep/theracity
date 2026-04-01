@@ -20,7 +20,6 @@ export default function LoginPage() {
               width={70}
               height={70}
               className={styles.logoIconImg}
-              priority
             />
           </span>
         </div>

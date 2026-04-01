@@ -4,6 +4,7 @@ export const logoFont = localFont({
   src: "../public/fonts/NewTegomin-Regular.ttf",
   variable: "--font-logo",
   display: "swap",
+  preload: false,
 });
 
 export const textFont = localFont({

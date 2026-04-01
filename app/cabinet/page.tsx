@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import styles from "./styles.module.css";
 import { useAuth } from "@/app/providers/AuthProvider";
+import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
 import type { CabinetRouteItem } from "./_components/CabinetRouteModal";
 import type { CabinetPhotoItem } from "./_components/CabinetPhotoModals";
 import ConfirmDeleteModal from "./_components/ConfirmDeleteModal";
@@ -278,7 +279,16 @@ export default function CabinetPage() {
                     tabIndex={0}
                   >
                     <div className={styles.thumb}>
-                      {preview ? <Image src={preview} alt={r.title} fill className={styles.img} unoptimized /> : null}
+                      {preview ? (
+                        <OptimizedPhoto
+                          src={preview}
+                          alt={r.title}
+                          fill
+                          sizes="150px"
+                          className={styles.img}
+                          quality={70}
+                        />
+                      ) : null}
                     </div>
                     <figcaption className={styles.cap}>{r.title}</figcaption>
                   </figure>
@@ -313,7 +323,16 @@ export default function CabinetPage() {
                   tabIndex={0}
                 >
                   <div className={styles.thumb}>
-                    {p.src ? <Image src={p.src} alt={p.title} fill className={styles.img} unoptimized /> : null}
+                    {p.src ? (
+                      <OptimizedPhoto
+                        src={p.src}
+                        alt={p.title}
+                        fill
+                        sizes="150px"
+                        className={styles.img}
+                        quality={70}
+                      />
+                    ) : null}
                     <Image
                       src="/images/city/heart_red.png"
                       alt=""
@@ -357,7 +376,16 @@ export default function CabinetPage() {
                     tabIndex={0}
                   >
                     <div className={styles.thumb}>
-                      {preview ? <Image src={preview} alt={r.title} fill className={styles.img} unoptimized /> : null}
+                      {preview ? (
+                        <OptimizedPhoto
+                          src={preview}
+                          alt={r.title}
+                          fill
+                          sizes="150px"
+                          className={styles.img}
+                          quality={70}
+                        />
+                      ) : null}
                       <Image
                         src="/images/city/heart_red.png"
                         alt=""

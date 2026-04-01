@@ -98,7 +98,6 @@ export default function BurgerMenu() {
                 width={27}
                 height={27}
                 className={styles.brandMark}
-                priority
               />
             </div>
             <button

@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import styles from "../../routes/_components/routeModal.module.css";
+import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
 
 export type CabinetRouteItem = {
   id: string;
@@ -106,7 +107,15 @@ export default function CabinetRouteModal({
               aria-label="Предыдущее фото"
               onClick={() => go(page - 1)}
             >
-              <Image src={prev.src} alt={prev.alt} width={88} height={111} className={styles.sideImg} unoptimized />
+              <OptimizedPhoto
+                src={prev.src}
+                alt={prev.alt}
+                width={88}
+                height={111}
+                sizes="88px"
+                className={styles.sideImg}
+                quality={68}
+              />
             </button>
           ) : (
             <div className={`${styles.sideThumb} ${styles.sideThumbEmpty}`} aria-hidden="true" />
@@ -114,7 +123,15 @@ export default function CabinetRouteModal({
 
           <div className={styles.mainPhoto}>
             {hasPhotos && main ? (
-              <Image src={main.src} alt={main.alt} width={300} height={375} className={styles.mainImg} unoptimized />
+              <OptimizedPhoto
+                src={main.src}
+                alt={main.alt}
+                width={300}
+                height={375}
+                sizes="300px"
+                className={styles.mainImg}
+                quality={78}
+              />
             ) : (
               <p className={styles.emptyRoutePhotos}>В этом маршруте пока нет фотографий</p>
             )}
@@ -127,7 +144,15 @@ export default function CabinetRouteModal({
               aria-label="Следующее фото"
               onClick={() => go(page + 1)}
             >
-              <Image src={next.src} alt={next.alt} width={88} height={111} className={styles.sideImg} unoptimized />
+              <OptimizedPhoto
+                src={next.src}
+                alt={next.alt}
+                width={88}
+                height={111}
+                sizes="88px"
+                className={styles.sideImg}
+                quality={68}
+              />
             </button>
           ) : (
             <div className={`${styles.sideThumb} ${styles.sideThumbEmpty}`} aria-hidden="true" />

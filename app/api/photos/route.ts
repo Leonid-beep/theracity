@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/lib/prisma";
-import { getProxyPhotoUrl, getSignedPhotoUrl, uploadToS3 } from "@/app/lib/s3";
+import { getProxyPhotoUrl, uploadToS3 } from "@/app/lib/s3";
 import { getSessionUser } from "@/app/lib/auth";
 import { isAdminUserEmail } from "@/app/lib/admin";
 import { ALLOWED_IMAGE_MIME_TYPES, MAX_UPLOAD_FILE_BYTES, MAX_UPLOAD_FILE_LABEL } from "@/app/lib/upload";
