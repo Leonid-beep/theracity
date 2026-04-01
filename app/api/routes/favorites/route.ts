@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/lib/prisma";
 import { getProxyPhotoUrl } from "@/app/lib/s3";
 import { getSessionUser } from "@/app/lib/auth";
+import { parseStoredMultiValue } from "@/app/lib/photoMetadata";
 
 export async function GET(req: NextRequest) {
   try {
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest) {
       const photos = f.route.routePhotos.map((rp) => ({
         src: getProxyPhotoUrl(rp.photo.s3Key),
         alt: rp.photo.title,
-        metro: rp.photo.metro,
+        metro: parseStoredMultiValue(rp.photo.metro),
         address: `${rp.photo.lat}, ${rp.photo.lng}`,
       }));
       const firstPhoto = f.route.routePhotos[0]?.photo;
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
         id: f.route.id,
         title: f.route.title,
         desc: f.route.description,
-        metro: firstPhoto?.metro ?? "",
+        metro: firstPhoto ? parseStoredMultiValue(firstPhoto.metro) : [],
         address: firstPhoto ? `${firstPhoto.lat}, ${firstPhoto.lng}` : "",
         photos,
       };

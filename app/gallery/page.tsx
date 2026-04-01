@@ -35,13 +35,13 @@ export type PhotoItem = {
   id: string;
   src: string;
   title: string;
-  metro: string;
+  metro: string[];
   coords: string;
   lat: number;
   lng: number;
-  spaceType: string;
-  mood: string;
-  atmosphere: string;
+  spaceType: string[];
+  mood: string[];
+  atmosphere: string[];
 };
 
 type Filters = {
@@ -50,6 +50,20 @@ type Filters = {
   mood: string[];
   atmosphere: string[];
 };
+
+function isAllSelected(selected: string[], options: string[]): boolean {
+  return !selected.length || (options.length > 0 && selected.length === options.length);
+}
+
+function summarizeSelection(selected: string[], options: string[]): string {
+  if (!options.length || isAllSelected(selected, options)) return "Р’СЃРµ";
+  return selected.join(", ");
+}
+
+function buildFilterValue(selected: string[], options: string[]): string | null {
+  if (!selected.length || !options.length || isAllSelected(selected, options)) return null;
+  return selected.join(",");
+}
 
 export default function GalleryPage() {
   const pageSize = useGalleryBreakpoint();
@@ -157,10 +171,14 @@ export default function GalleryPage() {
 
   const handleApplyFilters = () => {
     const f: Record<string, string> = {};
-    if (selMetro.length) f.metro = selMetro.join(",");
-    if (selSpace.length) f.spaceType = selSpace.join(",");
-    if (selMood.length) f.mood = selMood.join(",");
-    if (selAtmo.length) f.atmosphere = selAtmo.join(",");
+    const metro = buildFilterValue(selMetro, filterOptions.metro);
+    const spaceType = buildFilterValue(selSpace, filterOptions.spaceType);
+    const mood = buildFilterValue(selMood, filterOptions.mood);
+    const atmosphere = buildFilterValue(selAtmo, filterOptions.atmosphere);
+    if (metro) f.metro = metro;
+    if (spaceType) f.spaceType = spaceType;
+    if (mood) f.mood = mood;
+    if (atmosphere) f.atmosphere = atmosphere;
     setAppliedFilters(f);
     setPage(1);
   };
@@ -175,12 +193,32 @@ export default function GalleryPage() {
   };
 
   const hasAppliedFilters = Object.keys(appliedFilters).length > 0;
+  const canResetFilters =
+    hasAppliedFilters ||
+    selMetro.length > 0 ||
+    selSpace.length > 0 ||
+    selMood.length > 0 ||
+    selAtmo.length > 0;
 
-  const toggleValue = (value: string, setter: (updater: (prev: string[]) => string[]) => void) => {
-    setter((prev) =>
-      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
-    );
+  const toggleValue = (
+    value: string,
+    options: string[],
+    setter: (updater: (prev: string[]) => string[]) => void,
+  ) => {
+    setter((prev) => {
+      const base = prev.length ? prev : options;
+      const next = base.includes(value)
+        ? base.filter((item) => item !== value)
+        : [...base, value];
+
+      return next.length === 0 || next.length === options.length
+        ? []
+        : options.filter((option) => next.includes(option));
+    });
   };
+
+  const isValueChecked = (value: string, selected: string[], options: string[]) =>
+    selected.length === 0 ? options.includes(value) : selected.includes(value);
 
   const handlePhotoDeleted = useCallback((id: string) => {
     setPhotos((p) => p.filter((x) => x.id !== id));
@@ -355,8 +393,8 @@ export default function GalleryPage() {
                       <label key={v} className={styles.multiItem}>
                         <input
                           type="checkbox"
-                          checked={selSpace.includes(v)}
-                          onChange={() => toggleValue(v, setSelSpace)}
+                          checked={isValueChecked(v, selSpace, filterOptions.spaceType)}
+                          onChange={() => toggleValue(v, filterOptions.spaceType, setSelSpace)}
                         />
                         {v}
                       </label>
@@ -378,8 +416,8 @@ export default function GalleryPage() {
                       <label key={v} className={styles.multiItem}>
                         <input
                           type="checkbox"
-                          checked={selMood.includes(v)}
-                          onChange={() => toggleValue(v, setSelMood)}
+                          checked={isValueChecked(v, selMood, filterOptions.mood)}
+                          onChange={() => toggleValue(v, filterOptions.mood, setSelMood)}
                         />
                         {v}
                       </label>
@@ -401,8 +439,8 @@ export default function GalleryPage() {
                       <label key={v} className={styles.multiItem}>
                         <input
                           type="checkbox"
-                          checked={selMetro.includes(v)}
-                          onChange={() => toggleValue(v, setSelMetro)}
+                          checked={isValueChecked(v, selMetro, filterOptions.metro)}
+                          onChange={() => toggleValue(v, filterOptions.metro, setSelMetro)}
                         />
                         {v}
                       </label>
@@ -424,8 +462,8 @@ export default function GalleryPage() {
                       <label key={v} className={styles.multiItem}>
                         <input
                           type="checkbox"
-                          checked={selAtmo.includes(v)}
-                          onChange={() => toggleValue(v, setSelAtmo)}
+                          checked={isValueChecked(v, selAtmo, filterOptions.atmosphere)}
+                          onChange={() => toggleValue(v, filterOptions.atmosphere, setSelAtmo)}
                         />
                         {v}
                       </label>
@@ -441,6 +479,19 @@ export default function GalleryPage() {
             >
               {hasAppliedFilters ? "СБРОСИТЬ" : "ПРИМЕНИТЬ"}
             </button>
+            <div className={styles.actions}>
+              <button className={styles.findBtn} onClick={handleApplyFilters} aria-label="Найти">
+                РќРђР™РўР
+              </button>
+              <button
+                className={styles.resetBtn}
+                onClick={handleResetFilters}
+                disabled={!canResetFilters}
+                aria-label="Сбросить"
+              >
+                РЎР‘Р РћРЎРРўР¬
+              </button>
+            </div>
           </div>
         </aside>
       </div>

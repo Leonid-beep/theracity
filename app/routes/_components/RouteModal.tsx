@@ -5,15 +5,16 @@ import Image from "next/image";
 import styles from "./routeModal.module.css";
 import ConfirmDeleteModal from "@/app/cabinet/_components/ConfirmDeleteModal";
 import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
+import { formatMultiValue } from "@/app/lib/photoMetadata";
 
 type RouteItem = {
   id: string;
   title: string;
   desc: string;
   authorUsername?: string;
-  metro: string;
+  metro: string[];
   address: string;
-  photos: { src: string; alt: string; metro?: string; address?: string }[];
+  photos: { src: string; alt: string; metro?: string[]; address?: string }[];
 };
 
 export default function RouteModal({
@@ -203,7 +204,7 @@ export default function RouteModal({
         </div>
 
         <div className={styles.meta}>
-          <div>Метро: {main?.metro ?? route.metro}</div>
+          <div>Метро: {formatMultiValue(main?.metro ?? route.metro)}</div>
           <div>Адрес: {main?.address ?? route.address}</div>
         </div>
 

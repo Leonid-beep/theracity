@@ -3,6 +3,7 @@ import { prisma } from "@/app/lib/prisma";
 import { getProxyPhotoUrl, deletePhoto } from "@/app/lib/s3";
 import { getSessionUser } from "@/app/lib/auth";
 import { isAdminUserEmail } from "@/app/lib/admin";
+import { parseStoredMultiValue } from "@/app/lib/photoMetadata";
 
 export async function GET(
   _req: NextRequest,
@@ -19,13 +20,13 @@ export async function GET(
         id: photo.id,
         src: getProxyPhotoUrl(photo.s3Key),
         title: photo.title,
-        metro: photo.metro,
+        metro: parseStoredMultiValue(photo.metro),
         coords: `${photo.lat}, ${photo.lng}`,
         lat: photo.lat,
         lng: photo.lng,
-        spaceType: photo.spaceType,
-        mood: photo.mood,
-        atmosphere: photo.atmosphere,
+        spaceType: parseStoredMultiValue(photo.spaceType),
+        mood: parseStoredMultiValue(photo.mood),
+        atmosphere: parseStoredMultiValue(photo.atmosphere),
       },
     });
   } catch {

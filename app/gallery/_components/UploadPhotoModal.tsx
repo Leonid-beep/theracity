@@ -1,8 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import styles from "./uploadPhotoModal.module.css";
-import { ALLOWED_IMAGE_MIME_TYPES, MAX_UPLOAD_FILE_BYTES, MAX_UPLOAD_FILE_LABEL } from "@/app/lib/upload";
+import { useCloseDetailsOnOutsideClick } from "@/lib/useCloseDetailsOnOutsideClick";
+import {
+  ALLOWED_IMAGE_MIME_TYPES,
+  MAX_UPLOAD_FILE_BYTES,
+  MAX_UPLOAD_FILE_LABEL,
+} from "@/app/lib/upload";
 
 type Filters = {
   metro: string[];
@@ -10,6 +22,14 @@ type Filters = {
   mood: string[];
   atmosphere: string[];
 };
+
+type MultiSetter = Dispatch<SetStateAction<string[]>>;
+
+function summarizeSelected(values: string[]): string {
+  if (!values.length) return "Выберите…";
+  if (values.length <= 2) return values.join(", ");
+  return `${values.slice(0, 2).join(", ")} +${values.length - 2}`;
+}
 
 export default function UploadPhotoModal({
   open,
@@ -24,14 +44,19 @@ export default function UploadPhotoModal({
   const [preview, setPreview] = useState<string | null>(null);
 
   const [title, setTitle] = useState("");
-  const [metro, setMetro] = useState("");
+  const [metro, setMetro] = useState<string[]>([]);
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");
-  const [spaceType, setSpaceType] = useState("");
-  const [mood, setMood] = useState("");
-  const [atmosphere, setAtmosphere] = useState("");
+  const [spaceType, setSpaceType] = useState<string[]>([]);
+  const [mood, setMood] = useState<string[]>([]);
+  const [atmosphere, setAtmosphere] = useState<string[]>([]);
 
-  const [filters, setFilters] = useState<Filters>({ metro: [], spaceType: [], mood: [], atmosphere: [] });
+  const [filters, setFilters] = useState<Filters>({
+    metro: [],
+    spaceType: [],
+    mood: [],
+    atmosphere: [],
+  });
   const [filtersLoaded, setFiltersLoaded] = useState(false);
 
   const [uploading, setUploading] = useState(false);
@@ -40,6 +65,16 @@ export default function UploadPhotoModal({
 
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useCloseDetailsOnOutsideClick(modalRef, "upload-photo-filters");
+
+  const replacePreview = useCallback((nextPreview: string | null) => {
+    setPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return nextPreview;
+    });
+  }, []);
 
   useEffect(() => {
     if (!open || filtersLoaded) return;
@@ -67,43 +102,62 @@ export default function UploadPhotoModal({
 
   const resetForm = useCallback(() => {
     setFile(null);
-    setPreview(null);
+    replacePreview(null);
     setTitle("");
-    setMetro("");
+    setMetro([]);
     setLat("");
     setLng("");
-    setSpaceType("");
-    setMood("");
-    setAtmosphere("");
+    setSpaceType([]);
+    setMood([]);
+    setAtmosphere([]);
     setError("");
     setProgress(0);
     setUploading(false);
-  }, []);
+  }, [replacePreview]);
 
   useEffect(() => {
     if (!open) resetForm();
   }, [open, resetForm]);
 
-  const handleFile = (f: File) => {
-    if (!ALLOWED_IMAGE_MIME_TYPES.includes(f.type as (typeof ALLOWED_IMAGE_MIME_TYPES)[number])) {
-      setError("Допустимые форматы: JPEG, PNG, WebP");
-      return;
-    }
-    if (f.size > MAX_UPLOAD_FILE_BYTES) {
-      setError(`Максимальный размер файла: ${MAX_UPLOAD_FILE_LABEL}`);
-      return;
-    }
-    setError("");
-    setFile(f);
-    const url = URL.createObjectURL(f);
-    setPreview(url);
-  };
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
+  const toggleMultiValue = useCallback((value: string, setter: MultiSetter) => {
+    setter((prev) =>
+      prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value],
+    );
+  }, []);
+
+  const handleFile = useCallback(
+    (nextFile: File) => {
+      if (
+        !ALLOWED_IMAGE_MIME_TYPES.includes(
+          nextFile.type as (typeof ALLOWED_IMAGE_MIME_TYPES)[number],
+        )
+      ) {
+        setError("Допустимые форматы: JPEG, PNG, WebP");
+        return;
+      }
+      if (nextFile.size > MAX_UPLOAD_FILE_BYTES) {
+        setError(`Максимальный размер файла: ${MAX_UPLOAD_FILE_LABEL}`);
+        return;
+      }
+
+      setError("");
+      setFile(nextFile);
+      replacePreview(URL.createObjectURL(nextFile));
+    },
+    [replacePreview],
+  );
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragActive(false);
-    const f = e.dataTransfer.files[0];
-    if (f) handleFile(f);
+    const nextFile = e.dataTransfer.files[0];
+    if (nextFile) handleFile(nextFile);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -114,12 +168,20 @@ export default function UploadPhotoModal({
   const handleDragLeave = () => setDragActive(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (f) handleFile(f);
+    const nextFile = e.target.files?.[0];
+    if (nextFile) handleFile(nextFile);
   };
 
   const canSubmit =
-    !!file && !!title.trim() && !!metro && !!lat.trim() && !!lng.trim() && !!spaceType && !!mood && !!atmosphere && !uploading;
+    !!file &&
+    !!title.trim() &&
+    metro.length > 0 &&
+    !!lat.trim() &&
+    !!lng.trim() &&
+    spaceType.length > 0 &&
+    mood.length > 0 &&
+    atmosphere.length > 0 &&
+    !uploading;
 
   const handleSubmit = async () => {
     if (!canSubmit || !file) return;
@@ -130,12 +192,12 @@ export default function UploadPhotoModal({
     const fd = new FormData();
     fd.append("file", file);
     fd.append("title", title.trim());
-    fd.append("metro", metro);
+    metro.forEach((value) => fd.append("metro", value));
     fd.append("lat", lat.trim());
     fd.append("lng", lng.trim());
-    fd.append("spaceType", spaceType);
-    fd.append("mood", mood);
-    fd.append("atmosphere", atmosphere);
+    spaceType.forEach((value) => fd.append("spaceType", value));
+    mood.forEach((value) => fd.append("mood", value));
+    atmosphere.forEach((value) => fd.append("atmosphere", value));
 
     try {
       const xhr = new XMLHttpRequest();
@@ -148,13 +210,13 @@ export default function UploadPhotoModal({
         xhr.addEventListener("load", () => {
           if (xhr.status >= 200 && xhr.status < 300) {
             resolve();
-          } else {
-            try {
-              const data = JSON.parse(xhr.responseText);
-              reject(new Error(data.error || "Ошибка загрузки"));
-            } catch {
-              reject(new Error("Ошибка загрузки"));
-            }
+            return;
+          }
+          try {
+            const data = JSON.parse(xhr.responseText);
+            reject(new Error(data.error || "Ошибка загрузки"));
+          } catch {
+            reject(new Error("Ошибка загрузки"));
           }
         });
         xhr.addEventListener("error", () => reject(new Error("Ошибка сети")));
@@ -170,11 +232,45 @@ export default function UploadPhotoModal({
     }
   };
 
+  const renderMultiSelect = (
+    label: string,
+    options: string[],
+    selectedValues: string[],
+    setter: MultiSetter,
+  ) => (
+    <div className={styles.field}>
+      <div className={styles.label}>{label}</div>
+      <details className={styles.multi} name="upload-photo-filters">
+        <summary className={styles.select}>
+          <span className={styles.selectValue}>{summarizeSelected(selectedValues)}</span>
+        </summary>
+        <div className={styles.multiMenu}>
+          {options.map((value) => (
+            <label key={value} className={styles.multiItem}>
+              <input
+                type="checkbox"
+                checked={selectedValues.includes(value)}
+                onChange={() => toggleMultiValue(value, setter)}
+              />
+              <span>{value}</span>
+            </label>
+          ))}
+        </div>
+      </details>
+    </div>
+  );
+
   if (!open) return null;
 
   return (
     <div className={styles.overlay} onClick={onClose} role="presentation">
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+      <div
+        ref={modalRef}
+        className={styles.modal}
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
         <button type="button" className={styles.closeBtn} aria-label="Закрыть" onClick={onClose} />
 
         <div className={styles.title}>Загрузка фотографии</div>
@@ -193,9 +289,7 @@ export default function UploadPhotoModal({
               <div className={styles.dropzoneHint}>
                 Перетащите фото сюда или нажмите для выбора
               </div>
-              <div className={styles.dropzoneFormats}>
-                JPEG, PNG, WebP — до {MAX_UPLOAD_FILE_LABEL}
-              </div>
+              <div className={styles.dropzoneFormats}>JPEG, PNG, WebP до {MAX_UPLOAD_FILE_LABEL}</div>
               <input
                 ref={inputRef}
                 type="file"
@@ -207,110 +301,79 @@ export default function UploadPhotoModal({
           ) : (
             <div className={styles.previewWrap}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={preview!} alt="Превью" className={styles.previewImg} />
+              <img src={preview ?? ""} alt="Превью" className={styles.previewImg} />
               <button
                 type="button"
                 className={styles.removePreview}
                 onClick={() => {
                   setFile(null);
-                  if (preview) URL.revokeObjectURL(preview);
-                  setPreview(null);
+                  replacePreview(null);
                 }}
                 aria-label="Удалить фото"
               >
-                ✕
+                ×
               </button>
             </div>
           )}
 
-          <div className={styles.field}>
-            <div className={styles.label}>Название</div>
-            <input
-              className={styles.input}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Жёлтый двор-колодец"
-            />
-          </div>
-
-          <div className={styles.field}>
-            <div className={styles.label}>Станция метро</div>
-            <select className={styles.select} value={metro} onChange={(e) => setMetro(e.target.value)}>
-              <option value="">Выберите…</option>
-              {filters.metro.map((v) => (
-                <option key={v} value={v}>{v}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className={styles.field}>
-            <div className={styles.label}>Координаты</div>
-            <div className={styles.coordsRow}>
+          <div className={styles.formFields}>
+            <div className={styles.field}>
+              <div className={styles.label}>Название</div>
               <input
                 className={styles.input}
-                value={lat}
-                onChange={(e) => setLat(e.target.value)}
-                placeholder="Широта (59.936)"
-                type="number"
-                step="any"
-              />
-              <input
-                className={styles.input}
-                value={lng}
-                onChange={(e) => setLng(e.target.value)}
-                placeholder="Долгота (30.270)"
-                type="number"
-                step="any"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Жёлтый двор-колодец"
               />
             </div>
-          </div>
 
-          <div className={styles.field}>
-            <div className={styles.label}>Тип пространства</div>
-            <select className={styles.select} value={spaceType} onChange={(e) => setSpaceType(e.target.value)}>
-              <option value="">Выберите…</option>
-              {filters.spaceType.map((v) => (
-                <option key={v} value={v}>{v}</option>
-              ))}
-            </select>
-          </div>
+            {renderMultiSelect("Станция метро", filters.metro, metro, setMetro)}
 
-          <div className={styles.field}>
-            <div className={styles.label}>Эмоциональный фон</div>
-            <select className={styles.select} value={mood} onChange={(e) => setMood(e.target.value)}>
-              <option value="">Выберите…</option>
-              {filters.mood.map((v) => (
-                <option key={v} value={v}>{v}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className={styles.field}>
-            <div className={styles.label}>Атмосфера</div>
-            <select className={styles.select} value={atmosphere} onChange={(e) => setAtmosphere(e.target.value)}>
-              <option value="">Выберите…</option>
-              {filters.atmosphere.map((v) => (
-                <option key={v} value={v}>{v}</option>
-              ))}
-            </select>
-          </div>
-
-          {uploading && (
-            <div className={styles.progressBar}>
-              <div className={styles.progressFill} style={{ width: `${progress}%` }} />
+            <div className={styles.field}>
+              <div className={styles.label}>Координаты</div>
+              <div className={styles.coordsRow}>
+                <input
+                  className={styles.input}
+                  value={lat}
+                  onChange={(e) => setLat(e.target.value)}
+                  placeholder="Широта (59.936)"
+                  type="number"
+                  step="any"
+                />
+                <input
+                  className={styles.input}
+                  value={lng}
+                  onChange={(e) => setLng(e.target.value)}
+                  placeholder="Долгота (30.270)"
+                  type="number"
+                  step="any"
+                />
+              </div>
             </div>
-          )}
 
-          {error && <div className={styles.error}>{error}</div>}
+            {renderMultiSelect("Тип пространства", filters.spaceType, spaceType, setSpaceType)}
+            {renderMultiSelect("Эмоциональный фон", filters.mood, mood, setMood)}
+            {renderMultiSelect("Атмосфера", filters.atmosphere, atmosphere, setAtmosphere)}
+          </div>
 
-          <button
-            type="button"
-            className={styles.submitBtn}
-            disabled={!canSubmit}
-            onClick={handleSubmit}
-          >
-            {uploading ? `ЗАГРУЗКА… ${progress}%` : "ЗАГРУЗИТЬ"}
-          </button>
+          <div className={styles.submitBar}>
+            {uploading ? (
+              <div className={styles.progressBar}>
+                <div className={styles.progressFill} style={{ width: `${progress}%` }} />
+              </div>
+            ) : null}
+
+            {error ? <div className={styles.error}>{error}</div> : null}
+
+            <button
+              type="button"
+              className={styles.submitBtn}
+              disabled={!canSubmit}
+              onClick={handleSubmit}
+            >
+              {uploading ? `ЗАГРУЗКА… ${progress}%` : "ЗАГРУЗИТЬ"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

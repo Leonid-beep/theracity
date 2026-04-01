@@ -4,12 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import styles from "./cabinetPhotoModals.module.css";
 import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
+import { formatMultiValue } from "@/app/lib/photoMetadata";
 
 export type CabinetPhotoItem = {
   id: string;
   src: string;
   title: string;
-  metro: string;
+  metro: string[];
   coords: string;
   lat?: number;
   lng?: number;
@@ -239,7 +240,7 @@ export default function CabinetPhotoModals({
           </div>
 
           <div className={styles.meta}>
-            <div>Метро: {activePhoto.metro}</div>
+            <div>Метро: {formatMultiValue(activePhoto.metro)}</div>
             <div>
               Адрес:{" "}
               {mapsUrl ? (

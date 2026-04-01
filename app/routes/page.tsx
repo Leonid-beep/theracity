@@ -36,9 +36,9 @@ export type RouteItem = {
   title: string;
   desc: string;
   authorUsername: string;
-  metro: string;
+  metro: string[];
   address: string;
-  photos: { src: string; alt: string; metro?: string; address?: string }[];
+  photos: { src: string; alt: string; metro?: string[]; address?: string }[];
   coverUrl: string;
 };
 
@@ -48,6 +48,15 @@ type Filters = {
   mood: string[];
   atmosphere: string[];
 };
+
+function isAllSelected(selected: string[], options: string[]): boolean {
+  return options.length > 0 && selected.length === options.length;
+}
+
+function buildFilterValue(selected: string[], options: string[]): string | null {
+  if (!selected.length || !options.length || isAllSelected(selected, options)) return null;
+  return selected.join(",");
+}
 
 export default function RoutesPage() {
   const pageSize = useRoutesBreakpoint();
@@ -198,10 +207,14 @@ export default function RoutesPage() {
 
   const handleApplyFilters = () => {
     const f: Record<string, string> = {};
-    if (selMetro.length) f.metro = selMetro.join(",");
-    if (selSpace.length) f.spaceType = selSpace.join(",");
-    if (selMood.length) f.mood = selMood.join(",");
-    if (selAtmo.length) f.atmosphere = selAtmo.join(",");
+    const metro = buildFilterValue(selMetro, filterOptions.metro);
+    const spaceType = buildFilterValue(selSpace, filterOptions.spaceType);
+    const mood = buildFilterValue(selMood, filterOptions.mood);
+    const atmosphere = buildFilterValue(selAtmo, filterOptions.atmosphere);
+    if (metro) f.metro = metro;
+    if (spaceType) f.spaceType = spaceType;
+    if (mood) f.mood = mood;
+    if (atmosphere) f.atmosphere = atmosphere;
     setAppliedFilters(f);
     setPage(1);
   };
@@ -216,12 +229,32 @@ export default function RoutesPage() {
   };
 
   const hasAppliedFilters = Object.keys(appliedFilters).length > 0;
+  const canResetFilters =
+    hasAppliedFilters ||
+    selMetro.length > 0 ||
+    selSpace.length > 0 ||
+    selMood.length > 0 ||
+    selAtmo.length > 0;
 
-  const toggleValue = (value: string, setter: (updater: (prev: string[]) => string[]) => void) => {
-    setter((prev) =>
-      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
-    );
+  const toggleValue = (
+    value: string,
+    options: string[],
+    setter: (updater: (prev: string[]) => string[]) => void,
+  ) => {
+    setter((prev) => {
+      const base = prev.length ? prev : options;
+      const next = base.includes(value)
+        ? base.filter((item) => item !== value)
+        : [...base, value];
+
+      return next.length === 0 || next.length === options.length
+        ? []
+        : options.filter((option) => next.includes(option));
+    });
   };
+
+  const isValueChecked = (value: string, selected: string[], options: string[]) =>
+    selected.length === 0 ? options.includes(value) : selected.includes(value);
 
   const createEmptyRoute = async () => {
     if (creating) return;
@@ -359,8 +392,8 @@ export default function RoutesPage() {
                       <label key={v} className={styles.multiItem}>
                         <input
                           type="checkbox"
-                          checked={selSpace.includes(v)}
-                          onChange={() => toggleValue(v, setSelSpace)}
+                          checked={isValueChecked(v, selSpace, filterOptions.spaceType)}
+                          onChange={() => toggleValue(v, filterOptions.spaceType, setSelSpace)}
                         />
                         {v}
                       </label>
@@ -382,8 +415,8 @@ export default function RoutesPage() {
                       <label key={v} className={styles.multiItem}>
                         <input
                           type="checkbox"
-                          checked={selMood.includes(v)}
-                          onChange={() => toggleValue(v, setSelMood)}
+                          checked={isValueChecked(v, selMood, filterOptions.mood)}
+                          onChange={() => toggleValue(v, filterOptions.mood, setSelMood)}
                         />
                         {v}
                       </label>
@@ -405,8 +438,8 @@ export default function RoutesPage() {
                       <label key={v} className={styles.multiItem}>
                         <input
                           type="checkbox"
-                          checked={selMetro.includes(v)}
-                          onChange={() => toggleValue(v, setSelMetro)}
+                          checked={isValueChecked(v, selMetro, filterOptions.metro)}
+                          onChange={() => toggleValue(v, filterOptions.metro, setSelMetro)}
                         />
                         {v}
                       </label>
@@ -428,8 +461,8 @@ export default function RoutesPage() {
                       <label key={v} className={styles.multiItem}>
                         <input
                           type="checkbox"
-                          checked={selAtmo.includes(v)}
-                          onChange={() => toggleValue(v, setSelAtmo)}
+                          checked={isValueChecked(v, selAtmo, filterOptions.atmosphere)}
+                          onChange={() => toggleValue(v, filterOptions.atmosphere, setSelAtmo)}
                         />
                         {v}
                       </label>
@@ -445,6 +478,10 @@ export default function RoutesPage() {
             >
               {hasAppliedFilters ? "СБРОСИТЬ" : "ПРИМЕНИТЬ"}
             </button>
+            <div className={styles.actions}>
+              <button className={styles.findBtn} onClick={handleApplyFilters} aria-label="Найти">Найти</button>
+              <button className={styles.resetBtn} onClick={handleResetFilters} disabled={!canResetFilters} aria-label="Сбросить">Сбросить</button>
+            </div>
           </div>
         </aside>
       </div>

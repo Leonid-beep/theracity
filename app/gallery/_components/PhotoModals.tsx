@@ -6,6 +6,7 @@ import styles from "./photoModals.module.css";
 import type { PhotoItem } from "../page";
 import ConfirmDeleteModal from "@/app/cabinet/_components/ConfirmDeleteModal";
 import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
+import { formatMultiValue } from "@/app/lib/photoMetadata";
 
 type RouteItem = { id: string; title: string; src: string };
 type Step = "photo" | "routeChoice" | "pickRoute" | "createRoute";
@@ -227,7 +228,7 @@ export default function PhotoModals(props: {
           </div>
 
           <div className={styles.meta}>
-            <div>Метро: {activePhoto.metro}</div>
+            <div>Метро: {formatMultiValue(activePhoto.metro)}</div>
             <div>
               Адрес:{" "}
               <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>

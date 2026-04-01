@@ -436,6 +436,7 @@
 }
 
 .apply {
+  display: none;
   margin-top: 24px;
   width: 228px;
   height: 32px;
@@ -450,6 +451,57 @@
   color: #111;
   box-shadow: 0 10px 18px rgba(0, 0, 0, 0.14);
   flex-shrink: 0;
+}
+
+.actions {
+  margin-top: 24px;
+  width: 100%;
+  max-width: 236px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.findBtn,
+.resetBtn {
+  position: relative;
+  flex: 1 1 0;
+  height: 32px;
+  border: none;
+  border-radius: 999px;
+  background: #e0dab4;
+  cursor: pointer;
+  font-family: var(--font-button);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: transparent;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.14);
+}
+
+.findBtn::after,
+.resetBtn::after {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111;
+  content: "";
+}
+
+.findBtn::after {
+  content: "Найти";
+}
+
+.resetBtn::after {
+  content: "Сбросить";
+}
+
+.resetBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .mark {
@@ -538,6 +590,16 @@
   .apply {
     margin-top: auto;
     width: 190px;
+    height: 28px;
+    font-size: 11px;
+  }
+  .actions {
+    margin-top: auto;
+    max-width: 188px;
+    gap: 8px;
+  }
+  .findBtn,
+  .resetBtn {
     height: 28px;
     font-size: 11px;
   }
@@ -652,6 +714,15 @@
     height: 24px;
     font-size: 10px;
   }
+  .actions {
+    max-width: 168px;
+    gap: 8px;
+  }
+  .findBtn,
+  .resetBtn {
+    height: 24px;
+    font-size: 10px;
+  }
   .grid {
     grid-template-columns: repeat(5, minmax(0, 1fr));
     column-gap: 12px;
@@ -761,6 +832,15 @@
   .apply {
     margin-top: 22px;
     width: 140px;
+    height: 22px;
+    font-size: 9px;
+  }
+  .actions {
+    max-width: 148px;
+    gap: 6px;
+  }
+  .findBtn,
+  .resetBtn {
     height: 22px;
     font-size: 9px;
   }
@@ -917,6 +997,16 @@
     height: 20px;
     font-size: 8px;
     flex-shrink: 0;
+  }
+  .actions {
+    margin: 16px auto 0;
+    max-width: 260px;
+    gap: 8px;
+  }
+  .findBtn,
+  .resetBtn {
+    height: 24px;
+    font-size: 9px;
   }
   .grid {
     grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));

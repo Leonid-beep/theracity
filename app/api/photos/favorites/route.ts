@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/lib/prisma";
 import { getProxyPhotoUrl } from "@/app/lib/s3";
 import { getSessionUser } from "@/app/lib/auth";
+import { parseStoredMultiValue } from "@/app/lib/photoMetadata";
 
 export async function GET(req: NextRequest) {
   try {
@@ -28,13 +29,13 @@ export async function GET(req: NextRequest) {
       id: f.photo.id,
       src: getProxyPhotoUrl(f.photo.s3Key),
       title: f.photo.title,
-      metro: f.photo.metro,
+      metro: parseStoredMultiValue(f.photo.metro),
       coords: `${f.photo.lat}, ${f.photo.lng}`,
       lat: f.photo.lat,
       lng: f.photo.lng,
-      spaceType: f.photo.spaceType,
-      mood: f.photo.mood,
-      atmosphere: f.photo.atmosphere,
+      spaceType: parseStoredMultiValue(f.photo.spaceType),
+      mood: parseStoredMultiValue(f.photo.mood),
+      atmosphere: parseStoredMultiValue(f.photo.atmosphere),
     }));
 
     return NextResponse.json({ photos, total, page, pageSize });
