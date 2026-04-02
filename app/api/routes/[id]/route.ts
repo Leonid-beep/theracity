@@ -5,12 +5,34 @@ import { isAdminUserEmail } from "@/app/lib/admin";
 import { getProxyPhotoUrl } from "@/app/lib/s3";
 import { parseStoredMultiValue } from "@/app/lib/photoMetadata";
 
+async function getActorPermissions() {
+  const session = await getSessionUser();
+
+  if (!session) {
+    return {
+      session: null,
+      isAdmin: false,
+    };
+  }
+
+  const actor = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { email: true },
+  });
+
+  return {
+    session,
+    isAdmin: isAdminUserEmail(actor?.email),
+  };
+}
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
+    const { session, isAdmin } = await getActorPermissions();
 
     const route = await prisma.route.findUnique({
       where: { id },
@@ -28,16 +50,9 @@ export async function GET(
     }
 
     if (!route.isPublished) {
-      const session = await getSessionUser();
       if (!session) {
         return NextResponse.json({ error: "Маршрут не найден" }, { status: 404 });
       }
-
-      const actor = await prisma.user.findUnique({
-        where: { id: session.userId },
-        select: { email: true },
-      });
-      const isAdmin = isAdminUserEmail(actor?.email);
 
       if (!isAdmin && route.createdById !== session.userId) {
         return NextResponse.json({ error: "Нет доступа" }, { status: 403 });
@@ -63,6 +78,7 @@ export async function GET(
         photos,
         coverUrl: photos[0]?.src ?? "",
         isPublished: route.isPublished,
+        canEdit: !!session && (isAdmin || route.createdById === session.userId),
       },
     });
   } catch {
@@ -75,7 +91,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await getSessionUser();
+    const { session, isAdmin } = await getActorPermissions();
+
     if (!session) {
       return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
     }
@@ -86,12 +103,6 @@ export async function DELETE(
     if (!route) {
       return NextResponse.json({ error: "Маршрут не найден" }, { status: 404 });
     }
-
-    const actor = await prisma.user.findUnique({
-      where: { id: session.userId },
-      select: { email: true },
-    });
-    const isAdmin = isAdminUserEmail(actor?.email);
 
     if (!isAdmin && route.createdById !== session.userId) {
       return NextResponse.json({ error: "Нет доступа" }, { status: 403 });
@@ -106,11 +117,12 @@ export async function DELETE(
 }
 
 export async function PATCH(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await getSessionUser();
+    const { session, isAdmin } = await getActorPermissions();
+
     if (!session) {
       return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
     }
@@ -123,6 +135,51 @@ export async function PATCH(
 
     if (!route) {
       return NextResponse.json({ error: "Маршрут не найден" }, { status: 404 });
+    }
+
+    let payload: { title?: unknown; description?: unknown } = {};
+
+    try {
+      payload = (await req.json()) as { title?: unknown; description?: unknown };
+    } catch {
+      payload = {};
+    }
+
+    const hasEditableFields =
+      Object.prototype.hasOwnProperty.call(payload, "title") ||
+      Object.prototype.hasOwnProperty.call(payload, "description");
+
+    if (hasEditableFields) {
+      if (!isAdmin && route.createdById !== session.userId) {
+        return NextResponse.json({ error: "Нет доступа" }, { status: 403 });
+      }
+
+      const nextTitle =
+        typeof payload.title === "string"
+          ? payload.title.trim() || "Новый маршрут"
+          : route.title;
+      const nextDescription =
+        typeof payload.description === "string"
+          ? payload.description.trim()
+          : route.description;
+
+      const updated = await prisma.route.update({
+        where: { id },
+        data: {
+          title: nextTitle,
+          description: nextDescription,
+        },
+      });
+
+      return NextResponse.json({
+        route: {
+          id: updated.id,
+          title: updated.title,
+          desc: updated.description,
+          isPublished: updated.isPublished,
+          canEdit: true,
+        },
+      });
     }
 
     if (route.createdById !== session.userId) {

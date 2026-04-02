@@ -15,6 +15,7 @@ export type CabinetRouteItem = {
   metro: string[];
   address: string;
   photos: { src: string; alt: string; metro?: string[]; address?: string }[];
+  canEdit?: boolean;
 };
 
 export default function CabinetRouteModal({
@@ -23,6 +24,7 @@ export default function CabinetRouteModal({
   showPublish,
   onPublish,
   onShare,
+  onEdit,
   onClose,
   actionLabel,
   onDelete,
@@ -32,6 +34,7 @@ export default function CabinetRouteModal({
   showPublish?: boolean;
   onPublish?: () => void;
   onShare?: () => void;
+  onEdit?: (route: CabinetRouteItem) => void;
   onClose: () => void;
   actionLabel: string;
   onDelete: () => void;
@@ -93,6 +96,7 @@ export default function CabinetRouteModal({
   const prev = hasPhotos && index - 1 >= 0 ? photos[index - 1] : null;
   const next = hasPhotos && index + 1 < photos.length ? photos[index + 1] : null;
   const mapsUrl = buildYandexMapsUrlFromString(main?.address ?? route.address);
+  const canEdit = Boolean(route.canEdit);
 
   return (
     <div className={styles.overlay} onClick={onClose} role="presentation">
@@ -151,6 +155,36 @@ export default function CabinetRouteModal({
             ) : (
               <p className={styles.emptyRoutePhotos}>В этом маршруте пока нет фотографий</p>
             )}
+
+            {canEdit ? (
+              <button
+                type="button"
+                className={styles.editRouteBtn}
+                aria-label="Редактировать маршрут"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onEdit?.(route);
+                }}
+              >
+                <svg
+                  className={styles.editRouteIcon}
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  aria-hidden
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M12 20h9" strokeLinecap="round" />
+                  <path
+                    d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            ) : null}
 
             {totalPages > 1 ? (
               <div className={`${styles.pagination} ${styles.photoPagination}`}>

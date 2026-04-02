@@ -11,6 +11,7 @@ import type { CabinetPhotoItem } from "./_components/CabinetPhotoModals";
 import ConfirmDeleteModal from "./_components/ConfirmDeleteModal";
 import { SuccessToast, useSuccessToast } from "@/app/ui/SuccessToast";
 import { copyRouteShareLink } from "@/app/lib/locationLinks";
+import RouteFormModal from "../routes/_components/RouteFormModal";
 
 const CabinetRouteModal = dynamic(() => import("./_components/CabinetRouteModal"), { ssr: false });
 const CabinetPhotoModals = dynamic(() => import("./_components/CabinetPhotoModals"), { ssr: false });
@@ -121,6 +122,12 @@ export default function CabinetPage() {
   const [activeSectionKey, setActiveSectionKey] = useState<SectionKey | null>(null);
   const [activeRoute, setActiveRoute] = useState<CabinetRouteItem | null>(null);
   const [activePhoto, setActivePhoto] = useState<CabinetPhotoItem | null>(null);
+  const [routeForm, setRouteForm] = useState<{
+    routeId: string;
+    initialTitle: string;
+    initialDescription: string;
+  } | null>(null);
+  const [routeFormSubmitting, setRouteFormSubmitting] = useState(false);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmKind, setConfirmKind] = useState<"delete_route" | "remove_fav_route" | "remove_fav_photo">("delete_route");
@@ -184,6 +191,89 @@ export default function CabinetPage() {
     setActivePhoto(p);
     setOpenPhotoFlow(true);
   };
+
+  const applyRouteChanges = useCallback((routeId: string, title: string, desc: string) => {
+    setMyRoutes((prev) =>
+      prev.map((route) =>
+        String(route.id) === routeId
+          ? {
+              ...route,
+              title,
+              desc,
+            }
+          : route,
+      ),
+    );
+    setFavRoutes((prev) =>
+      prev.map((route) =>
+        String(route.id) === routeId
+          ? {
+              ...route,
+              title,
+              desc,
+            }
+          : route,
+      ),
+    );
+    setActiveRoute((prev) =>
+      prev && String(prev.id) === routeId
+        ? {
+            ...prev,
+            title,
+            desc,
+          }
+        : prev,
+    );
+  }, []);
+
+  const openRouteEditForm = useCallback((route: CabinetRouteItem) => {
+    setRouteForm({
+      routeId: String(route.id),
+      initialTitle: route.title,
+      initialDescription: route.desc,
+    });
+  }, []);
+
+  const closeRouteForm = useCallback(() => {
+    if (routeFormSubmitting) return;
+    setRouteForm(null);
+  }, [routeFormSubmitting]);
+
+  const handleRouteFormSubmit = useCallback(
+    async ({ title, description }: { title: string; description: string }) => {
+      if (!routeForm || routeFormSubmitting) return;
+
+      setRouteFormSubmitting(true);
+
+      try {
+        const normalizedTitle = title.trim() || "Новый маршрут";
+        const normalizedDescription = description.trim();
+        const response = await fetch(`/api/routes/${routeForm.routeId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: normalizedTitle,
+            description: normalizedDescription,
+          }),
+        });
+
+        if (!response.ok) return;
+
+        const data = (await response.json().catch(() => ({}))) as {
+          route?: { title?: string; desc?: string };
+        };
+        const nextTitle = data.route?.title ?? normalizedTitle;
+        const nextDesc = data.route?.desc ?? normalizedDescription;
+
+        applyRouteChanges(routeForm.routeId, nextTitle, nextDesc);
+        showSuccess("Маршрут обновлён");
+        setRouteForm(null);
+      } finally {
+        setRouteFormSubmitting(false);
+      }
+    },
+    [applyRouteChanges, routeForm, routeFormSubmitting, showSuccess],
+  );
 
   const askDelete = (kind: typeof confirmKind, id?: string | number) => {
     setConfirmKind(kind);
@@ -438,6 +528,7 @@ export default function CabinetPage() {
             }
           }}
           onClose={() => setOpenRoute(false)}
+          onEdit={openRouteEditForm}
           actionLabel={activeSectionKey === "my_routes" ? "УДАЛИТЬ МАРШРУТ" : "УДАЛИТЬ ИЗ ИЗБРАННОГО"}
           onDelete={() => {
             if (activeSectionKey === "my_routes") askDelete("delete_route", activeRoute?.id);
@@ -475,6 +566,16 @@ export default function CabinetPage() {
       {confirmOpen && (
         <ConfirmDeleteModal open onClose={() => setConfirmOpen(false)} onYes={doDelete} />
       )}
+
+      <RouteFormModal
+        open={!!routeForm}
+        mode="edit"
+        initialTitle={routeForm?.initialTitle}
+        initialDescription={routeForm?.initialDescription}
+        submitting={routeFormSubmitting}
+        onClose={closeRouteForm}
+        onSubmit={handleRouteFormSubmit}
+      />
 
       <SuccessToast message={successMsg} />
     </main>

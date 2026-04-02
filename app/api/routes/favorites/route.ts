@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/lib/prisma";
 import { getProxyPhotoUrl } from "@/app/lib/s3";
 import { getSessionUser } from "@/app/lib/auth";
+import { isAdminUserEmail } from "@/app/lib/admin";
 import { parseStoredMultiValue } from "@/app/lib/photoMetadata";
 
 export async function GET(req: NextRequest) {
@@ -13,6 +14,11 @@ export async function GET(req: NextRequest) {
     const sp = req.nextUrl.searchParams;
     const page = Math.max(1, Number(sp.get("page")) || 1);
     const pageSize = Math.min(100, Math.max(1, Number(sp.get("pageSize")) || 10));
+    const actor = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { email: true },
+    });
+    const isAdmin = isAdminUserEmail(actor?.email);
 
     const [favs, total] = await Promise.all([
       prisma.favoriteRoute.findMany({
@@ -49,6 +55,7 @@ export async function GET(req: NextRequest) {
         metro: firstPhoto ? parseStoredMultiValue(firstPhoto.metro) : [],
         address: firstPhoto ? `${firstPhoto.lat}, ${firstPhoto.lng}` : "",
         photos,
+        canEdit: isAdmin || f.route.createdById === session.userId,
       };
     });
 

@@ -23,6 +23,7 @@ type RouteItem = {
   metro: string[];
   address: string;
   photos: RoutePhoto[];
+  canEdit?: boolean;
 };
 
 export default function RouteModal({
@@ -35,6 +36,7 @@ export default function RouteModal({
   isAuthenticated,
   onRequireAuth,
   onShare,
+  onEdit,
   onRouteDeleted,
 }: {
   open: boolean;
@@ -46,6 +48,7 @@ export default function RouteModal({
   isAuthenticated?: boolean;
   onRequireAuth?: () => void;
   onShare?: (routeId: string) => void;
+  onEdit?: (route: RouteItem) => void;
   onRouteDeleted?: (routeId: string) => void;
 }) {
   const [photoPage, setPhotoPage] = useState(1);
@@ -149,6 +152,7 @@ export default function RouteModal({
     authorNick.length > 0 ? `${activeRoute.title} от ${authorNick}` : activeRoute.title;
   const mapsUrl = buildYandexMapsUrlFromString(mainPhoto?.address ?? activeRoute.address);
   const liked = likedRouteIds.has(activeRoute.id);
+  const canEdit = Boolean(activeRoute.canEdit);
 
   return (
     <>
@@ -238,6 +242,36 @@ export default function RouteModal({
                     <path
                       d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"
                       strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+              ) : null}
+
+              {canEdit ? (
+                <button
+                  type="button"
+                  className={`${styles.editRouteBtn} ${isAdmin ? styles.editRouteBtnOffset : ""}`}
+                  aria-label="Редактировать маршрут"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onEdit?.(activeRoute);
+                  }}
+                >
+                  <svg
+                    className={styles.editRouteIcon}
+                    width="17"
+                    height="17"
+                    viewBox="0 0 24 24"
+                    aria-hidden
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M12 20h9" strokeLinecap="round" />
+                    <path
+                      d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
                   </svg>
                 </button>

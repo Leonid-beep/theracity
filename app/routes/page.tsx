@@ -5,12 +5,12 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import styles from "./styles.module.css";
-import createStyles from "../gallery/_components/photoModals.module.css";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { SuccessToast, useSuccessToast } from "@/app/ui/SuccessToast";
 import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
 import { useCloseDetailsOnOutsideClick } from "@/lib/useCloseDetailsOnOutsideClick";
 import { copyRouteShareLink } from "@/app/lib/locationLinks";
+import RouteFormModal from "./_components/RouteFormModal";
 
 const RouteModal = dynamic(() => import("./_components/RouteModal"), {
   ssr: false,
@@ -47,6 +47,7 @@ export type RouteItem = {
   photos: { src: string; alt: string; metro?: string[]; address?: string }[];
   coverUrl: string;
   isPublished?: boolean;
+  canEdit?: boolean;
 };
 
 type Filters = {
@@ -101,10 +102,13 @@ function RoutesPageContent() {
 
   const [open, setOpen] = useState(false);
   const [activeRoute, setActiveRoute] = useState<RouteItem | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [newDesc, setNewDesc] = useState("");
-  const [creating, setCreating] = useState(false);
+  const [routeForm, setRouteForm] = useState<{
+    mode: "create" | "edit";
+    routeId?: string;
+    initialTitle: string;
+    initialDescription: string;
+  } | null>(null);
+  const [routeFormSubmitting, setRouteFormSubmitting] = useState(false);
 
   const [filterOptions, setFilterOptions] = useState<Filters>({
     metro: [],
@@ -256,6 +260,51 @@ function RoutesPageContent() {
     setOpen(true);
   };
 
+  const applyRouteChanges = useCallback((routeId: string, title: string, desc: string) => {
+    setRoutes((prev) =>
+      prev.map((route) =>
+        route.id === routeId
+          ? {
+              ...route,
+              title,
+              desc,
+            }
+          : route,
+      ),
+    );
+    setActiveRoute((prev) =>
+      prev?.id === routeId
+        ? {
+            ...prev,
+            title,
+            desc,
+          }
+        : prev,
+    );
+  }, []);
+
+  const openCreateRouteForm = () => {
+    setRouteForm({
+      mode: "create",
+      initialTitle: "",
+      initialDescription: "",
+    });
+  };
+
+  const openEditRouteForm = (route: Pick<RouteItem, "id" | "title" | "desc">) => {
+    setRouteForm({
+      mode: "edit",
+      routeId: route.id,
+      initialTitle: route.title,
+      initialDescription: route.desc,
+    });
+  };
+
+  const closeRouteForm = () => {
+    if (routeFormSubmitting) return;
+    setRouteForm(null);
+  };
+
   const toggleLike = async (routeId: string) => {
     if (authLoading) return;
 
@@ -313,6 +362,73 @@ function RoutesPageContent() {
     },
     [showSuccess],
   );
+
+  const handleRouteFormSubmit = async ({
+    title,
+    description,
+  }: {
+    title: string;
+    description: string;
+  }) => {
+    if (!routeForm || routeFormSubmitting || authLoading) return;
+
+    if (!user) {
+      requireAuth();
+      return;
+    }
+
+    setRouteFormSubmitting(true);
+
+    try {
+      const normalizedTitle = title.trim() || "Новый маршрут";
+      const normalizedDescription = description.trim();
+
+      if (routeForm.mode === "create") {
+        const response = await fetch("/api/routes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: normalizedTitle,
+            description: normalizedDescription,
+            photoIds: [],
+          }),
+        });
+
+        if (response.ok) {
+          showSuccess("Маршрут создан");
+          setRouteForm(null);
+          await fetchRoutes(page, appliedFilters);
+        }
+
+        return;
+      }
+
+      if (!routeForm.routeId) return;
+
+      const response = await fetch(`/api/routes/${routeForm.routeId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: normalizedTitle,
+          description: normalizedDescription,
+        }),
+      });
+
+      if (!response.ok) return;
+
+      const data = (await response.json().catch(() => ({}))) as {
+        route?: { title?: string; desc?: string };
+      };
+      const nextTitle = data.route?.title ?? normalizedTitle;
+      const nextDesc = data.route?.desc ?? normalizedDescription;
+
+      applyRouteChanges(routeForm.routeId, nextTitle, nextDesc);
+      showSuccess("Маршрут обновлён");
+      setRouteForm(null);
+    } finally {
+      setRouteFormSubmitting(false);
+    }
+  };
 
   const handleApplyFilters = () => {
     if (
@@ -375,39 +491,6 @@ function RoutesPageContent() {
     });
   };
 
-  const createEmptyRoute = async () => {
-    if (creating || authLoading) return;
-
-    if (!user) {
-      requireAuth();
-      return;
-    }
-
-    setCreating(true);
-
-    try {
-      const response = await fetch("/api/routes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: newTitle.trim() || "Новый маршрут",
-          description: newDesc.trim(),
-          photoIds: [],
-        }),
-      });
-
-      if (response.ok) {
-        showSuccess("Маршрут создан");
-        setCreateOpen(false);
-        setNewTitle("");
-        setNewDesc("");
-        await fetchRoutes(page, appliedFilters);
-      }
-    } finally {
-      setCreating(false);
-    }
-  };
-
   return (
     <main className={styles.root}>
       <h1 className={styles.h1}>
@@ -422,7 +505,7 @@ function RoutesPageContent() {
             requireAuth();
             return;
           }
-          setCreateOpen(true);
+          openCreateRouteForm();
         }}
       >
         Создать новый маршрут
@@ -675,58 +758,20 @@ function RoutesPageContent() {
           isAuthenticated={!!user}
           onRequireAuth={requireAuth}
           onShare={(routeId) => void handleShareRoute(routeId)}
+          onEdit={openEditRouteForm}
           onRouteDeleted={handleRouteDeleted}
         />
       ) : null}
 
-      {createOpen ? (
-        <div
-          className={createStyles.overlay}
-          onClick={() => setCreateOpen(false)}
-          role="presentation"
-        >
-          <div
-            className={`${createStyles.modal} ${createStyles.modalCreate}`}
-            onClick={(event) => event.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-          >
-            <button
-              type="button"
-              className={createStyles.closeBtn}
-              onClick={() => setCreateOpen(false)}
-              aria-label="Закрыть"
-            />
-            <div className={createStyles.createTitle}>Создание маршрута</div>
-            <div className={createStyles.createBody}>
-              <div className={createStyles.createField}>
-                <div className={createStyles.createLabel}>ПРИДУМАЙТЕ НАЗВАНИЕ</div>
-                <input
-                  className={createStyles.createInput}
-                  value={newTitle}
-                  onChange={(event) => setNewTitle(event.target.value)}
-                />
-              </div>
-              <div className={createStyles.createField}>
-                <div className={createStyles.createLabel}>ПРИДУМАЙТЕ ОПИСАНИЕ</div>
-                <textarea
-                  className={createStyles.createTextarea}
-                  value={newDesc}
-                  onChange={(event) => setNewDesc(event.target.value)}
-                />
-              </div>
-              <button
-                type="button"
-                className={createStyles.createConfirm}
-                onClick={createEmptyRoute}
-                disabled={creating}
-              >
-                {creating ? "СОЗДАНИЕ..." : "СОЗДАТЬ НОВЫЙ МАРШРУТ"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <RouteFormModal
+        open={!!routeForm}
+        mode={routeForm?.mode ?? "create"}
+        initialTitle={routeForm?.initialTitle}
+        initialDescription={routeForm?.initialDescription}
+        submitting={routeFormSubmitting}
+        onClose={closeRouteForm}
+        onSubmit={handleRouteFormSubmit}
+      />
 
       <SuccessToast message={successMsg} />
     </main>

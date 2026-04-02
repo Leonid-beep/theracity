@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/lib/prisma";
 import { getProxyPhotoUrl } from "@/app/lib/s3";
 import { getSessionUser } from "@/app/lib/auth";
+import { isAdminUserEmail } from "@/app/lib/admin";
 import {
   matchesSelectedValues,
   parseStoredMultiValue,
@@ -28,6 +29,14 @@ export async function GET(req: NextRequest) {
       mood: getSelectedValues(sp, "mood"),
       atmosphere: getSelectedValues(sp, "atmosphere"),
     };
+    const session = await getSessionUser();
+    const actor = session
+      ? await prisma.user.findUnique({
+          where: { id: session.userId },
+          select: { email: true },
+        })
+      : null;
+    const isAdmin = isAdminUserEmail(actor?.email);
 
     const routes = await prisma.route.findMany({
       where: { isPublished: true },
@@ -73,6 +82,7 @@ export async function GET(req: NextRequest) {
         address: firstPhoto ? `${firstPhoto.lat}, ${firstPhoto.lng}` : "",
         photos,
         coverUrl: photos[0]?.src ?? "",
+        canEdit: !!session && (isAdmin || route.createdById === session.userId),
       };
     });
 

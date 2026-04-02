@@ -47,6 +47,7 @@ export async function GET(req: NextRequest) {
         address: firstPhoto ? `${firstPhoto.lat}, ${firstPhoto.lng}` : "",
         photos,
         coverUrl: photos[0]?.src ?? "",
+        canEdit: true,
       };
     });
 
