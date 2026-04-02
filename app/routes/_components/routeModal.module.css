@@ -56,7 +56,7 @@
 
 .modalRoute {
   width: 568px;
-  height: 820px;
+  height: 880px;
   padding: 0 15px 0 15px;
   padding-right: 48px;
   box-sizing: border-box;
@@ -193,7 +193,7 @@
 .meta {
   position: absolute;
   left: 15px;
-  top: calc(19.5px + 27px + 29px + 4.4em + 16px + 375px);
+  top: calc(19.5px + 27px + 29px + 4.4em + 16px + 375px + 20px);
   font-family: var(--font-text);
   font-size: 27px;
   line-height: 1.22;
@@ -209,17 +209,37 @@
 }
 
 .pagination {
-  position: absolute;
-  left: 50%;
-  top: auto;
-  bottom: 130px;
-  transform: translateX(-50%);
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: min(260px, calc(100% - 24px));
   gap: 0;
   flex-wrap: nowrap;
+}
+
+.photoPagination {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  width: calc(100% - 20px);
+  max-width: calc(100% - 20px);
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: rgba(17, 17, 17, 0.42);
+  backdrop-filter: blur(10px);
+  z-index: 3;
+}
+
+.photoPagination .pagBtn,
+.photoPagination .page,
+.photoPagination .dots {
+  color: #fff;
+}
+
+.photoPagination .pageActive {
+  background: rgba(255, 255, 255, 0.92);
+  color: #111;
 }
 
 .pagBtn {
@@ -250,6 +270,11 @@
   flex-shrink: 1;
   min-width: 0;
   width: 170px;
+}
+
+.photoPages {
+  width: auto;
+  flex: 1 1 auto;
 }
 
 .page {
@@ -380,7 +405,7 @@
 @media (max-width: 1440px) {
   .modalRoute {
     width: 400px;
-    height: 795px;
+    height: 840px;
     padding-right: 44px;
   }
   .routeTitle {
@@ -410,14 +435,13 @@
     height: 43px;
   }
   .meta {
-    top: calc(19.5px + 24px + 22px + 4.2em + 14px + 325px + 18px);
+    top: calc(19.5px + 24px + 22px + 4.2em + 14px + 325px + 24px);
     width: calc(100% - 30px);
     font-size: 24px;
   }
-  .pagination {
-    top: auto;
-    bottom: 118px;
-    gap: 8px;
+  .photoPagination {
+    bottom: 10px;
+    padding: 5px 7px;
   }
   .pagBtn {
     width: 30px;
@@ -448,7 +472,7 @@
 @media (max-width: 1024px) {
   .modalRoute {
     width: 360px;
-    height: 620px;
+    height: 690px;
     max-height: calc(100dvh - 24px);
     padding-right: 42px;
     overflow-x: hidden;
@@ -482,17 +506,16 @@
     height: 35px;
   }
   .meta {
-    top: calc(16px + 22px + 14px + 36px + 8px + 300px + 10px);
+    top: calc(16px + 22px + 14px + 36px + 8px + 300px + 18px);
     width: calc(100% - 28px);
     font-size: 20px;
     line-height: 1.35;
     padding-bottom: 6px;
     box-sizing: border-box;
   }
-  .pagination {
-    top: auto;
-    bottom: 96px;
-    gap: 6px;
+  .photoPagination {
+    bottom: 9px;
+    padding: 5px 6px;
   }
   .pagBtn {
     width: 28px;
@@ -624,11 +647,21 @@
     top: auto;
     bottom: auto;
     transform: none;
-    margin-top: 12px;
     flex-shrink: 0;
     width: min(260px, calc(100% - 8px));
     max-width: calc(100% - 8px);
     gap: 4px;
+  }
+
+  .photoPagination {
+    position: absolute;
+    left: 50%;
+    bottom: 8px;
+    transform: translateX(-50%);
+    width: calc(100% - 12px);
+    max-width: calc(100% - 12px);
+    margin-top: 0;
+    padding: 4px 6px;
   }
 
   .pages {
@@ -733,9 +766,14 @@
   }
 
   .pagination {
-    margin-top: 10px;
     max-width: calc(100% - 4px);
     gap: 2px;
+  }
+
+  .photoPagination {
+    width: calc(100% - 10px);
+    max-width: calc(100% - 10px);
+    padding: 4px 5px;
   }
 
   .pages {

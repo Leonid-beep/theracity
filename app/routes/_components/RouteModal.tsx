@@ -28,7 +28,6 @@ type RouteItem = {
 export default function RouteModal({
   open,
   route,
-  routes,
   likedRouteIds,
   onToggleLike,
   onClose,
@@ -40,7 +39,6 @@ export default function RouteModal({
 }: {
   open: boolean;
   route: RouteItem | null;
-  routes: RouteItem[];
   likedRouteIds: Set<string>;
   onToggleLike: (routeId: string) => void;
   onClose: () => void;
@@ -50,30 +48,11 @@ export default function RouteModal({
   onShare?: (routeId: string) => void;
   onRouteDeleted?: (routeId: string) => void;
 }) {
-  const modalRoutes = useMemo(() => {
-    if (!route) return routes;
-    if (routes.some((item) => item.id === route.id)) return routes;
-    return [route, ...routes];
-  }, [route, routes]);
-
-  const totalRoutePages = Math.max(1, modalRoutes.length);
-  const initialRoutePage = useMemo(() => {
-    if (!route) return 1;
-    const index = modalRoutes.findIndex((item) => item.id === route.id);
-    return index >= 0 ? index + 1 : 1;
-  }, [route, modalRoutes]);
-
-  const [routePage, setRoutePage] = useState(1);
   const [photoPage, setPhotoPage] = useState(1);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!open) return;
-    setRoutePage(initialRoutePage);
-  }, [open, initialRoutePage]);
-
-  const activeRoute = modalRoutes[routePage - 1] ?? route;
+  const activeRoute = route;
   const photos = activeRoute?.photos ?? [];
   const totalPhotos = photos.length;
 
@@ -85,49 +64,49 @@ export default function RouteModal({
 
   useEffect(() => {
     if (!open) return;
+
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setConfirmDeleteOpen(false);
         onClose();
       }
     };
+
     window.addEventListener("keydown", onKey);
     document.documentElement.style.overflow = "hidden";
+
     return () => {
       window.removeEventListener("keydown", onKey);
       document.documentElement.style.overflow = "";
     };
   }, [open, onClose]);
 
-  const canRoutePrev = routePage > 1;
-  const canRouteNext = routePage < totalRoutePages;
-  const goRoute = (nextPage: number) => {
-    setRoutePage(Math.min(totalRoutePages, Math.max(1, nextPage)));
+  const goPhoto = (nextPage: number) => {
+    if (totalPhotos === 0) return;
+    setPhotoPage(Math.min(totalPhotos, Math.max(1, nextPage)));
   };
 
-  const routePagesToShow = useMemo(() => {
-    if (totalRoutePages <= 7) {
-      return Array.from({ length: totalRoutePages }, (_, index) => index + 1);
+  const canPhotoPrev = totalPhotos > 1 && photoPage > 1;
+  const canPhotoNext = totalPhotos > 1 && photoPage < totalPhotos;
+
+  const photoPagesToShow = useMemo(() => {
+    if (totalPhotos <= 7) {
+      return Array.from({ length: totalPhotos }, (_, index) => index + 1);
     }
 
     const result: (number | "dots")[] = [1];
-    const left = Math.max(2, routePage - 1);
-    const right = Math.min(totalRoutePages - 1, routePage + 1);
+    const left = Math.max(2, photoPage - 1);
+    const right = Math.min(totalPhotos - 1, photoPage + 1);
 
     if (left > 2) result.push("dots");
     for (let nextPage = left; nextPage <= right; nextPage += 1) {
       result.push(nextPage);
     }
-    if (right < totalRoutePages - 1) result.push("dots");
-    result.push(totalRoutePages);
+    if (right < totalPhotos - 1) result.push("dots");
+    result.push(totalPhotos);
 
     return result;
-  }, [routePage, totalRoutePages]);
-
-  const goPhoto = (nextPage: number) => {
-    if (totalPhotos === 0) return;
-    setPhotoPage(Math.min(totalPhotos, Math.max(1, nextPage)));
-  };
+  }, [photoPage, totalPhotos]);
 
   const handleClose = () => {
     setConfirmDeleteOpen(false);
@@ -136,13 +115,19 @@ export default function RouteModal({
 
   const performDelete = async () => {
     if (!activeRoute || deleteSubmitting) return;
+
     setDeleteSubmitting(true);
+
     try {
-      const response = await fetch(`/api/routes/${activeRoute.id}`, { method: "DELETE" });
+      const response = await fetch(`/api/routes/${activeRoute.id}`, {
+        method: "DELETE",
+      });
+
       if (!response.ok) {
         setConfirmDeleteOpen(false);
         return;
       }
+
       onRouteDeleted?.(activeRoute.id);
       setConfirmDeleteOpen(false);
       handleClose();
@@ -153,7 +138,7 @@ export default function RouteModal({
     }
   };
 
-  if (!open || !route || !activeRoute) return null;
+  if (!open || !activeRoute) return null;
 
   const photoIndex = totalPhotos > 0 ? photoPage - 1 : 0;
   const mainPhoto = totalPhotos > 0 ? (photos[photoIndex] ?? photos[0]) : undefined;
@@ -226,7 +211,10 @@ export default function RouteModal({
                   className={styles.mainImg}
                   quality={78}
                 />
-              ) : null}
+              ) : (
+                <p className={styles.emptyRoutePhotos}>В этом маршруте пока нет фотографий</p>
+              )}
+
               {isAdmin ? (
                 <button
                   type="button"
@@ -247,10 +235,14 @@ export default function RouteModal({
                     stroke="currentColor"
                     strokeWidth="2"
                   >
-                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" strokeLinecap="round" />
+                    <path
+                      d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"
+                      strokeLinecap="round"
+                    />
                   </svg>
                 </button>
               ) : null}
+
               {liked ? (
                 <Image
                   src="/images/city/heart_red.png"
@@ -260,6 +252,47 @@ export default function RouteModal({
                   className={styles.likeIcon}
                   aria-hidden="true"
                 />
+              ) : null}
+
+              {totalPhotos > 1 ? (
+                <div className={`${styles.pagination} ${styles.photoPagination}`}>
+                  <button
+                    className={`${styles.pagBtn} ${!canPhotoPrev ? styles.pagBtnDisabled : ""}`}
+                    disabled={!canPhotoPrev}
+                    onClick={() => goPhoto(photoPage - 1)}
+                    aria-label="Назад"
+                  >
+                    ←
+                  </button>
+
+                  <div className={`${styles.pages} ${styles.photoPages}`}>
+                    {photoPagesToShow.map((pageNumber, indexValue) =>
+                      pageNumber === "dots" ? (
+                        <span key={`d-${indexValue}`} className={styles.dots}>
+                          ...
+                        </span>
+                      ) : (
+                        <button
+                          key={pageNumber}
+                          className={`${styles.page} ${pageNumber === photoPage ? styles.pageActive : ""}`}
+                          onClick={() => goPhoto(pageNumber)}
+                          aria-current={pageNumber === photoPage ? "page" : undefined}
+                        >
+                          {pageNumber}
+                        </button>
+                      ),
+                    )}
+                  </div>
+
+                  <button
+                    className={`${styles.pagBtn} ${!canPhotoNext ? styles.pagBtnDisabled : ""}`}
+                    disabled={!canPhotoNext}
+                    onClick={() => goPhoto(photoPage + 1)}
+                    aria-label="Вперёд"
+                  >
+                    →
+                  </button>
+                </div>
               ) : null}
             </div>
 
@@ -290,52 +323,18 @@ export default function RouteModal({
             <div>
               Адрес:{" "}
               {mapsUrl ? (
-                <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className={styles.metaLink}>
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.metaLink}
+                >
                   {mainPhoto?.address ?? activeRoute.address}
                 </a>
               ) : (
                 mainPhoto?.address ?? activeRoute.address
               )}
             </div>
-          </div>
-
-          <div className={styles.pagination}>
-            <button
-              className={`${styles.pagBtn} ${!canRoutePrev ? styles.pagBtnDisabled : ""}`}
-              disabled={!canRoutePrev}
-              onClick={() => goRoute(routePage - 1)}
-              aria-label="Назад"
-            >
-              ←
-            </button>
-
-            <div className={styles.pages}>
-              {routePagesToShow.map((pageNumber, indexValue) =>
-                pageNumber === "dots" ? (
-                  <span key={`d-${indexValue}`} className={styles.dots}>
-                    ...
-                  </span>
-                ) : (
-                  <button
-                    key={pageNumber}
-                    className={`${styles.page} ${pageNumber === routePage ? styles.pageActive : ""}`}
-                    onClick={() => goRoute(pageNumber)}
-                    aria-current={pageNumber === routePage ? "page" : undefined}
-                  >
-                    {pageNumber}
-                  </button>
-                ),
-              )}
-            </div>
-
-            <button
-              className={`${styles.pagBtn} ${!canRouteNext ? styles.pagBtnDisabled : ""}`}
-              disabled={!canRouteNext}
-              onClick={() => goRoute(routePage + 1)}
-              aria-label="Вперёд"
-            >
-              →
-            </button>
           </div>
 
           <div className={styles.actions}>
@@ -379,6 +378,7 @@ export default function RouteModal({
           </div>
         </div>
       </div>
+
       {isAdmin ? (
         <ConfirmDeleteModal
           open={confirmDeleteOpen}

@@ -1,4 +1,3 @@
-// app/(app)/cabinet/_components/CabinetRouteModal.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -49,11 +48,14 @@ export default function CabinetRouteModal({
 
   useEffect(() => {
     if (!open) return;
+
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };
+
     window.addEventListener("keydown", onKey);
     document.documentElement.style.overflow = "hidden";
+
     return () => {
       window.removeEventListener("keydown", onKey);
       document.documentElement.style.overflow = "";
@@ -62,6 +64,7 @@ export default function CabinetRouteModal({
 
   const canPrev = hasPhotos && page > 1;
   const canNext = hasPhotos && page < totalPages;
+
   const go = (nextPage: number) => {
     if (!hasPhotos) return;
     setPage(Math.min(totalPages, Math.max(1, nextPage)));
@@ -70,13 +73,16 @@ export default function CabinetRouteModal({
   const pagesToShow = useMemo(() => {
     if (!hasPhotos || totalPages === 0) return [];
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, index) => index + 1);
+
     const result: (number | "dots")[] = [1];
     const left = Math.max(2, page - 1);
     const right = Math.min(totalPages - 1, page + 1);
+
     if (left > 2) result.push("dots");
     for (let nextPage = left; nextPage <= right; nextPage += 1) result.push(nextPage);
     if (right < totalPages - 1) result.push("dots");
     result.push(totalPages);
+
     return result;
   }, [page, totalPages, hasPhotos]);
 
@@ -96,7 +102,12 @@ export default function CabinetRouteModal({
         role="dialog"
         aria-modal="true"
       >
-        <button type="button" className={styles.closeBtn} aria-label="Закрыть" onClick={onClose} />
+        <button
+          type="button"
+          className={styles.closeBtn}
+          aria-label="Закрыть"
+          onClick={onClose}
+        />
 
         <div className={styles.routeTitle} title={route.title}>
           {route.title}
@@ -140,6 +151,47 @@ export default function CabinetRouteModal({
             ) : (
               <p className={styles.emptyRoutePhotos}>В этом маршруте пока нет фотографий</p>
             )}
+
+            {totalPages > 1 ? (
+              <div className={`${styles.pagination} ${styles.photoPagination}`}>
+                <button
+                  className={`${styles.pagBtn} ${!canPrev ? styles.pagBtnDisabled : ""}`}
+                  disabled={!canPrev}
+                  onClick={() => go(page - 1)}
+                  aria-label="Назад"
+                >
+                  ←
+                </button>
+
+                <div className={`${styles.pages} ${styles.photoPages}`}>
+                  {pagesToShow.map((pageNumber, indexValue) =>
+                    pageNumber === "dots" ? (
+                      <span key={`d-${indexValue}`} className={styles.dots}>
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={pageNumber}
+                        className={`${styles.page} ${pageNumber === page ? styles.pageActive : ""}`}
+                        onClick={() => go(pageNumber)}
+                        aria-current={pageNumber === page ? "page" : undefined}
+                      >
+                        {pageNumber}
+                      </button>
+                    ),
+                  )}
+                </div>
+
+                <button
+                  className={`${styles.pagBtn} ${!canNext ? styles.pagBtnDisabled : ""}`}
+                  disabled={!canNext}
+                  onClick={() => go(page + 1)}
+                  aria-label="Вперёд"
+                >
+                  →
+                </button>
+              </div>
+            ) : null}
           </div>
 
           {next ? (
@@ -169,7 +221,12 @@ export default function CabinetRouteModal({
           <div>
             Адрес:{" "}
             {mapsUrl ? (
-              <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className={styles.metaLink}>
+              <a
+                href={mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.metaLink}
+              >
                 {(main?.address ?? route.address) || "—"}
               </a>
             ) : (
@@ -178,59 +235,46 @@ export default function CabinetRouteModal({
           </div>
         </div>
 
-        {hasPhotos ? (
-          <div className={styles.pagination}>
-            <button
-              className={`${styles.pagBtn} ${!canPrev ? styles.pagBtnDisabled : ""}`}
-              disabled={!canPrev}
-              onClick={() => go(page - 1)}
-            >
-              ←
-            </button>
-
-            <div className={styles.pages}>
-              {pagesToShow.map((pageNumber, indexValue) =>
-                pageNumber === "dots" ? (
-                  <span key={`d-${indexValue}`} className={styles.dots}>
-                    ...
-                  </span>
-                ) : (
-                  <button
-                    key={pageNumber}
-                    className={`${styles.page} ${pageNumber === page ? styles.pageActive : ""}`}
-                    onClick={() => go(pageNumber)}
-                  >
-                    {pageNumber}
-                  </button>
-                ),
-              )}
-            </div>
-
-            <button
-              className={`${styles.pagBtn} ${!canNext ? styles.pagBtnDisabled : ""}`}
-              disabled={!canNext}
-              onClick={() => go(page + 1)}
-            >
-              →
-            </button>
-          </div>
-        ) : null}
-
         <div className={styles.actions}>
           {showPublish && !route.isPublished ? (
             <button type="button" className={styles.bigBtn} onClick={onPublish}>
-              <Image src="/images/city/share.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
+              <Image
+                src="/images/city/share.png"
+                alt=""
+                width={23}
+                height={23}
+                className={styles.btnImg}
+                aria-hidden="true"
+              />
               ОПУБЛИКОВАТЬ МАРШРУТ
             </button>
           ) : (
             <button type="button" className={styles.bigBtn} onClick={onShare}>
-              <Image src="/images/city/share.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
+              <Image
+                src="/images/city/share.png"
+                alt=""
+                width={23}
+                height={23}
+                className={styles.btnImg}
+                aria-hidden="true"
+              />
               ПОДЕЛИТЬСЯ МАРШРУТОМ
             </button>
           )}
 
-          <button type="button" className={`${styles.bigBtn} ${styles.bigBtnDanger}`} onClick={onDelete}>
-            <Image src="/images/city/trash.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
+          <button
+            type="button"
+            className={`${styles.bigBtn} ${styles.bigBtnDanger}`}
+            onClick={onDelete}
+          >
+            <Image
+              src="/images/city/trash.png"
+              alt=""
+              width={23}
+              height={23}
+              className={styles.btnImg}
+              aria-hidden="true"
+            />
             {actionLabel}
           </button>
         </div>

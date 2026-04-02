@@ -93,7 +93,6 @@ function RoutesPageContent() {
   const returnToRoutes = "/routes";
 
   const [routes, setRoutes] = useState<RouteItem[]>([]);
-  const [allRoutes, setAllRoutes] = useState<RouteItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -156,7 +155,6 @@ function RoutesPageContent() {
     (routeId: string) => {
       showSuccess("Маршрут удалён");
       setRoutes((prev) => prev.filter((route) => route.id !== routeId));
-      setAllRoutes((prev) => prev.filter((route) => route.id !== routeId));
       setTotal((currentTotal) => Math.max(0, currentTotal - 1));
       setLiked((prev) => {
         const next = new Set(prev);
@@ -177,23 +175,13 @@ function RoutesPageContent() {
         page: String(nextPage),
         pageSize: String(pageSize),
       });
-      const allSearch = buildRoutesSearch(filters, { all: "1" });
-
       try {
-        const [pageResponse, allResponse] = await Promise.all([
-          fetch(`/api/routes?${pageSearch}`),
-          fetch(`/api/routes?${allSearch}`),
-        ]);
-        const [pageData, allData] = await Promise.all([
-          pageResponse.json(),
-          allResponse.json(),
-        ]);
+        const pageResponse = await fetch(`/api/routes?${pageSearch}`);
+        const pageData = await pageResponse.json();
         setRoutes(pageData.routes ?? []);
-        setAllRoutes(allData.routes ?? []);
         setTotal(pageData.total ?? 0);
       } catch {
         setRoutes([]);
-        setAllRoutes([]);
         setTotal(0);
       }
 
@@ -680,7 +668,6 @@ function RoutesPageContent() {
         <RouteModal
           open={open}
           route={activeRoute}
-          routes={allRoutes}
           likedRouteIds={liked}
           onToggleLike={toggleLike}
           onClose={() => setOpen(false)}
