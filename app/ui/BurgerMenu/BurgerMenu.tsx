@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -14,6 +14,7 @@ export default function BurgerMenu() {
   const isStart = pathname === "/start";
   const { user, logout } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const authEntryHref = useMemo(() => {
     if (!pathname || pathname.startsWith("/auth")) return "/auth/login";
@@ -66,7 +67,18 @@ export default function BurgerMenu() {
 
   useEffect(() => {
     const syncModalState = () => {
-      setModalOpen(Boolean(document.querySelector('[aria-modal="true"]')));
+      const modals = Array.from(document.querySelectorAll<HTMLElement>('[aria-modal="true"]'));
+      const hasExternalModal = modals.some((modal) => {
+        if (panelRef.current?.contains(modal)) return false;
+
+        const style = window.getComputedStyle(modal);
+        if (style.display === "none" || style.visibility === "hidden") return false;
+
+        const rect = modal.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+      });
+
+      setModalOpen(hasExternalModal);
     };
 
     syncModalState();
@@ -106,6 +118,7 @@ export default function BurgerMenu() {
         onClick={() => setOpen(false)}
       >
         <div
+          ref={panelRef}
           className={styles.panel}
           role="dialog"
           aria-modal="true"
