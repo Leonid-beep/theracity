@@ -13,16 +13,32 @@ const PUBLIC_PREFIXES = [
 function isPublicPath(pathname: string, req: NextRequest): boolean {
   if (pathname === "/") return true;
   if (pathname === "/gallery" || pathname.startsWith("/gallery/")) return true;
+  if (pathname === "/routes" || pathname.startsWith("/routes/")) return true;
   if (PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return true;
 
   const m = req.method;
   if (m === "GET" || m === "HEAD") {
     if (pathname === "/api/photos") return true;
+    if (pathname === "/api/photos/favorites/ids") return true;
     if (
       pathname.startsWith("/api/photos/") &&
       !pathname.startsWith("/api/photos/favorites")
     ) {
       return true;
+    }
+
+    if (pathname === "/api/routes") return true;
+    if (pathname === "/api/routes/favorites/ids") return true;
+    if (pathname.startsWith("/api/routes/")) {
+      const rest = pathname.slice("/api/routes/".length);
+      const segments = rest.split("/").filter(Boolean);
+      if (
+        segments.length === 1 &&
+        segments[0] !== "favorites" &&
+        segments[0] !== "my"
+      ) {
+        return true;
+      }
     }
   }
 

@@ -23,10 +23,34 @@ type Filters = {
   atmosphere: string[];
 };
 
+type SavedPhoto = {
+  id: string;
+  src: string;
+  title: string;
+  metro: string[];
+  coords: string;
+  lat: number;
+  lng: number;
+  spaceType: string[];
+  mood: string[];
+  atmosphere: string[];
+};
+
+export type EditablePhoto = {
+  id: string;
+  title: string;
+  metro: string[];
+  lat: number;
+  lng: number;
+  spaceType: string[];
+  mood: string[];
+  atmosphere: string[];
+};
+
 type MultiSetter = Dispatch<SetStateAction<string[]>>;
 
 function summarizeSelected(values: string[]): string {
-  if (!values.length) return "Выберите…";
+  if (!values.length) return "Выберите...";
   if (values.length <= 2) return values.join(", ");
   return `${values.slice(0, 2).join(", ")} +${values.length - 2}`;
 }
@@ -35,11 +59,17 @@ export default function UploadPhotoModal({
   open,
   onClose,
   onUploaded,
+  mode = "create",
+  initialPhoto = null,
 }: {
   open: boolean;
   onClose: () => void;
-  onUploaded: () => void;
+  onUploaded: (photo?: SavedPhoto) => void;
+  mode?: "create" | "edit";
+  initialPhoto?: EditablePhoto | null;
 }) {
+  const isEditMode = mode === "edit";
+
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
@@ -79,9 +109,9 @@ export default function UploadPhotoModal({
   useEffect(() => {
     if (!open || filtersLoaded) return;
     fetch("/api/filters")
-      .then((r) => r.json())
-      .then((d) => {
-        setFilters(d);
+      .then((response) => response.json())
+      .then((data) => {
+        setFilters(data);
         setFiltersLoaded(true);
       })
       .catch(() => setFiltersLoaded(true));
@@ -89,8 +119,8 @@ export default function UploadPhotoModal({
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
     document.documentElement.style.overflow = "hidden";
@@ -113,11 +143,35 @@ export default function UploadPhotoModal({
     setError("");
     setProgress(0);
     setUploading(false);
+    setDragActive(false);
   }, [replacePreview]);
 
   useEffect(() => {
-    if (!open) resetForm();
-  }, [open, resetForm]);
+    if (!open) {
+      resetForm();
+      return;
+    }
+
+    setError("");
+    setProgress(0);
+    setUploading(false);
+    setDragActive(false);
+
+    if (isEditMode && initialPhoto) {
+      setFile(null);
+      replacePreview(null);
+      setTitle(initialPhoto.title);
+      setMetro(initialPhoto.metro);
+      setLat(String(initialPhoto.lat));
+      setLng(String(initialPhoto.lng));
+      setSpaceType(initialPhoto.spaceType);
+      setMood(initialPhoto.mood);
+      setAtmosphere(initialPhoto.atmosphere);
+      return;
+    }
+
+    resetForm();
+  }, [open, isEditMode, initialPhoto, resetForm, replacePreview]);
 
   useEffect(() => {
     return () => {
@@ -153,78 +207,126 @@ export default function UploadPhotoModal({
     [replacePreview],
   );
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault();
     setDragActive(false);
-    const nextFile = e.dataTransfer.files[0];
+    const nextFile = event.dataTransfer.files[0];
     if (nextFile) handleFile(nextFile);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault();
     setDragActive(true);
   };
 
   const handleDragLeave = () => setDragActive(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const nextFile = e.target.files?.[0];
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const nextFile = event.target.files?.[0];
     if (nextFile) handleFile(nextFile);
   };
 
-  const canSubmit =
-    !!file &&
+  const hasRequiredValues =
     !!title.trim() &&
     metro.length > 0 &&
     !!lat.trim() &&
     !!lng.trim() &&
     spaceType.length > 0 &&
     mood.length > 0 &&
-    atmosphere.length > 0 &&
-    !uploading;
+    atmosphere.length > 0;
+
+  const canSubmit = hasRequiredValues && (isEditMode || !!file) && !uploading;
+
+  const handleCreateSubmit = async () => {
+    if (!file || !hasRequiredValues) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("title", title.trim());
+    metro.forEach((value) => formData.append("metro", value));
+    formData.append("lat", lat.trim());
+    formData.append("lng", lng.trim());
+    spaceType.forEach((value) => formData.append("spaceType", value));
+    mood.forEach((value) => formData.append("mood", value));
+    atmosphere.forEach((value) => formData.append("atmosphere", value));
+
+    return new Promise<SavedPhoto>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.upload.addEventListener("progress", (event) => {
+        if (event.lengthComputable) {
+          setProgress(Math.round((event.loaded / event.total) * 100));
+        }
+      });
+      xhr.addEventListener("load", () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const data = JSON.parse(xhr.responseText) as { photo?: SavedPhoto };
+            if (!data.photo) {
+              reject(new Error("Ответ сервера не содержит фотографию"));
+              return;
+            }
+            resolve(data.photo);
+          } catch {
+            reject(new Error("Ошибка обработки ответа"));
+          }
+          return;
+        }
+        try {
+          const data = JSON.parse(xhr.responseText);
+          reject(new Error(data.error || "Ошибка загрузки"));
+        } catch {
+          reject(new Error("Ошибка загрузки"));
+        }
+      });
+      xhr.addEventListener("error", () => reject(new Error("Ошибка сети")));
+      xhr.open("POST", "/api/photos");
+      xhr.send(formData);
+    });
+  };
+
+  const handleEditSubmit = async () => {
+    if (!initialPhoto || !hasRequiredValues) return;
+
+    const response = await fetch(`/api/photos/${initialPhoto.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: title.trim(),
+        metro,
+        lat: Number(lat),
+        lng: Number(lng),
+        spaceType,
+        mood,
+        atmosphere,
+      }),
+    });
+
+    const data = (await response.json().catch(() => ({}))) as {
+      error?: string;
+      photo?: SavedPhoto;
+    };
+
+    if (!response.ok || !data.photo) {
+      throw new Error(data.error || "Ошибка сохранения");
+    }
+
+    return data.photo;
+  };
 
   const handleSubmit = async () => {
-    if (!canSubmit || !file) return;
+    if (!canSubmit) return;
+
     setUploading(true);
     setError("");
     setProgress(0);
 
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("title", title.trim());
-    metro.forEach((value) => fd.append("metro", value));
-    fd.append("lat", lat.trim());
-    fd.append("lng", lng.trim());
-    spaceType.forEach((value) => fd.append("spaceType", value));
-    mood.forEach((value) => fd.append("mood", value));
-    atmosphere.forEach((value) => fd.append("atmosphere", value));
-
     try {
-      const xhr = new XMLHttpRequest();
-      await new Promise<void>((resolve, reject) => {
-        xhr.upload.addEventListener("progress", (e) => {
-          if (e.lengthComputable) {
-            setProgress(Math.round((e.loaded / e.total) * 100));
-          }
-        });
-        xhr.addEventListener("load", () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve();
-            return;
-          }
-          try {
-            const data = JSON.parse(xhr.responseText);
-            reject(new Error(data.error || "Ошибка загрузки"));
-          } catch {
-            reject(new Error("Ошибка загрузки"));
-          }
-        });
-        xhr.addEventListener("error", () => reject(new Error("Ошибка сети")));
-        xhr.open("POST", "/api/photos");
-        xhr.send(fd);
-      });
+      const savedPhoto = isEditMode
+        ? await handleEditSubmit()
+        : await handleCreateSubmit();
+
       setProgress(100);
-      onUploaded();
+      onUploaded(savedPhoto);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка загрузки");
@@ -267,54 +369,58 @@ export default function UploadPhotoModal({
       <div
         ref={modalRef}
         className={styles.modal}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >
         <button type="button" className={styles.closeBtn} aria-label="Закрыть" onClick={onClose} />
 
-        <div className={styles.title}>Загрузка фотографии</div>
+        <div className={styles.title}>
+          {isEditMode ? "Редактирование фотографии" : "Загрузка фотографии"}
+        </div>
 
         <div className={styles.body}>
-          {!file ? (
-            <div
-              className={`${styles.dropzone} ${dragActive ? styles.dropzoneActive : ""}`}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onClick={() => inputRef.current?.click()}
-              role="button"
-              tabIndex={0}
-            >
-              <div className={styles.dropzoneHint}>
-                Перетащите фото сюда или нажмите для выбора
-              </div>
-              <div className={styles.dropzoneFormats}>JPEG, PNG, WebP до {MAX_UPLOAD_FILE_LABEL}</div>
-              <input
-                ref={inputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className={styles.hiddenInput}
-                onChange={handleInputChange}
-              />
-            </div>
-          ) : (
-            <div className={styles.previewWrap}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={preview ?? ""} alt="Превью" className={styles.previewImg} />
-              <button
-                type="button"
-                className={styles.removePreview}
-                onClick={() => {
-                  setFile(null);
-                  replacePreview(null);
-                }}
-                aria-label="Удалить фото"
+          {!isEditMode ? (
+            !file ? (
+              <div
+                className={`${styles.dropzone} ${dragActive ? styles.dropzoneActive : ""}`}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onClick={() => inputRef.current?.click()}
+                role="button"
+                tabIndex={0}
               >
-                ×
-              </button>
-            </div>
-          )}
+                <div className={styles.dropzoneHint}>
+                  Перетащите фото сюда или нажмите для выбора
+                </div>
+                <div className={styles.dropzoneFormats}>JPEG, PNG, WebP до {MAX_UPLOAD_FILE_LABEL}</div>
+                <input
+                  ref={inputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className={styles.hiddenInput}
+                  onChange={handleInputChange}
+                />
+              </div>
+            ) : (
+              <div className={styles.previewWrap}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={preview ?? ""} alt="Превью" className={styles.previewImg} />
+                <button
+                  type="button"
+                  className={styles.removePreview}
+                  onClick={() => {
+                    setFile(null);
+                    replacePreview(null);
+                  }}
+                  aria-label="Удалить фото"
+                >
+                  x
+                </button>
+              </div>
+            )
+          ) : null}
 
           <div className={styles.formFields}>
             <div className={styles.field}>
@@ -322,7 +428,7 @@ export default function UploadPhotoModal({
               <input
                 className={styles.input}
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(event) => setTitle(event.target.value)}
                 placeholder="Жёлтый двор-колодец"
               />
             </div>
@@ -335,7 +441,7 @@ export default function UploadPhotoModal({
                 <input
                   className={styles.input}
                   value={lat}
-                  onChange={(e) => setLat(e.target.value)}
+                  onChange={(event) => setLat(event.target.value)}
                   placeholder="Широта (59.936)"
                   type="number"
                   step="any"
@@ -343,7 +449,7 @@ export default function UploadPhotoModal({
                 <input
                   className={styles.input}
                   value={lng}
-                  onChange={(e) => setLng(e.target.value)}
+                  onChange={(event) => setLng(event.target.value)}
                   placeholder="Долгота (30.270)"
                   type="number"
                   step="any"
@@ -357,7 +463,7 @@ export default function UploadPhotoModal({
           </div>
 
           <div className={styles.submitBar}>
-            {uploading ? (
+            {uploading && !isEditMode ? (
               <div className={styles.progressBar}>
                 <div className={styles.progressFill} style={{ width: `${progress}%` }} />
               </div>
@@ -371,7 +477,13 @@ export default function UploadPhotoModal({
               disabled={!canSubmit}
               onClick={handleSubmit}
             >
-              {uploading ? `ЗАГРУЗКА… ${progress}%` : "ЗАГРУЗИТЬ"}
+              {uploading
+                ? isEditMode
+                  ? "СОХРАНЕНИЕ..."
+                  : `ЗАГРУЗКА... ${progress}%`
+                : isEditMode
+                  ? "СОХРАНИТЬ"
+                  : "ЗАГРУЗИТЬ"}
             </button>
           </div>
         </div>

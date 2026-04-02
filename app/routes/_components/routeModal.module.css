@@ -203,6 +203,11 @@
   max-width: 402px;
 }
 
+.metaLink {
+  color: inherit;
+  text-decoration: underline;
+}
+
 .pagination {
   position: absolute;
   left: 50%;

@@ -52,6 +52,11 @@
   cursor: pointer;
 }
 
+.blocked {
+  opacity: 0.38;
+  pointer-events: none;
+}
+
 .hidden {
   opacity: 0;
   pointer-events: none;

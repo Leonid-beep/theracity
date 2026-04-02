@@ -141,6 +141,37 @@
   outline-offset: 1px;
 }
 
+.editPhotoBtn {
+  position: absolute;
+  left: 10px;
+  top: 44px;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.48);
+  color: #fff;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+}
+
+.editPhotoBtn:hover {
+  background: rgba(25, 25, 25, 0.85);
+}
+
+.editPhotoIcon {
+  display: block;
+}
+
+.editPhotoBtn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 1px;
+}
+
 .meta {
   position: absolute;
   left: 15px;
@@ -990,7 +1021,7 @@
     width: min(340px, calc(100vw - 24px));
     min-height: 0;
     max-height: calc(100dvh - 24px);
-    padding: 48px 14px 18px;
+    padding: 48px 14px 24px;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
@@ -1037,7 +1068,10 @@
     top: auto;
     bottom: auto;
     transform: none;
-    margin-top: 14px;
+    margin-top: 20px;
+    width: min(260px, calc(100% - 28px));
+    max-width: 100%;
+    gap: 10px;
   }
   .pickConfirm {
     position: relative;
@@ -1047,7 +1081,8 @@
     width: min(300px, calc(100% - 28px));
     height: 36px;
     font-size: 12px;
-    margin: 16px auto 0;
+    margin: 24px auto 0;
+    flex-shrink: 0;
   }
   .modalCreate {
     width: min(340px, calc(100vw - 24px));
@@ -1173,7 +1208,7 @@
     width: 100%;
     max-width: calc(100vw - 20px);
     max-height: calc(100dvh - 20px);
-    padding: 44px 12px 16px;
+    padding: 44px 12px 24px;
   }
   .pickTitle {
     font-size: 20px;
@@ -1193,12 +1228,13 @@
     font-size: 14px;
   }
   .pickPagination {
-    margin-top: 12px;
+    margin-top: 18px;
   }
   .pickConfirm {
     width: calc(100% - 20px);
     height: 40px;
     font-size: 11px;
+    margin-top: 24px;
   }
   .pagBtn {
     width: 36px;

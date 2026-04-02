@@ -7,6 +7,8 @@ import type { PhotoItem } from "../page";
 import ConfirmDeleteModal from "@/app/cabinet/_components/ConfirmDeleteModal";
 import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
 import { formatMultiValue } from "@/app/lib/photoMetadata";
+import UploadPhotoModal from "./UploadPhotoModal";
+import { buildYandexMapsUrl } from "@/app/lib/locationLinks";
 
 type RouteItem = { id: string; title: string; src: string };
 type Step = "photo" | "routeChoice" | "pickRoute" | "createRoute";
@@ -18,14 +20,30 @@ export default function PhotoModals(props: {
   liked: Set<string>;
   onToggleLike: (photoId: string) => void;
   isAdmin?: boolean;
+  isAuthenticated?: boolean;
+  onRequireAuth?: () => void;
   onPhotoDeleted?: (photoId: string) => void;
+  onPhotoUpdated?: (photo: PhotoItem) => void;
   onActionSuccess?: (message: string) => void;
 }) {
-  const { photo, photos, onClose, liked, onToggleLike, isAdmin, onPhotoDeleted, onActionSuccess } = props;
+  const {
+    photo,
+    photos,
+    onClose,
+    liked,
+    onToggleLike,
+    isAdmin,
+    isAuthenticated,
+    onRequireAuth,
+    onPhotoDeleted,
+    onPhotoUpdated,
+    onActionSuccess,
+  } = props;
 
   const [step, setStep] = useState<Step>("photo");
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   const [routes, setRoutes] = useState<RouteItem[]>([]);
   const [routesLoaded, setRoutesLoaded] = useState(false);
@@ -40,7 +58,7 @@ export default function PhotoModals(props: {
   const totalPhotoPages = Math.max(1, photos.length);
   const initialPhotoPage = useMemo(() => {
     if (!photo) return 1;
-    const idx = photos.findIndex((p) => p.id === photo.id);
+    const idx = photos.findIndex((item) => item.id === photo.id);
     return idx >= 0 ? idx + 1 : 1;
   }, [photo, photos]);
 
@@ -50,35 +68,50 @@ export default function PhotoModals(props: {
 
   useEffect(() => {
     if (!photo) return;
+
+    if (!isAuthenticated) {
+      setRoutes([]);
+      setRoutesLoaded(true);
+      return;
+    }
+
     if (routesLoaded) return;
     fetch("/api/routes/my")
-      .then((r) => r.json())
-      .then((d) => {
-        const list = (d.routes ?? []).map((r: { id: string; title: string; coverUrl?: string }) => ({
-          id: r.id,
-          title: r.title,
-          src: r.coverUrl ?? "/images/city/city-1.jpg",
+      .then((response) => response.json())
+      .then((data) => {
+        const list = (data.routes ?? []).map((route: { id: string; title: string; coverUrl?: string }) => ({
+          id: route.id,
+          title: route.title,
+          src: route.coverUrl ?? "/images/city/city-1.jpg",
         }));
         setRoutes(list);
         setRoutesLoaded(true);
       })
       .catch(() => setRoutesLoaded(true));
-  }, [photo, routesLoaded]);
+  }, [photo, routesLoaded, isAuthenticated]);
 
-  const goPhoto = (p: number) => setPhotoPage(Math.min(totalPhotoPages, Math.max(1, p)));
+  useEffect(() => {
+    if (!photo) {
+      setEditOpen(false);
+      setRoutes([]);
+      setRoutesLoaded(false);
+    }
+  }, [photo]);
+
+  const goPhoto = (nextPage: number) => setPhotoPage(Math.min(totalPhotoPages, Math.max(1, nextPage)));
   const canPhotoPrev = photoPage > 1;
   const canPhotoNext = photoPage < totalPhotoPages;
 
   const photoPagesToShow = useMemo(() => {
-    if (totalPhotoPages <= 7) return Array.from({ length: totalPhotoPages }, (_, i) => i + 1);
-    const out: (number | "dots")[] = [1];
+    if (totalPhotoPages <= 7) return Array.from({ length: totalPhotoPages }, (_, index) => index + 1);
+    const result: (number | "dots")[] = [1];
     const left = Math.max(2, photoPage - 1);
     const right = Math.min(totalPhotoPages - 1, photoPage + 1);
-    if (left > 2) out.push("dots");
-    for (let p = left; p <= right; p++) out.push(p);
-    if (right < totalPhotoPages - 1) out.push("dots");
-    out.push(totalPhotoPages);
-    return out;
+    if (left > 2) result.push("dots");
+    for (let nextPage = left; nextPage <= right; nextPage += 1) result.push(nextPage);
+    if (right < totalPhotoPages - 1) result.push("dots");
+    result.push(totalPhotoPages);
+    return result;
   }, [photoPage, totalPhotoPages]);
 
   const activePhoto = photos[photoPage - 1] ?? photo;
@@ -86,6 +119,11 @@ export default function PhotoModals(props: {
   const hasUserRoutes = routes.length > 0;
 
   const openAddToRoute = () => {
+    if (!isAuthenticated) {
+      onRequireAuth?.();
+      return;
+    }
+
     if (routesLoaded && !hasUserRoutes) {
       setStep("createRoute");
       return;
@@ -98,6 +136,7 @@ export default function PhotoModals(props: {
     setPickPage(1);
     setPickedRouteId(null);
     setConfirmDeleteOpen(false);
+    setEditOpen(false);
     onClose();
   };
 
@@ -105,8 +144,8 @@ export default function PhotoModals(props: {
     if (!activePhoto || deleteSubmitting) return;
     setDeleteSubmitting(true);
     try {
-      const res = await fetch(`/api/photos/${activePhoto.id}`, { method: "DELETE" });
-      if (!res.ok) {
+      const response = await fetch(`/api/photos/${activePhoto.id}`, { method: "DELETE" });
+      if (!response.ok) {
         setConfirmDeleteOpen(false);
         return;
       }
@@ -134,42 +173,52 @@ export default function PhotoModals(props: {
   }, [routes, pickPage]);
 
   const pagesToShow = useMemo(() => {
-    const total = pickTotalPages;
-    const current = pickPage;
-    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-    const out: (number | "dots")[] = [1];
-    const left = Math.max(2, current - 1);
-    const right = Math.min(total - 1, current + 1);
-    if (left > 2) out.push("dots");
-    for (let p = left; p <= right; p++) out.push(p);
-    if (right < total - 1) out.push("dots");
-    out.push(total);
-    return out;
+    if (pickTotalPages <= 7) return Array.from({ length: pickTotalPages }, (_, index) => index + 1);
+    const result: (number | "dots")[] = [1];
+    const left = Math.max(2, pickPage - 1);
+    const right = Math.min(pickTotalPages - 1, pickPage + 1);
+    if (left > 2) result.push("dots");
+    for (let nextPage = left; nextPage <= right; nextPage += 1) result.push(nextPage);
+    if (right < pickTotalPages - 1) result.push("dots");
+    result.push(pickTotalPages);
+    return result;
   }, [pickPage, pickTotalPages]);
 
-  const goPick = (p: number) => setPickPage(Math.min(pickTotalPages, Math.max(1, p)));
+  const goPick = (nextPage: number) => setPickPage(Math.min(pickTotalPages, Math.max(1, nextPage)));
 
   const handleConfirmPick = async () => {
     if (!pickedRouteId || !activePhoto) return;
+    if (!isAuthenticated) {
+      onRequireAuth?.();
+      return;
+    }
+
     try {
-      const res = await fetch(`/api/routes/${pickedRouteId}/photos`, {
+      const response = await fetch(`/api/routes/${pickedRouteId}/photos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ photoId: activePhoto.id }),
       });
-      if (res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { message?: string };
-        const dup = typeof data.message === "string" && data.message.includes("уже");
-        onActionSuccess?.(dup ? "Фото уже в этом маршруте" : "Фото добавлено в маршрут");
+      if (response.ok) {
+        const data = (await response.json().catch(() => ({}))) as { message?: string };
+        const duplicate = typeof data.message === "string" && data.message.includes("уже");
+        onActionSuccess?.(duplicate ? "Фото уже в этом маршруте" : "Фото добавлено в маршрут");
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     closeAll();
   };
 
   const handleCreateConfirm = async () => {
     if (!activePhoto) return;
+    if (!isAuthenticated) {
+      onRequireAuth?.();
+      return;
+    }
+
     try {
-      const res = await fetch("/api/routes", {
+      const response = await fetch("/api/routes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -178,257 +227,302 @@ export default function PhotoModals(props: {
           photoIds: [activePhoto.id],
         }),
       });
-      if (res.ok) {
+      if (response.ok) {
         onActionSuccess?.("Маршрут создан, фото добавлено");
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     closeAll();
   };
 
   if (!open || !photo || !activePhoto) return null;
 
-  const mapsUrl = `https://yandex.ru/maps/?pt=${activePhoto.lng},${activePhoto.lat}&z=17&l=map`;
+  const mapsUrl = buildYandexMapsUrl({ lat: activePhoto.lat, lng: activePhoto.lng });
 
   return (
     <>
-    <div className={styles.overlay} onClick={closeAll} role="presentation">
-      {step === "photo" ? (
-        <div className={`${styles.modal} ${styles.modalPhoto}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-          <button className={styles.closeBtn} onClick={closeAll} aria-label="Закрыть" type="button" />
-          <div className={styles.photoTitle}>{activePhoto.title}</div>
+      <div className={styles.overlay} onClick={closeAll} role="presentation">
+        {step === "photo" ? (
+          <div className={`${styles.modal} ${styles.modalPhoto}`} onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
+            <button className={styles.closeBtn} onClick={closeAll} aria-label="Закрыть" type="button" />
+            <div className={styles.photoTitle}>{activePhoto.title}</div>
 
-          <div className={styles.photoWrap}>
-            <OptimizedPhoto
-              src={activePhoto.src}
-              alt={activePhoto.title}
-              width={300}
-              height={375}
-              sizes="300px"
-              className={styles.photoImg}
-              quality={78}
-            />
-            {isAdmin ? (
-              <button
-                type="button"
-                className={styles.deletePhotoBtn}
-                aria-label="Удалить фото"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setConfirmDeleteOpen(true);
-                }}
-              >
-                <svg className={styles.deletePhotoIcon} width="18" height="18" viewBox="0 0 24 24" aria-hidden fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" strokeLinecap="round" />
-                </svg>
-              </button>
-            ) : null}
-            {likedNow ? (
-              <Image src="/images/city/heart_red.png" alt="" width={23} height={23} className={styles.likeIcon} aria-hidden="true" />
-            ) : null}
-          </div>
-
-          <div className={styles.meta}>
-            <div>Метро: {formatMultiValue(activePhoto.metro)}</div>
-            <div>
-              Адрес:{" "}
-              <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>
-                {activePhoto.coords}
-              </a>
-            </div>
-          </div>
-
-          <div className={styles.photoPagination}>
-            <button
-              className={`${styles.pagBtn} ${!canPhotoPrev ? styles.pagBtnDisabled : ""}`}
-              disabled={!canPhotoPrev}
-              onClick={() => goPhoto(photoPage - 1)}
-              aria-label="Назад"
-              type="button"
-            >
-              ←
-            </button>
-
-            <div className={styles.pages}>
-              {photoPagesToShow.map((p, idx) =>
-                p === "dots" ? (
-                  <span key={`d-${idx}`} className={styles.dots}>…</span>
-                ) : (
-                  <button
-                    key={p}
-                    className={`${styles.page} ${p === photoPage ? styles.pageActive : ""}`}
-                    onClick={() => goPhoto(p)}
-                    aria-current={p === photoPage ? "page" : undefined}
-                    type="button"
-                  >
-                    {p}
-                  </button>
-                )
-              )}
-            </div>
-
-            <button
-              className={`${styles.pagBtn} ${!canPhotoNext ? styles.pagBtnDisabled : ""}`}
-              disabled={!canPhotoNext}
-              onClick={() => goPhoto(photoPage + 1)}
-              aria-label="Вперёд"
-              type="button"
-            >
-              →
-            </button>
-          </div>
-
-          <div className={styles.actions}>
-            <button type="button" className={styles.bigBtn} onClick={() => onToggleLike(activePhoto.id)}>
-              <Image
-                src={likedNow ? "/images/city/heart_red.png" : "/images/city/heart_black.png"}
-                alt=""
-                width={23}
-                height={23}
-                className={styles.btnImg}
-                aria-hidden="true"
+            <div className={styles.photoWrap}>
+              <OptimizedPhoto
+                src={activePhoto.src}
+                alt={activePhoto.title}
+                width={300}
+                height={375}
+                sizes="300px"
+                className={styles.photoImg}
+                quality={78}
               />
-              {likedNow ? "УДАЛИТЬ ИЗ ИЗБРАННОГО" : "ДОБАВИТЬ В ИЗБРАННОЕ"}
-            </button>
-
-            <button type="button" className={styles.bigBtn} onClick={openAddToRoute}>
-              <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
-              ДОБАВИТЬ В МАРШРУТ
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      {step === "routeChoice" ? (
-        <div className={`${styles.modal} ${styles.modalChoice}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-          <button className={styles.closeBtn} onClick={closeAll} aria-label="Закрыть" type="button" />
-          <div className={styles.choiceBtns}>
-            <button type="button" className={`${styles.choiceBtn} ${styles.choiceBtn1}`} onClick={() => setStep("createRoute")}>
-              <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
-              СОЗДАТЬ НОВЫЙ МАРШРУТ
-            </button>
-            {hasUserRoutes ? (
-              <button type="button" className={`${styles.choiceBtn} ${styles.choiceBtn2}`} onClick={() => setStep("pickRoute")}>
-                <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
-                ДОБАВИТЬ В СОЗДАННЫЙ МАРШРУТ
-              </button>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-
-      {step === "pickRoute" ? (
-        <div className={`${styles.modal} ${styles.modalPick}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-          <button className={styles.closeBtn} onClick={closeAll} aria-label="Закрыть" type="button" />
-
-          <div className={styles.pickTitle}>
-            <span className={styles.pickMark}>Выберите</span> маршрут для добавления
-          </div>
-
-          <div className={styles.pickGrid}>
-            {pickItems.map((r) => {
-              const active = r.id === pickedRouteId;
-              return (
-                <button
-                  key={r.id}
-                  type="button"
-                  className={`${styles.pickCard} ${active ? styles.pickCardActive : ""}`}
-                  onClick={() => setPickedRouteId(r.id)}
-                >
-                  <div className={styles.pickThumb}>
-                    <OptimizedPhoto
-                      src={r.src}
-                      alt={r.title}
-                      width={150}
-                      height={200}
-                      sizes="150px"
-                      className={styles.pickImg}
-                      quality={70}
-                    />
-                  </div>
-                  <div className={styles.pickCap}>{r.title}</div>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className={styles.pickPagination}>
-            <button
-              className={`${styles.pagBtn} ${!canPrev ? styles.pagBtnDisabled : ""}`}
-              disabled={!canPrev}
-              onClick={() => goPick(pickPage - 1)}
-              aria-label="Назад"
-              type="button"
-            >
-              ←
-            </button>
-
-            <div className={styles.pages}>
-              {pagesToShow.map((p, idx) =>
-                p === "dots" ? (
-                  <span key={`d-${idx}`} className={styles.dots}>…</span>
-                ) : (
+              {isAdmin ? (
+                <>
                   <button
-                    key={p}
-                    className={`${styles.page} ${p === pickPage ? styles.pageActive : ""}`}
-                    onClick={() => goPick(p)}
                     type="button"
+                    className={styles.deletePhotoBtn}
+                    aria-label="Удалить фото"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setConfirmDeleteOpen(true);
+                    }}
                   >
-                    {p}
+                    <svg className={styles.deletePhotoIcon} width="18" height="18" viewBox="0 0 24 24" aria-hidden fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" strokeLinecap="round" />
+                    </svg>
                   </button>
-                )
-              )}
+                  <button
+                    type="button"
+                    className={styles.editPhotoBtn}
+                    aria-label="Редактировать фото"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setEditOpen(true);
+                    }}
+                  >
+                    <svg className={styles.editPhotoIcon} width="17" height="17" viewBox="0 0 24 24" aria-hidden fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 20h9" strokeLinecap="round" />
+                      <path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </>
+              ) : null}
+              {likedNow ? (
+                <Image src="/images/city/heart_red.png" alt="" width={23} height={23} className={styles.likeIcon} aria-hidden="true" />
+              ) : null}
             </div>
 
-            <button
-              className={`${styles.pagBtn} ${!canNext ? styles.pagBtnDisabled : ""}`}
-              disabled={!canNext}
-              onClick={() => goPick(pickPage + 1)}
-              aria-label="Вперёд"
-              type="button"
-            >
-              →
+            <div className={styles.meta}>
+              <div>Метро: {formatMultiValue(activePhoto.metro)}</div>
+              <div>
+                Адрес:{" "}
+                {mapsUrl ? (
+                  <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>
+                    {activePhoto.coords}
+                  </a>
+                ) : (
+                  activePhoto.coords
+                )}
+              </div>
+            </div>
+
+            <div className={styles.photoPagination}>
+              <button
+                className={`${styles.pagBtn} ${!canPhotoPrev ? styles.pagBtnDisabled : ""}`}
+                disabled={!canPhotoPrev}
+                onClick={() => goPhoto(photoPage - 1)}
+                aria-label="Назад"
+                type="button"
+              >
+                ←
+              </button>
+
+              <div className={styles.pages}>
+                {photoPagesToShow.map((pageNumber, index) =>
+                  pageNumber === "dots" ? (
+                    <span key={`d-${index}`} className={styles.dots}>...</span>
+                  ) : (
+                    <button
+                      key={pageNumber}
+                      className={`${styles.page} ${pageNumber === photoPage ? styles.pageActive : ""}`}
+                      onClick={() => goPhoto(pageNumber)}
+                      aria-current={pageNumber === photoPage ? "page" : undefined}
+                      type="button"
+                    >
+                      {pageNumber}
+                    </button>
+                  ),
+                )}
+              </div>
+
+              <button
+                className={`${styles.pagBtn} ${!canPhotoNext ? styles.pagBtnDisabled : ""}`}
+                disabled={!canPhotoNext}
+                onClick={() => goPhoto(photoPage + 1)}
+                aria-label="Вперёд"
+                type="button"
+              >
+                →
+              </button>
+            </div>
+
+            <div className={styles.actions}>
+              <button type="button" className={styles.bigBtn} onClick={() => onToggleLike(activePhoto.id)}>
+                <Image
+                  src={likedNow ? "/images/city/heart_red.png" : "/images/city/heart_black.png"}
+                  alt=""
+                  width={23}
+                  height={23}
+                  className={styles.btnImg}
+                  aria-hidden="true"
+                />
+                {likedNow ? "УДАЛИТЬ ИЗ ИЗБРАННОГО" : "ДОБАВИТЬ В ИЗБРАННОЕ"}
+              </button>
+
+              <button type="button" className={styles.bigBtn} onClick={openAddToRoute}>
+                <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
+                ДОБАВИТЬ В МАРШРУТ
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {step === "routeChoice" ? (
+          <div className={`${styles.modal} ${styles.modalChoice}`} onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
+            <button className={styles.closeBtn} onClick={closeAll} aria-label="Закрыть" type="button" />
+            <div className={styles.choiceBtns}>
+              <button type="button" className={`${styles.choiceBtn} ${styles.choiceBtn1}`} onClick={() => setStep("createRoute")}>
+                <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
+                СОЗДАТЬ НОВЫЙ МАРШРУТ
+              </button>
+              {hasUserRoutes ? (
+                <button type="button" className={`${styles.choiceBtn} ${styles.choiceBtn2}`} onClick={() => setStep("pickRoute")}>
+                  <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
+                  ДОБАВИТЬ В СОЗДАННЫЙ МАРШРУТ
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        {step === "pickRoute" ? (
+          <div className={`${styles.modal} ${styles.modalPick}`} onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
+            <button className={styles.closeBtn} onClick={closeAll} aria-label="Закрыть" type="button" />
+
+            <div className={styles.pickTitle}>
+              <span className={styles.pickMark}>Выберите</span> маршрут для добавления
+            </div>
+
+            <div className={styles.pickGrid}>
+              {pickItems.map((route) => {
+                const active = route.id === pickedRouteId;
+                return (
+                  <button
+                    key={route.id}
+                    type="button"
+                    className={`${styles.pickCard} ${active ? styles.pickCardActive : ""}`}
+                    onClick={() => setPickedRouteId(route.id)}
+                  >
+                    <div className={styles.pickThumb}>
+                      <OptimizedPhoto
+                        src={route.src}
+                        alt={route.title}
+                        width={150}
+                        height={200}
+                        sizes="150px"
+                        className={styles.pickImg}
+                        quality={70}
+                      />
+                    </div>
+                    <div className={styles.pickCap}>{route.title}</div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className={styles.pickPagination}>
+              <button
+                className={`${styles.pagBtn} ${!canPrev ? styles.pagBtnDisabled : ""}`}
+                disabled={!canPrev}
+                onClick={() => goPick(pickPage - 1)}
+                aria-label="Назад"
+                type="button"
+              >
+                ←
+              </button>
+
+              <div className={styles.pages}>
+                {pagesToShow.map((pageNumber, index) =>
+                  pageNumber === "dots" ? (
+                    <span key={`d-${index}`} className={styles.dots}>...</span>
+                  ) : (
+                    <button
+                      key={pageNumber}
+                      className={`${styles.page} ${pageNumber === pickPage ? styles.pageActive : ""}`}
+                      onClick={() => goPick(pageNumber)}
+                      type="button"
+                    >
+                      {pageNumber}
+                    </button>
+                  ),
+                )}
+              </div>
+
+              <button
+                className={`${styles.pagBtn} ${!canNext ? styles.pagBtnDisabled : ""}`}
+                disabled={!canNext}
+                onClick={() => goPick(pickPage + 1)}
+                aria-label="Вперёд"
+                type="button"
+              >
+                →
+              </button>
+            </div>
+
+            <button type="button" className={styles.pickConfirm} onClick={handleConfirmPick}>
+              ДОБАВИТЬ В ВЫБРАННЫЙ МАРШРУТ
             </button>
           </div>
+        ) : null}
 
-          <button type="button" className={styles.pickConfirm} onClick={handleConfirmPick}>
-            ДОБАВИТЬ В ВЫБРАННЫЙ МАРШРУТ
-          </button>
-        </div>
-      ) : null}
+        {step === "createRoute" ? (
+          <div className={`${styles.modal} ${styles.modalCreate}`} onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
+            <button className={styles.closeBtn} onClick={closeAll} aria-label="Закрыть" type="button" />
 
-      {step === "createRoute" ? (
-        <div className={`${styles.modal} ${styles.modalCreate}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-          <button className={styles.closeBtn} onClick={closeAll} aria-label="Закрыть" type="button" />
+            <div className={styles.createTitle}>Создание маршрута</div>
 
-          <div className={styles.createTitle}>Создание маршрута</div>
+            <div className={styles.createBody}>
+              <div className={styles.createField}>
+                <div className={styles.createLabel}>ПРИДУМАЙТЕ НАЗВАНИЕ</div>
+                <input className={styles.createInput} value={newTitle} onChange={(event) => setNewTitle(event.target.value)} />
+              </div>
 
-          <div className={styles.createBody}>
-            <div className={styles.createField}>
-              <div className={styles.createLabel}>ПРИДУМАЙТЕ НАЗВАНИЕ</div>
-              <input className={styles.createInput} value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
+              <div className={styles.createField}>
+                <div className={styles.createLabel}>ПРИДУМАЙТЕ ОПИСАНИЕ</div>
+                <textarea className={styles.createTextarea} value={newDesc} onChange={(event) => setNewDesc(event.target.value)} />
+              </div>
+
+              <button type="button" className={styles.createConfirm} onClick={handleCreateConfirm}>
+                СОЗДАТЬ НОВЫЙ МАРШРУТ
+              </button>
             </div>
-
-            <div className={styles.createField}>
-              <div className={styles.createLabel}>ПРИДУМАЙТЕ ОПИСАНИЕ</div>
-              <textarea className={styles.createTextarea} value={newDesc} onChange={(e) => setNewDesc(e.target.value)} />
-            </div>
-
-            <button type="button" className={styles.createConfirm} onClick={handleCreateConfirm}>
-              СОЗДАТЬ НОВЫЙ МАРШРУТ
-            </button>
           </div>
-        </div>
+        ) : null}
+      </div>
+      {isAdmin ? (
+        <ConfirmDeleteModal
+          open={confirmDeleteOpen}
+          onClose={() => {
+            if (!deleteSubmitting) setConfirmDeleteOpen(false);
+          }}
+          onYes={() => void performDelete()}
+        />
       ) : null}
-    </div>
-    {isAdmin ? (
-      <ConfirmDeleteModal
-        open={confirmDeleteOpen}
-        onClose={() => {
-          if (!deleteSubmitting) setConfirmDeleteOpen(false);
-        }}
-        onYes={() => void performDelete()}
-      />
-    ) : null}
+      {isAdmin && activePhoto ? (
+        <UploadPhotoModal
+          open={editOpen}
+          mode="edit"
+          initialPhoto={{
+            id: activePhoto.id,
+            title: activePhoto.title,
+            metro: activePhoto.metro,
+            lat: activePhoto.lat,
+            lng: activePhoto.lng,
+            spaceType: activePhoto.spaceType,
+            mood: activePhoto.mood,
+            atmosphere: activePhoto.atmosphere,
+          }}
+          onClose={() => setEditOpen(false)}
+          onUploaded={(updatedPhoto) => {
+            if (updatedPhoto) {
+              onPhotoUpdated?.(updatedPhoto);
+              onActionSuccess?.("Фото обновлено");
+            }
+          }}
+        />
+      ) : null}
     </>
   );
 }

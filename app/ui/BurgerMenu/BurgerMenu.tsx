@@ -13,6 +13,7 @@ export default function BurgerMenu() {
   const pathname = usePathname();
   const isStart = pathname === "/start";
   const { user, logout } = useAuth();
+  const [modalOpen, setModalOpen] = useState(false);
 
   const authEntryHref = useMemo(() => {
     if (!pathname || pathname.startsWith("/auth")) return "/auth/login";
@@ -29,23 +30,23 @@ export default function BurgerMenu() {
         : [{ label: "ВОЙТИ/РЕГИСТРАЦИЯ", href: authEntryHref }]),
       { label: "О ПРОЕКТЕ", href: "/about" },
     ],
-    [user, logout, authEntryHref]
+    [user, logout, authEntryHref],
   );
 
   const activeIndex = useMemo(() => {
-    const idx = items.findIndex((i) => {
-      if (i.href.startsWith("/auth/login")) return pathname?.startsWith("/auth");
-      if (i.href === "#") return false;
-      return pathname === i.href || pathname?.startsWith(`${i.href}/`);
+    const index = items.findIndex((item) => {
+      if (item.href.startsWith("/auth/login")) return pathname?.startsWith("/auth");
+      if (item.href === "#") return false;
+      return pathname === item.href || pathname?.startsWith(`${item.href}/`);
     });
-    return idx >= 0 ? idx : 0;
+    return index >= 0 ? index : 0;
   }, [items, pathname]);
 
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -63,15 +64,37 @@ export default function BurgerMenu() {
     if (isStart) setOpen(false);
   }, [isStart]);
 
+  useEffect(() => {
+    const syncModalState = () => {
+      setModalOpen(Boolean(document.querySelector('[aria-modal="true"]')));
+    };
+
+    syncModalState();
+
+    const observer = new MutationObserver(() => {
+      syncModalState();
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["aria-modal"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   if (isStart) return null;
 
   return (
     <>
       <button
         type="button"
-        className={`${styles.burgerBtn} ${open ? styles.hidden : ""}`}
+        className={`${styles.burgerBtn} ${open ? styles.hidden : ""} ${!open && modalOpen ? styles.blocked : ""}`}
         aria-label="Открыть меню"
         aria-expanded={open}
+        disabled={!open && modalOpen}
         onClick={() => setOpen(true)}
       >
         <span className={styles.burgerIcon} aria-hidden="true" />
@@ -87,7 +110,7 @@ export default function BurgerMenu() {
           role="dialog"
           aria-modal="true"
           aria-label="Меню"
-          onClick={(e) => e.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
         >
           <header className={styles.header}>
             <div className={styles.topLeft}>
@@ -112,34 +135,34 @@ export default function BurgerMenu() {
 
           <nav className={styles.nav} aria-label="Разделы">
             <ul className={styles.list} style={{ ["--active" as any]: activeIndex }}>
-              {items.map((it, idx) => {
-                const isActive = idx === activeIndex;
+              {items.map((item, index) => {
+                const isActive = index === activeIndex;
 
-                if (it.onClick) {
+                if (item.onClick) {
                   return (
-                    <li key={it.label} className={styles.item}>
+                    <li key={item.label} className={styles.item}>
                       <button
                         type="button"
                         className={`${styles.link} ${styles.linkBtn}`}
                         onClick={() => {
                           setOpen(false);
-                          it.onClick!();
+                          item.onClick?.();
                         }}
                       >
-                        <span>{it.label}</span>
+                        <span>{item.label}</span>
                       </button>
                     </li>
                   );
                 }
 
                 return (
-                  <li key={it.href} className={styles.item}>
+                  <li key={item.href} className={styles.item}>
                     <Link
-                      href={it.href}
+                      href={item.href}
                       className={`${styles.link} ${isActive ? styles.active : ""}`}
                       onClick={() => setOpen(false)}
                     >
-                      <span className={isActive ? styles.mark : ""}>{it.label}</span>
+                      <span className={isActive ? styles.mark : ""}>{item.label}</span>
                     </Link>
                   </li>
                 );

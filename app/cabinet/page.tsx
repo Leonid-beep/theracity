@@ -10,6 +10,7 @@ import type { CabinetRouteItem } from "./_components/CabinetRouteModal";
 import type { CabinetPhotoItem } from "./_components/CabinetPhotoModals";
 import ConfirmDeleteModal from "./_components/ConfirmDeleteModal";
 import { SuccessToast, useSuccessToast } from "@/app/ui/SuccessToast";
+import { copyRouteShareLink } from "@/app/lib/locationLinks";
 
 const CabinetRouteModal = dynamic(() => import("./_components/CabinetRouteModal"), { ssr: false });
 const CabinetPhotoModals = dynamic(() => import("./_components/CabinetPhotoModals"), { ssr: false });
@@ -424,6 +425,17 @@ export default function CabinetPage() {
               }
             } catch { /* ignore */ }
             await Promise.all([fetchMyRoutes(myRoutesPage), fetchFavRoutes(favRoutesPage)]);
+          }}
+          onShare={async () => {
+            const routeId = activeRoute?.id;
+            if (!routeId) return;
+
+            try {
+              await copyRouteShareLink(routeId);
+              showSuccess("Ссылка на маршрут скопирована");
+            } catch {
+              showSuccess("Не удалось скопировать ссылку");
+            }
           }}
           onClose={() => setOpenRoute(false)}
           actionLabel={activeSectionKey === "my_routes" ? "УДАЛИТЬ МАРШРУТ" : "УДАЛИТЬ ИЗ ИЗБРАННОГО"}

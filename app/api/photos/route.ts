@@ -61,7 +61,12 @@ export async function GET(req: NextRequest) {
 
     const total = filteredPhotos.length;
     const photos = filteredPhotos.slice((page - 1) * pageSize, page * pageSize);
-    console.log("[/api/photos] prisma query finished", { total, page, pageSize, returned: photos.length });
+    console.log("[/api/photos] prisma query finished", {
+      total,
+      page,
+      pageSize,
+      returned: photos.length,
+    });
 
     console.log("[/api/photos] photo count", { count: photos.length });
 
@@ -90,7 +95,8 @@ export async function GET(req: NextRequest) {
     } else {
       console.error("[/api/photos] unhandled non-error value in GET", { error });
     }
-    return NextResponse.json({ error: "РћС€РёР±РєР° СЃРµСЂРІРµСЂР°" }, { status: 500 });
+
+    return NextResponse.json({ error: "Ошибка сервера" }, { status: 500 });
   }
 }
 
@@ -99,25 +105,43 @@ export async function POST(req: NextRequest) {
     console.log("[/api/photos] POST entered photos route");
 
     const session = await getSessionUser();
-    if (!session)
-      return NextResponse.json({ error: "РќРµ Р°РІС‚РѕСЂРёР·РѕРІР°РЅ" }, { status: 401 });
+    if (!session) {
+      return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: session.userId },
       select: { email: true },
     });
-    if (!user || !isAdminUserEmail(user.email))
-      return NextResponse.json({ error: "РќРµС‚ РїСЂР°РІ РЅР° Р·Р°РіСЂСѓР·РєСѓ" }, { status: 403 });
+    if (!user || !isAdminUserEmail(user.email)) {
+      return NextResponse.json({ error: "Нет прав на загрузку" }, { status: 403 });
+    }
 
     const form = await req.formData();
     const file = form.get("file") as File | null;
     const title = form.get("title") as string;
-    const metro = form.getAll("metro").map(String).map((value) => value.trim()).filter(Boolean);
+    const metro = form
+      .getAll("metro")
+      .map(String)
+      .map((value) => value.trim())
+      .filter(Boolean);
     const lat = parseFloat(form.get("lat") as string);
     const lng = parseFloat(form.get("lng") as string);
-    const spaceType = form.getAll("spaceType").map(String).map((value) => value.trim()).filter(Boolean);
-    const mood = form.getAll("mood").map(String).map((value) => value.trim()).filter(Boolean);
-    const atmosphere = form.getAll("atmosphere").map(String).map((value) => value.trim()).filter(Boolean);
+    const spaceType = form
+      .getAll("spaceType")
+      .map(String)
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const mood = form
+      .getAll("mood")
+      .map(String)
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const atmosphere = form
+      .getAll("atmosphere")
+      .map(String)
+      .map((value) => value.trim())
+      .filter(Boolean);
 
     console.log("[/api/photos] POST parsed form data", {
       hasFile: !!file,
@@ -132,17 +156,38 @@ export async function POST(req: NextRequest) {
       fileType: file?.type,
     });
 
-    if (!file || !title || !metro.length || isNaN(lat) || isNaN(lng) || !spaceType.length || !mood.length || !atmosphere.length) {
-      return NextResponse.json({ error: "Р—Р°РїРѕР»РЅРёС‚Рµ РІСЃРµ РїРѕР»СЏ" }, { status: 400 });
+    if (
+      !file ||
+      !title ||
+      !metro.length ||
+      Number.isNaN(lat) ||
+      Number.isNaN(lng) ||
+      !spaceType.length ||
+      !mood.length ||
+      !atmosphere.length
+    ) {
+      return NextResponse.json({ error: "Заполните все поля" }, { status: 400 });
     }
 
-    if (!ALLOWED_IMAGE_MIME_TYPES.includes(file.type as (typeof ALLOWED_IMAGE_MIME_TYPES)[number]))
-      return NextResponse.json({ error: "Р”РѕРїСѓСЃС‚РёРјС‹Рµ С„РѕСЂРјР°С‚С‹: JPEG, PNG, WebP" }, { status: 400 });
-    if (file.size > MAX_UPLOAD_FILE_BYTES)
+    if (
+      !ALLOWED_IMAGE_MIME_TYPES.includes(
+        file.type as (typeof ALLOWED_IMAGE_MIME_TYPES)[number],
+      )
+    ) {
       return NextResponse.json(
-        { error: `РњР°РєСЃРёРјР°Р»СЊРЅС‹Р№ СЂР°Р·РјРµСЂ С„Р°Р№Р»Р° РґР»СЏ СЃРµСЂРІРµСЂРЅРѕР№ Р·Р°РіСЂСѓР·РєРё: ${MAX_UPLOAD_FILE_LABEL}` },
+        { error: "Допустимые форматы: JPEG, PNG, WebP" },
         { status: 400 },
       );
+    }
+
+    if (file.size > MAX_UPLOAD_FILE_BYTES) {
+      return NextResponse.json(
+        {
+          error: `Максимальный размер файла для серверной загрузки: ${MAX_UPLOAD_FILE_LABEL}`,
+        },
+        { status: 400 },
+      );
+    }
 
     const ext = file.name.split(".").pop() || "jpg";
     const s3Key = `photos/${crypto.randomUUID()}.${ext}`;
@@ -195,6 +240,7 @@ export async function POST(req: NextRequest) {
     } else {
       console.error("[/api/photos] unhandled non-error value in POST", { error });
     }
-    return NextResponse.json({ error: "РћС€РёР±РєР° СЃРµСЂРІРµСЂР°" }, { status: 500 });
+
+    return NextResponse.json({ error: "Ошибка сервера" }, { status: 500 });
   }
 }

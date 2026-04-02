@@ -10,24 +10,31 @@ import { SuccessToast, useSuccessToast } from "@/app/ui/SuccessToast";
 import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
 import { useCloseDetailsOnOutsideClick } from "@/lib/useCloseDetailsOnOutsideClick";
 
-const PhotoModals = dynamic(() => import("./_components/PhotoModals"), { ssr: false });
-const UploadPhotoModal = dynamic(() => import("./_components/UploadPhotoModal"), { ssr: false });
+const PhotoModals = dynamic(() => import("./_components/PhotoModals"), {
+  ssr: false,
+});
+const UploadPhotoModal = dynamic(() => import("./_components/UploadPhotoModal"), {
+  ssr: false,
+});
 
 function useGalleryBreakpoint() {
   const [pageSize, setPageSize] = useState(32);
+
   useEffect(() => {
     const calc = () => {
-      const w = window.innerWidth;
-      if (w <= 480) setPageSize(8);
-      else if (w <= 700) setPageSize(16);
-      else if (w <= 1024) setPageSize(25);
-      else if (w <= 1440) setPageSize(32);
+      const width = window.innerWidth;
+      if (width <= 480) setPageSize(8);
+      else if (width <= 700) setPageSize(16);
+      else if (width <= 1024) setPageSize(25);
+      else if (width <= 1440) setPageSize(32);
       else setPageSize(28);
     };
+
     calc();
     window.addEventListener("resize", calc);
     return () => window.removeEventListener("resize", calc);
   }, []);
+
   return pageSize;
 }
 
@@ -52,16 +59,20 @@ type Filters = {
 };
 
 function isAllSelected(selected: string[], options: string[]): boolean {
-  return !selected.length || (options.length > 0 && selected.length === options.length);
+  return options.length > 0 && selected.length === options.length;
 }
 
 function summarizeSelection(selected: string[], options: string[]): string {
-  if (!options.length || isAllSelected(selected, options)) return "Р’СЃРµ";
+  if (!selected.length) return "Выберите...";
+  if (isAllSelected(selected, options)) return "Все";
   return selected.join(", ");
 }
 
 function buildFilterValue(selected: string[], options: string[]): string | null {
-  if (!selected.length || !options.length || isAllSelected(selected, options)) return null;
+  if (!selected.length || !options.length || isAllSelected(selected, options)) {
+    return null;
+  }
+
   return selected.join(",");
 }
 
@@ -91,7 +102,7 @@ export default function GalleryPage() {
   const [selSpace, setSelSpace] = useState<string[]>([]);
   const [selMood, setSelMood] = useState<string[]>([]);
   const [selAtmo, setSelAtmo] = useState<string[]>([]);
-
+  const [filtersInitialized, setFiltersInitialized] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<Record<string, string>>({});
 
   const [selected, setSelected] = useState<PhotoItem | null>(null);
@@ -100,86 +111,114 @@ export default function GalleryPage() {
   const filterRef = useRef<HTMLElement>(null);
   useCloseDetailsOnOutsideClick(filterRef, "gallery-filters");
 
-  const openPhoto = useCallback(
-    (p: PhotoItem) => {
-      if (authLoading) return;
-      if (!user) {
-        router.push(`/auth/login?returnTo=${encodeURIComponent(returnToGallery)}`);
-        return;
-      }
-      setSelected(p);
-    },
-    [authLoading, user, router],
-  );
+  const requireAuth = useCallback(() => {
+    if (authLoading) return;
+    router.push(`/auth/login?returnTo=${encodeURIComponent(returnToGallery)}`);
+  }, [authLoading, router]);
 
-  useEffect(() => {
-    fetch("/api/filters")
-      .then((r) => r.json())
-      .then((d) => setFilterOptions(d))
-      .catch(() => {});
+  const openPhoto = useCallback((photo: PhotoItem) => {
+    setSelected(photo);
   }, []);
 
   useEffect(() => {
+    fetch("/api/filters")
+      .then((response) => response.json())
+      .then((data: Filters) => {
+        setFilterOptions(data);
+
+        if (!filtersInitialized) {
+          setSelMetro(data.metro);
+          setSelSpace(data.spaceType);
+          setSelMood(data.mood);
+          setSelAtmo(data.atmosphere);
+          setFiltersInitialized(true);
+        }
+      })
+      .catch(() => {});
+  }, [filtersInitialized]);
+
+  useEffect(() => {
     fetch("/api/photos/favorites/ids")
-      .then((r) => r.json())
-      .then((d) => setLiked(new Set(d.ids ?? [])))
+      .then((response) => response.json())
+      .then((data) => setLiked(new Set(data.ids ?? [])))
       .catch(() => {});
   }, []);
 
   const fetchPhotos = useCallback(
-    async (p: number, filters: Record<string, string>) => {
+    async (nextPage: number, filters: Record<string, string>) => {
       setLoading(true);
-      const sp = new URLSearchParams({
-        page: String(p),
+
+      const search = new URLSearchParams({
+        page: String(nextPage),
         pageSize: String(pageSize),
         ...filters,
       });
+
       try {
-        const res = await fetch(`/api/photos?${sp}`);
-        const data = await res.json();
+        const response = await fetch(`/api/photos?${search}`);
+        const data = await response.json();
         setPhotos(data.photos ?? []);
         setTotal(data.total ?? 0);
       } catch {
         setPhotos([]);
         setTotal(0);
       }
+
       setLoading(false);
     },
     [pageSize],
   );
 
   useEffect(() => {
-    fetchPhotos(page, appliedFilters);
+    void fetchPhotos(page, appliedFilters);
   }, [page, appliedFilters, fetchPhotos]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const canPrev = page > 1;
   const canNext = page < totalPages;
-  const go = (p: number) => setPage(Math.min(totalPages, Math.max(1, p)));
+
+  const go = (nextPage: number) => {
+    setPage(Math.min(totalPages, Math.max(1, nextPage)));
+  };
 
   const pagesToShow = useMemo(() => {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-    const out: (number | "dots")[] = [1];
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }
+
+    const result: (number | "dots")[] = [1];
     const left = Math.max(2, page - 1);
     const right = Math.min(totalPages - 1, page + 1);
-    if (left > 2) out.push("dots");
-    for (let p = left; p <= right; p++) out.push(p);
-    if (right < totalPages - 1) out.push("dots");
-    out.push(totalPages);
-    return out;
+
+    if (left > 2) result.push("dots");
+
+    for (let nextPage = left; nextPage <= right; nextPage += 1) {
+      result.push(nextPage);
+    }
+
+    if (right < totalPages - 1) result.push("dots");
+    result.push(totalPages);
+
+    return result;
   }, [page, totalPages]);
 
   const handleApplyFilters = () => {
-    const f: Record<string, string> = {};
+    if (!selMetro.length || !selSpace.length || !selMood.length || !selAtmo.length) {
+      return;
+    }
+
+    const nextFilters: Record<string, string> = {};
     const metro = buildFilterValue(selMetro, filterOptions.metro);
     const spaceType = buildFilterValue(selSpace, filterOptions.spaceType);
     const mood = buildFilterValue(selMood, filterOptions.mood);
     const atmosphere = buildFilterValue(selAtmo, filterOptions.atmosphere);
-    if (metro) f.metro = metro;
-    if (spaceType) f.spaceType = spaceType;
-    if (mood) f.mood = mood;
-    if (atmosphere) f.atmosphere = atmosphere;
-    setAppliedFilters(f);
+
+    if (metro) nextFilters.metro = metro;
+    if (spaceType) nextFilters.spaceType = spaceType;
+    if (mood) nextFilters.mood = mood;
+    if (atmosphere) nextFilters.atmosphere = atmosphere;
+
+    setAppliedFilters(nextFilters);
     setPage(1);
   };
 
@@ -199,6 +238,11 @@ export default function GalleryPage() {
     selSpace.length > 0 ||
     selMood.length > 0 ||
     selAtmo.length > 0;
+  const canFind =
+    selMetro.length > 0 &&
+    selSpace.length > 0 &&
+    selMood.length > 0 &&
+    selAtmo.length > 0;
 
   const toggleValue = (
     value: string,
@@ -206,57 +250,62 @@ export default function GalleryPage() {
     setter: (updater: (prev: string[]) => string[]) => void,
   ) => {
     setter((prev) => {
-      const base = prev.length ? prev : options;
-      const next = base.includes(value)
-        ? base.filter((item) => item !== value)
-        : [...base, value];
+      const next = prev.includes(value)
+        ? prev.filter((item) => item !== value)
+        : [...prev, value];
 
-      return next.length === 0 || next.length === options.length
-        ? []
-        : options.filter((option) => next.includes(option));
+      return options.filter((option) => next.includes(option));
     });
   };
 
-  const isValueChecked = (value: string, selected: string[], options: string[]) =>
-    selected.length === 0 ? options.includes(value) : selected.includes(value);
-
-  const handlePhotoDeleted = useCallback((id: string) => {
-    setPhotos((p) => p.filter((x) => x.id !== id));
-    setTotal((t) => Math.max(0, t - 1));
+  const handlePhotoDeleted = useCallback((photoId: string) => {
+    setPhotos((prev) => prev.filter((photo) => photo.id !== photoId));
+    setTotal((currentTotal) => Math.max(0, currentTotal - 1));
     setLiked((prev) => {
-      const n = new Set(prev);
-      n.delete(id);
-      return n;
+      const next = new Set(prev);
+      next.delete(photoId);
+      return next;
     });
     setSelected(null);
   }, []);
 
+  const handlePhotoUpdated = useCallback((updatedPhoto: PhotoItem) => {
+    setPhotos((prev) =>
+      prev.map((photo) => (photo.id === updatedPhoto.id ? updatedPhoto : photo)),
+    );
+    setSelected((prev) => (prev && prev.id === updatedPhoto.id ? updatedPhoto : prev));
+  }, []);
+
   const toggleLike = async (photoId: string) => {
     if (authLoading) return;
+
     if (!user) {
-      router.push(`/auth/login?returnTo=${encodeURIComponent(returnToGallery)}`);
+      requireAuth();
       return;
     }
-    const was = liked.has(photoId);
+
+    const wasLiked = liked.has(photoId);
+
     setLiked((prev) => {
       const next = new Set(prev);
-      if (was) next.delete(photoId);
+      if (wasLiked) next.delete(photoId);
       else next.add(photoId);
       return next;
     });
 
     try {
-      const res = await fetch("/api/photos/favorites", {
-        method: was ? "DELETE" : "POST",
+      const response = await fetch("/api/photos/favorites", {
+        method: wasLiked ? "DELETE" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ photoId }),
       });
-      if (res.ok) {
-        showSuccess(was ? "Удалено из избранного" : "Добавлено в избранное");
+
+      if (response.ok) {
+        showSuccess(wasLiked ? "Удалено из избранного" : "Добавлено в избранное");
       } else {
         setLiked((prev) => {
           const next = new Set(prev);
-          if (was) next.add(photoId);
+          if (wasLiked) next.add(photoId);
           else next.delete(photoId);
           return next;
         });
@@ -264,7 +313,7 @@ export default function GalleryPage() {
     } catch {
       setLiked((prev) => {
         const next = new Set(prev);
-        if (was) next.add(photoId);
+        if (wasLiked) next.add(photoId);
         else next.delete(photoId);
         return next;
       });
@@ -277,31 +326,33 @@ export default function GalleryPage() {
         <span className={styles.mark}>Выберите</span> место, которое откликается
       </h1>
 
-      {isAdmin && (
+      {isAdmin ? (
         <button
           type="button"
           className={styles.uploadBtn}
           onClick={() => setUploadOpen(true)}
         >
-          ЗАГРУЗИТЬ ФОТО
+          Загрузить фото
         </button>
-      )}
+      ) : null}
 
       <div className={styles.wrap}>
         <section className={styles.gallery}>
           <div className={styles.grid}>
             {loading && photos.length === 0 ? (
-              <p style={{ gridColumn: "1/-1", textAlign: "center", color: "#fff" }}>Загрузка...</p>
+              <p style={{ gridColumn: "1 / -1", textAlign: "center", color: "#fff" }}>
+                Загрузка...
+              </p>
             ) : (
-              photos.map((p) => (
+              photos.map((photo) => (
                 <figure
-                  key={p.id}
+                  key={photo.id}
                   className={styles.card}
-                  onClick={() => openPhoto(p)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      openPhoto(p);
+                  onClick={() => openPhoto(photo)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      openPhoto(photo);
                     }
                   }}
                   role="button"
@@ -309,14 +360,14 @@ export default function GalleryPage() {
                 >
                   <div className={styles.thumb}>
                     <OptimizedPhoto
-                      src={p.src}
-                      alt={p.title}
+                      src={photo.src}
+                      alt={photo.title}
                       fill
                       sizes="150px"
                       className={styles.img}
                       quality={70}
                     />
-                    {liked.has(p.id) ? (
+                    {liked.has(photo.id) ? (
                       <Image
                         src="/images/city/heart_red.png"
                         alt=""
@@ -327,7 +378,7 @@ export default function GalleryPage() {
                       />
                     ) : null}
                   </div>
-                  <figcaption className={styles.cap}>{p.title}</figcaption>
+                  <figcaption className={styles.cap}>{photo.title}</figcaption>
                 </figure>
               ))
             )}
@@ -344,21 +395,21 @@ export default function GalleryPage() {
             </button>
 
             <div className={styles.pages}>
-              {pagesToShow.map((p, idx) =>
-                p === "dots" ? (
-                  <span key={`d-${idx}`} className={styles.dots}>
+              {pagesToShow.map((pageNumber, index) =>
+                pageNumber === "dots" ? (
+                  <span key={`d-${index}`} className={styles.dots}>
                     …
                   </span>
                 ) : (
                   <button
-                    key={p}
-                    className={`${styles.page} ${p === page ? styles.pageActive : ""}`}
-                    onClick={() => go(p)}
-                    aria-current={p === page ? "page" : undefined}
+                    key={pageNumber}
+                    className={`${styles.page} ${pageNumber === page ? styles.pageActive : ""}`}
+                    onClick={() => go(pageNumber)}
+                    aria-current={pageNumber === page ? "page" : undefined}
                   >
-                    {p}
+                    {pageNumber}
                   </button>
-                )
+                ),
               )}
             </div>
 
@@ -381,22 +432,24 @@ export default function GalleryPage() {
 
             <div className={styles.filterFields}>
               <div className={styles.field}>
-                <div className={styles.fieldLabel}>тип пространства</div>
+                <div className={styles.fieldLabel}>Тип пространства</div>
                 <details className={styles.multi} name="gallery-filters">
                   <summary className={styles.select}>
                     <span className={styles.selectValue}>
-                      {selSpace.length ? selSpace.join(", ") : "Все"}
+                      {summarizeSelection(selSpace, filterOptions.spaceType)}
                     </span>
                   </summary>
                   <div className={styles.multiMenu}>
-                    {filterOptions.spaceType.map((v) => (
-                      <label key={v} className={styles.multiItem}>
+                    {filterOptions.spaceType.map((value) => (
+                      <label key={value} className={styles.multiItem}>
                         <input
                           type="checkbox"
-                          checked={isValueChecked(v, selSpace, filterOptions.spaceType)}
-                          onChange={() => toggleValue(v, filterOptions.spaceType, setSelSpace)}
+                          checked={selSpace.includes(value)}
+                          onChange={() =>
+                            toggleValue(value, filterOptions.spaceType, setSelSpace)
+                          }
                         />
-                        {v}
+                        {value}
                       </label>
                     ))}
                   </div>
@@ -404,22 +457,22 @@ export default function GalleryPage() {
               </div>
 
               <div className={styles.field}>
-                <div className={styles.fieldLabel}>эмоциональный фон</div>
+                <div className={styles.fieldLabel}>Эмоциональный фон</div>
                 <details className={styles.multi} name="gallery-filters">
                   <summary className={styles.select}>
                     <span className={styles.selectValue}>
-                      {selMood.length ? selMood.join(", ") : "Все"}
+                      {summarizeSelection(selMood, filterOptions.mood)}
                     </span>
                   </summary>
                   <div className={styles.multiMenu}>
-                    {filterOptions.mood.map((v) => (
-                      <label key={v} className={styles.multiItem}>
+                    {filterOptions.mood.map((value) => (
+                      <label key={value} className={styles.multiItem}>
                         <input
                           type="checkbox"
-                          checked={isValueChecked(v, selMood, filterOptions.mood)}
-                          onChange={() => toggleValue(v, filterOptions.mood, setSelMood)}
+                          checked={selMood.includes(value)}
+                          onChange={() => toggleValue(value, filterOptions.mood, setSelMood)}
                         />
-                        {v}
+                        {value}
                       </label>
                     ))}
                   </div>
@@ -427,22 +480,22 @@ export default function GalleryPage() {
               </div>
 
               <div className={styles.field}>
-                <div className={styles.fieldLabel}>станция метро</div>
+                <div className={styles.fieldLabel}>Станция метро</div>
                 <details className={styles.multi} name="gallery-filters">
                   <summary className={styles.select}>
                     <span className={styles.selectValue}>
-                      {selMetro.length ? selMetro.join(", ") : "Все"}
+                      {summarizeSelection(selMetro, filterOptions.metro)}
                     </span>
                   </summary>
                   <div className={styles.multiMenu}>
-                    {filterOptions.metro.map((v) => (
-                      <label key={v} className={styles.multiItem}>
+                    {filterOptions.metro.map((value) => (
+                      <label key={value} className={styles.multiItem}>
                         <input
                           type="checkbox"
-                          checked={isValueChecked(v, selMetro, filterOptions.metro)}
-                          onChange={() => toggleValue(v, filterOptions.metro, setSelMetro)}
+                          checked={selMetro.includes(value)}
+                          onChange={() => toggleValue(value, filterOptions.metro, setSelMetro)}
                         />
-                        {v}
+                        {value}
                       </label>
                     ))}
                   </div>
@@ -450,22 +503,24 @@ export default function GalleryPage() {
               </div>
 
               <div className={styles.field}>
-                <div className={styles.fieldLabel}>атмосфера</div>
+                <div className={styles.fieldLabel}>Атмосфера</div>
                 <details className={styles.multi} name="gallery-filters">
                   <summary className={styles.select}>
                     <span className={styles.selectValue}>
-                      {selAtmo.length ? selAtmo.join(", ") : "Все"}
+                      {summarizeSelection(selAtmo, filterOptions.atmosphere)}
                     </span>
                   </summary>
                   <div className={styles.multiMenu}>
-                    {filterOptions.atmosphere.map((v) => (
-                      <label key={v} className={styles.multiItem}>
+                    {filterOptions.atmosphere.map((value) => (
+                      <label key={value} className={styles.multiItem}>
                         <input
                           type="checkbox"
-                          checked={isValueChecked(v, selAtmo, filterOptions.atmosphere)}
-                          onChange={() => toggleValue(v, filterOptions.atmosphere, setSelAtmo)}
+                          checked={selAtmo.includes(value)}
+                          onChange={() =>
+                            toggleValue(value, filterOptions.atmosphere, setSelAtmo)
+                          }
                         />
-                        {v}
+                        {value}
                       </label>
                     ))}
                   </div>
@@ -474,22 +529,32 @@ export default function GalleryPage() {
             </div>
 
             <button
+              type="button"
               className={styles.apply}
-              onClick={hasAppliedFilters ? handleResetFilters : handleApplyFilters}
+              onClick={handleApplyFilters}
+              disabled={!canFind}
             >
-              {hasAppliedFilters ? "СБРОСИТЬ" : "ПРИМЕНИТЬ"}
+              Применить
             </button>
+
             <div className={styles.actions}>
-              <button className={styles.findBtn} onClick={handleApplyFilters} aria-label="Найти">
-                РќРђР™РўР
+              <button
+                type="button"
+                className={styles.findBtn}
+                onClick={handleApplyFilters}
+                aria-label="Найти"
+                disabled={!canFind}
+              >
+                Найти
               </button>
               <button
+                type="button"
                 className={styles.resetBtn}
                 onClick={handleResetFilters}
                 disabled={!canResetFilters}
                 aria-label="Сбросить"
               >
-                РЎР‘Р РћРЎРРўР¬
+                Сбросить
               </button>
             </div>
           </div>
@@ -504,12 +569,15 @@ export default function GalleryPage() {
           liked={liked}
           onToggleLike={toggleLike}
           isAdmin={isAdmin}
+          isAuthenticated={!!user}
+          onRequireAuth={requireAuth}
           onPhotoDeleted={handlePhotoDeleted}
+          onPhotoUpdated={handlePhotoUpdated}
           onActionSuccess={showSuccess}
         />
       ) : null}
 
-      {uploadOpen && (
+      {uploadOpen ? (
         <UploadPhotoModal
           open
           onClose={() => setUploadOpen(false)}
@@ -518,7 +586,7 @@ export default function GalleryPage() {
             showSuccess("Фото загружено");
           }}
         />
-      )}
+      ) : null}
 
       <SuccessToast message={successMsg} />
     </main>

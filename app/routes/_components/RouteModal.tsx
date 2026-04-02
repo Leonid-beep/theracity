@@ -6,6 +6,7 @@ import styles from "./routeModal.module.css";
 import ConfirmDeleteModal from "@/app/cabinet/_components/ConfirmDeleteModal";
 import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
 import { formatMultiValue } from "@/app/lib/photoMetadata";
+import { buildYandexMapsUrlFromString } from "@/app/lib/locationLinks";
 
 type RouteItem = {
   id: string;
@@ -24,6 +25,9 @@ export default function RouteModal({
   onToggleLike,
   onClose,
   isAdmin,
+  isAuthenticated,
+  onRequireAuth,
+  onShare,
   onRouteDeleted,
 }: {
   open: boolean;
@@ -32,6 +36,9 @@ export default function RouteModal({
   onToggleLike: () => void;
   onClose: () => void;
   isAdmin?: boolean;
+  isAuthenticated?: boolean;
+  onRequireAuth?: () => void;
+  onShare?: () => void;
   onRouteDeleted?: (routeId: string) => void;
 }) {
   const photos = route?.photos ?? [];
@@ -47,8 +54,8 @@ export default function RouteModal({
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
         setConfirmDeleteOpen(false);
         onClose();
       }
@@ -63,19 +70,18 @@ export default function RouteModal({
 
   const canPrev = page > 1;
   const canNext = page < totalPages;
-  const go = (p: number) => setPage(Math.min(totalPages, Math.max(1, p)));
+  const go = (nextPage: number) => setPage(Math.min(totalPages, Math.max(1, nextPage)));
 
   const pagesToShow = useMemo(() => {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-    const out: (number | "dots")[] = [];
-    out.push(1);
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, index) => index + 1);
+    const result: (number | "dots")[] = [1];
     const left = Math.max(2, page - 1);
     const right = Math.min(totalPages - 1, page + 1);
-    if (left > 2) out.push("dots");
-    for (let p = left; p <= right; p++) out.push(p);
-    if (right < totalPages - 1) out.push("dots");
-    out.push(totalPages);
-    return out;
+    if (left > 2) result.push("dots");
+    for (let nextPage = left; nextPage <= right; nextPage += 1) result.push(nextPage);
+    if (right < totalPages - 1) result.push("dots");
+    result.push(totalPages);
+    return result;
   }, [page, totalPages]);
 
   const handleClose = () => {
@@ -87,8 +93,8 @@ export default function RouteModal({
     if (!route || deleteSubmitting) return;
     setDeleteSubmitting(true);
     try {
-      const res = await fetch(`/api/routes/${route.id}`, { method: "DELETE" });
-      if (!res.ok) {
+      const response = await fetch(`/api/routes/${route.id}`, { method: "DELETE" });
+      if (!response.ok) {
         setConfirmDeleteOpen(false);
         return;
       }
@@ -104,163 +110,183 @@ export default function RouteModal({
 
   if (!open || !route) return null;
 
-  const idx = page - 1;
-  const main = photos[idx] ?? photos[0];
-  const prev = idx - 1 >= 0 ? photos[idx - 1] : null;
-  const next = idx + 1 < photos.length ? photos[idx + 1] : null;
+  const index = page - 1;
+  const main = photos[index] ?? photos[0];
+  const prev = index - 1 >= 0 ? photos[index - 1] : null;
+  const next = index + 1 < photos.length ? photos[index + 1] : null;
   const authorNick = route.authorUsername?.trim() ?? "";
   const routeTitleFull =
     authorNick.length > 0 ? `${route.title} от ${authorNick}` : route.title;
+  const mapsUrl = buildYandexMapsUrlFromString(main?.address ?? route.address);
 
   return (
     <>
-    <div className={styles.overlay} onClick={handleClose} role="presentation">
-      <div className={`${styles.modal} ${styles.modalRoute}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-        <button type="button" className={styles.closeBtn} aria-label="Закрыть" onClick={handleClose} />
+      <div className={styles.overlay} onClick={handleClose} role="presentation">
+        <div className={`${styles.modal} ${styles.modalRoute}`} onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
+          <button type="button" className={styles.closeBtn} aria-label="Закрыть" onClick={handleClose} />
 
-        <div className={styles.routeTitle} title={routeTitleFull}>
-          <span className={styles.routeTitleMain}>{route.title}</span>
-          {authorNick ? (
-            <span className={styles.routeTitleAuthor}>
-              {" "}
-              от <span className={styles.routeTitleNick}>{authorNick}</span>
-            </span>
-          ) : null}
-        </div>
-
-        <div className={styles.routeDesc}>{route.desc}</div>
-
-        <div className={styles.photoRow}>
-          {prev ? (
-            <button type="button" className={styles.sideThumb} aria-label="Предыдущее фото" onClick={() => go(page - 1)}>
-              <OptimizedPhoto
-                src={prev.src}
-                alt={prev.alt}
-                width={88}
-                height={111}
-                sizes="88px"
-                className={styles.sideImg}
-                quality={68}
-              />
-            </button>
-          ) : (
-            <div className={`${styles.sideThumb} ${styles.sideThumbEmpty}`} aria-hidden="true" />
-          )}
-
-          <div className={styles.mainPhoto}>
-            {main ? (
-              <OptimizedPhoto
-                src={main.src}
-                alt={main.alt}
-                width={300}
-                height={375}
-                sizes="300px"
-                className={styles.mainImg}
-                quality={78}
-              />
-            ) : null}
-            {isAdmin ? (
-              <button
-                type="button"
-                className={styles.deleteRouteBtn}
-                aria-label="Удалить маршрут"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setConfirmDeleteOpen(true);
-                }}
-              >
-                <svg className={styles.deleteRouteIcon} width="18" height="18" viewBox="0 0 24 24" aria-hidden fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" strokeLinecap="round" />
-                </svg>
-              </button>
-            ) : null}
-            {liked ? (
-              <Image
-                src="/images/city/heart_red.png"
-                alt=""
-                width={23}
-                height={23}
-                className={styles.likeIcon}
-                aria-hidden="true"
-              />
+          <div className={styles.routeTitle} title={routeTitleFull}>
+            <span className={styles.routeTitleMain}>{route.title}</span>
+            {authorNick ? (
+              <span className={styles.routeTitleAuthor}>
+                {" "}
+                от <span className={styles.routeTitleNick}>{authorNick}</span>
+              </span>
             ) : null}
           </div>
 
-          {next ? (
-            <button type="button" className={styles.sideThumb} aria-label="Следующее фото" onClick={() => go(page + 1)}>
-              <OptimizedPhoto
-                src={next.src}
-                alt={next.alt}
-                width={88}
-                height={111}
-                sizes="88px"
-                className={styles.sideImg}
-                quality={68}
-              />
-            </button>
-          ) : (
-            <div className={`${styles.sideThumb} ${styles.sideThumbEmpty}`} aria-hidden="true" />
-          )}
-        </div>
+          <div className={styles.routeDesc}>{route.desc}</div>
 
-        <div className={styles.meta}>
-          <div>Метро: {formatMultiValue(main?.metro ?? route.metro)}</div>
-          <div>Адрес: {main?.address ?? route.address}</div>
-        </div>
+          <div className={styles.photoRow}>
+            {prev ? (
+              <button type="button" className={styles.sideThumb} aria-label="Предыдущее фото" onClick={() => go(page - 1)}>
+                <OptimizedPhoto
+                  src={prev.src}
+                  alt={prev.alt}
+                  width={88}
+                  height={111}
+                  sizes="88px"
+                  className={styles.sideImg}
+                  quality={68}
+                />
+              </button>
+            ) : (
+              <div className={`${styles.sideThumb} ${styles.sideThumbEmpty}`} aria-hidden="true" />
+            )}
 
-        <div className={styles.pagination}>
-          <button className={`${styles.pagBtn} ${!canPrev ? styles.pagBtnDisabled : ""}`} disabled={!canPrev} onClick={() => go(page - 1)} aria-label="Назад">
-            ←
-          </button>
-
-          <div className={styles.pages}>
-            {pagesToShow.map((p, i) =>
-              p === "dots" ? (
-                <span key={`d-${i}`} className={styles.dots}>
-                  …
-                </span>
-              ) : (
-                <button key={p} className={`${styles.page} ${p === page ? styles.pageActive : ""}`} onClick={() => go(p)} aria-current={p === page ? "page" : undefined}>
-                  {p}
+            <div className={styles.mainPhoto}>
+              {main ? (
+                <OptimizedPhoto
+                  src={main.src}
+                  alt={main.alt}
+                  width={300}
+                  height={375}
+                  sizes="300px"
+                  className={styles.mainImg}
+                  quality={78}
+                />
+              ) : null}
+              {isAdmin ? (
+                <button
+                  type="button"
+                  className={styles.deleteRouteBtn}
+                  aria-label="Удалить маршрут"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setConfirmDeleteOpen(true);
+                  }}
+                >
+                  <svg className={styles.deleteRouteIcon} width="18" height="18" viewBox="0 0 24 24" aria-hidden fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" strokeLinecap="round" />
+                  </svg>
                 </button>
-              )
+              ) : null}
+              {liked ? (
+                <Image
+                  src="/images/city/heart_red.png"
+                  alt=""
+                  width={23}
+                  height={23}
+                  className={styles.likeIcon}
+                  aria-hidden="true"
+                />
+              ) : null}
+            </div>
+
+            {next ? (
+              <button type="button" className={styles.sideThumb} aria-label="Следующее фото" onClick={() => go(page + 1)}>
+                <OptimizedPhoto
+                  src={next.src}
+                  alt={next.alt}
+                  width={88}
+                  height={111}
+                  sizes="88px"
+                  className={styles.sideImg}
+                  quality={68}
+                />
+              </button>
+            ) : (
+              <div className={`${styles.sideThumb} ${styles.sideThumbEmpty}`} aria-hidden="true" />
             )}
           </div>
 
-          <button className={`${styles.pagBtn} ${!canNext ? styles.pagBtnDisabled : ""}`} disabled={!canNext} onClick={() => go(page + 1)} aria-label="Вперёд">
-            →
-          </button>
-        </div>
+          <div className={styles.meta}>
+            <div>Метро: {formatMultiValue(main?.metro ?? route.metro)}</div>
+            <div>
+              Адрес:{" "}
+              {mapsUrl ? (
+                <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className={styles.metaLink}>
+                  {main?.address ?? route.address}
+                </a>
+              ) : (
+                main?.address ?? route.address
+              )}
+            </div>
+          </div>
 
-        <div className={styles.actions}>
-          <button type="button" className={styles.bigBtn} onClick={onToggleLike}>
-            <Image
-              src={liked ? "/images/city/heart_red.png" : "/images/city/heart_black.png"}
-              alt=""
-              width={23}
-              height={23}
-              className={styles.btnImg}
-              aria-hidden="true"
-            />
-            {liked ? "УДАЛИТЬ ИЗ ИЗБРАННОГО" : "ДОБАВИТЬ В ИЗБРАННОЕ"}
-          </button>
+          <div className={styles.pagination}>
+            <button className={`${styles.pagBtn} ${!canPrev ? styles.pagBtnDisabled : ""}`} disabled={!canPrev} onClick={() => go(page - 1)} aria-label="Назад">
+              ←
+            </button>
 
-          <button type="button" className={styles.bigBtn} onClick={() => {}}>
-            <Image src="/images/city/share.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
-            ПОДЕЛИТЬСЯ МАРШРУТОМ
-          </button>
+            <div className={styles.pages}>
+              {pagesToShow.map((pageNumber, indexValue) =>
+                pageNumber === "dots" ? (
+                  <span key={`d-${indexValue}`} className={styles.dots}>
+                    ...
+                  </span>
+                ) : (
+                  <button key={pageNumber} className={`${styles.page} ${pageNumber === page ? styles.pageActive : ""}`} onClick={() => go(pageNumber)} aria-current={pageNumber === page ? "page" : undefined}>
+                    {pageNumber}
+                  </button>
+                ),
+              )}
+            </div>
+
+            <button className={`${styles.pagBtn} ${!canNext ? styles.pagBtnDisabled : ""}`} disabled={!canNext} onClick={() => go(page + 1)} aria-label="Вперёд">
+              →
+            </button>
+          </div>
+
+          <div className={styles.actions}>
+            <button type="button" className={styles.bigBtn} onClick={onToggleLike}>
+              <Image
+                src={liked ? "/images/city/heart_red.png" : "/images/city/heart_black.png"}
+                alt=""
+                width={23}
+                height={23}
+                className={styles.btnImg}
+                aria-hidden="true"
+              />
+              {liked ? "УДАЛИТЬ ИЗ ИЗБРАННОГО" : "ДОБАВИТЬ В ИЗБРАННОЕ"}
+            </button>
+
+            <button
+              type="button"
+              className={styles.bigBtn}
+              onClick={() => {
+                if (!isAuthenticated) {
+                  onRequireAuth?.();
+                  return;
+                }
+                onShare?.();
+              }}
+            >
+              <Image src="/images/city/share.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
+              ПОДЕЛИТЬСЯ МАРШРУТОМ
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-    {isAdmin ? (
-      <ConfirmDeleteModal
-        open={confirmDeleteOpen}
-        onClose={() => {
-          if (!deleteSubmitting) setConfirmDeleteOpen(false);
-        }}
-        onYes={() => void performDelete()}
-      />
-    ) : null}
+      {isAdmin ? (
+        <ConfirmDeleteModal
+          open={confirmDeleteOpen}
+          onClose={() => {
+            if (!deleteSubmitting) setConfirmDeleteOpen(false);
+          }}
+          onYes={() => void performDelete()}
+        />
+      ) : null}
     </>
   );
 }

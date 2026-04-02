@@ -438,6 +438,12 @@
   cursor: default;
 }
 
+.findBtn:disabled,
+.apply:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .mark {
   position: relative;
   display: inline-block;

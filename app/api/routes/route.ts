@@ -18,10 +18,6 @@ function getSelectedValues(sp: URLSearchParams, key: FilterKey): string[] {
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getSessionUser();
-    if (!session)
-      return NextResponse.json({ error: "РќРµ Р°РІС‚РѕСЂРёР·РѕРІР°РЅ" }, { status: 401 });
-
     const sp = req.nextUrl.searchParams;
     const page = Math.max(1, Number(sp.get("page")) || 1);
     const pageSize = Math.min(100, Math.max(1, Number(sp.get("pageSize")) || 32));
@@ -79,28 +75,33 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ routes: items, total, page, pageSize });
   } catch {
-    return NextResponse.json({ error: "РћС€РёР±РєР° СЃРµСЂРІРµСЂР°" }, { status: 500 });
+    return NextResponse.json({ error: "Ошибка сервера" }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
     const session = await getSessionUser();
-    if (!session)
-      return NextResponse.json({ error: "РќРµ Р°РІС‚РѕСЂРёР·РѕРІР°РЅ" }, { status: 401 });
+    if (!session) {
+      return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+    }
 
     const { title, description, photoIds } = await req.json();
+    const normalizedTitle = typeof title === "string" ? title.trim() : "";
 
-    if (!title || typeof title !== "string")
-      return NextResponse.json({ error: "РќР°Р·РІР°РЅРёРµ РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ" }, { status: 400 });
+    if (!normalizedTitle) {
+      return NextResponse.json({ error: "Название обязательно" }, { status: 400 });
+    }
 
-    const photoIdArr: string[] = Array.isArray(photoIds) ? photoIds : [];
+    const photoIdArr = Array.isArray(photoIds)
+      ? photoIds.map((photoId) => String(photoId)).filter(Boolean)
+      : [];
 
     const route = await prisma.$transaction(async (tx) => {
       const created = await tx.route.create({
         data: {
-          title: title.trim(),
-          description: (description ?? "").trim(),
+          title: normalizedTitle,
+          description: typeof description === "string" ? description.trim() : "",
           createdById: session.userId,
           isPublished: false,
         },
@@ -108,10 +109,10 @@ export async function POST(req: NextRequest) {
 
       if (photoIdArr.length > 0) {
         await tx.routePhoto.createMany({
-          data: photoIdArr.map((photoId, idx) => ({
+          data: photoIdArr.map((photoId, index) => ({
             routeId: created.id,
             photoId,
-            order: idx,
+            order: index,
           })),
         });
       }
@@ -121,6 +122,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ route: { id: route.id, title: route.title } });
   } catch {
-    return NextResponse.json({ error: "РћС€РёР±РєР° СЃРµСЂРІРµСЂР°" }, { status: 500 });
+    return NextResponse.json({ error: "Ошибка сервера" }, { status: 500 });
   }
 }

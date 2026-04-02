@@ -6,6 +6,7 @@ import Image from "next/image";
 import styles from "../../routes/_components/routeModal.module.css";
 import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
 import { formatMultiValue } from "@/app/lib/photoMetadata";
+import { buildYandexMapsUrlFromString } from "@/app/lib/locationLinks";
 
 export type CabinetRouteItem = {
   id: string;
@@ -22,6 +23,7 @@ export default function CabinetRouteModal({
   route,
   showPublish,
   onPublish,
+  onShare,
   onClose,
   actionLabel,
   onDelete,
@@ -30,6 +32,7 @@ export default function CabinetRouteModal({
   route: CabinetRouteItem | null;
   showPublish?: boolean;
   onPublish?: () => void;
+  onShare?: () => void;
   onClose: () => void;
   actionLabel: string;
   onDelete: () => void;
@@ -46,8 +49,8 @@ export default function CabinetRouteModal({
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
     document.documentElement.style.overflow = "hidden";
@@ -59,36 +62,37 @@ export default function CabinetRouteModal({
 
   const canPrev = hasPhotos && page > 1;
   const canNext = hasPhotos && page < totalPages;
-  const go = (p: number) => {
+  const go = (nextPage: number) => {
     if (!hasPhotos) return;
-    setPage(Math.min(totalPages, Math.max(1, p)));
+    setPage(Math.min(totalPages, Math.max(1, nextPage)));
   };
 
   const pagesToShow = useMemo(() => {
     if (!hasPhotos || totalPages === 0) return [];
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-    const out: (number | "dots")[] = [1];
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, index) => index + 1);
+    const result: (number | "dots")[] = [1];
     const left = Math.max(2, page - 1);
     const right = Math.min(totalPages - 1, page + 1);
-    if (left > 2) out.push("dots");
-    for (let p = left; p <= right; p++) out.push(p);
-    if (right < totalPages - 1) out.push("dots");
-    out.push(totalPages);
-    return out;
+    if (left > 2) result.push("dots");
+    for (let nextPage = left; nextPage <= right; nextPage += 1) result.push(nextPage);
+    if (right < totalPages - 1) result.push("dots");
+    result.push(totalPages);
+    return result;
   }, [page, totalPages, hasPhotos]);
 
   if (!open || !route) return null;
 
-  const idx = hasPhotos ? page - 1 : 0;
-  const main = hasPhotos ? (photos[idx] ?? photos[0]) : undefined;
-  const prev = hasPhotos && idx - 1 >= 0 ? photos[idx - 1] : null;
-  const next = hasPhotos && idx + 1 < photos.length ? photos[idx + 1] : null;
+  const index = hasPhotos ? page - 1 : 0;
+  const main = hasPhotos ? (photos[index] ?? photos[0]) : undefined;
+  const prev = hasPhotos && index - 1 >= 0 ? photos[index - 1] : null;
+  const next = hasPhotos && index + 1 < photos.length ? photos[index + 1] : null;
+  const mapsUrl = buildYandexMapsUrlFromString(main?.address ?? route.address);
 
   return (
     <div className={styles.overlay} onClick={onClose} role="presentation">
       <div
         className={`${styles.modal} ${styles.modalRoute}`}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >
@@ -162,45 +166,54 @@ export default function CabinetRouteModal({
 
         <div className={styles.meta}>
           <div>Метро: {formatMultiValue(main?.metro ?? route.metro) || "—"}</div>
-          <div>Адрес: {(main?.address ?? route.address) || "—"}</div>
+          <div>
+            Адрес:{" "}
+            {mapsUrl ? (
+              <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className={styles.metaLink}>
+                {(main?.address ?? route.address) || "—"}
+              </a>
+            ) : (
+              (main?.address ?? route.address) || "—"
+            )}
+          </div>
         </div>
 
         {hasPhotos ? (
-        <div className={styles.pagination}>
-          <button
-            className={`${styles.pagBtn} ${!canPrev ? styles.pagBtnDisabled : ""}`}
-            disabled={!canPrev}
-            onClick={() => go(page - 1)}
-          >
-            ←
-          </button>
+          <div className={styles.pagination}>
+            <button
+              className={`${styles.pagBtn} ${!canPrev ? styles.pagBtnDisabled : ""}`}
+              disabled={!canPrev}
+              onClick={() => go(page - 1)}
+            >
+              ←
+            </button>
 
-          <div className={styles.pages}>
-            {pagesToShow.map((p, i) =>
-              p === "dots" ? (
-                <span key={`d-${i}`} className={styles.dots}>
-                  …
-                </span>
-              ) : (
-                <button
-                  key={p}
-                  className={`${styles.page} ${p === page ? styles.pageActive : ""}`}
-                  onClick={() => go(p)}
-                >
-                  {p}
-                </button>
-              )
-            )}
+            <div className={styles.pages}>
+              {pagesToShow.map((pageNumber, indexValue) =>
+                pageNumber === "dots" ? (
+                  <span key={`d-${indexValue}`} className={styles.dots}>
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    key={pageNumber}
+                    className={`${styles.page} ${pageNumber === page ? styles.pageActive : ""}`}
+                    onClick={() => go(pageNumber)}
+                  >
+                    {pageNumber}
+                  </button>
+                ),
+              )}
+            </div>
+
+            <button
+              className={`${styles.pagBtn} ${!canNext ? styles.pagBtnDisabled : ""}`}
+              disabled={!canNext}
+              onClick={() => go(page + 1)}
+            >
+              →
+            </button>
           </div>
-
-          <button
-            className={`${styles.pagBtn} ${!canNext ? styles.pagBtnDisabled : ""}`}
-            disabled={!canNext}
-            onClick={() => go(page + 1)}
-          >
-            →
-          </button>
-        </div>
         ) : null}
 
         <div className={styles.actions}>
@@ -210,7 +223,7 @@ export default function CabinetRouteModal({
               ОПУБЛИКОВАТЬ МАРШРУТ
             </button>
           ) : (
-            <button type="button" className={styles.bigBtn} onClick={() => {}}>
+            <button type="button" className={styles.bigBtn} onClick={onShare}>
               <Image src="/images/city/share.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
               ПОДЕЛИТЬСЯ МАРШРУТОМ
             </button>
