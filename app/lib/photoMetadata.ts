@@ -75,11 +75,7 @@ export const PETERSBURG_METRO_STATIONS = [
   "Юго-Западная",
 ];
 
-export const DEFAULT_SPACE_TYPES = [
-  "Брандмауэры",
-  "Дворы",
-  "Улицы",
-];
+export const DEFAULT_SPACE_TYPES = ["Брандмауэры", "Дворы", "Улицы"];
 
 export const DEFAULT_MOODS = [
   "Надежда",
@@ -87,6 +83,11 @@ export const DEFAULT_MOODS = [
   "Спокойствие",
   "Тоска",
   "Тревога",
+  "Уют",
+  "Одиночество",
+  "Ностальгия",
+  "Напряжение",
+  "Пустота",
 ];
 
 export const DEFAULT_ATMOSPHERES = [
@@ -95,6 +96,10 @@ export const DEFAULT_ATMOSPHERES = [
   "Снег",
   "Солнечно",
   "Туман",
+  "Утро",
+  "День",
+  "Вечер",
+  "Ночь",
 ];
 
 export function sortRuStrings(values: string[]): string[] {
