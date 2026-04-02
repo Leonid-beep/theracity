@@ -223,7 +223,12 @@ export default function GalleryPage() {
   }, [page, totalPages]);
 
   const handleApplyFilters = () => {
-    if (!selMetro.length || !selSpace.length || !selMood.length || !selAtmo.length) {
+    if (
+      selMetro.length === 0 &&
+      selSpace.length === 0 &&
+      selMood.length === 0 &&
+      selAtmo.length === 0
+    ) {
       return;
     }
 
@@ -259,9 +264,9 @@ export default function GalleryPage() {
     selMood.length > 0 ||
     selAtmo.length > 0;
   const canFind =
-    selMetro.length > 0 &&
-    selSpace.length > 0 &&
-    selMood.length > 0 &&
+    selMetro.length > 0 ||
+    selSpace.length > 0 ||
+    selMood.length > 0 ||
     selAtmo.length > 0;
 
   const toggleValue = (
