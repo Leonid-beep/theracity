@@ -155,6 +155,19 @@ function RoutesPageContent() {
       .catch(() => {});
   }, [filtersInitialized]);
 
+  const closeRouteModal = useCallback(() => {
+    setOpen(false);
+    setActiveRoute(null);
+
+    if (!sharedRouteId) return;
+
+    const nextSearch = new URLSearchParams(searchParams.toString());
+    nextSearch.delete("routeId");
+
+    const nextQuery = nextSearch.toString();
+    router.replace(nextQuery ? `/routes?${nextQuery}` : "/routes", { scroll: false });
+  }, [router, searchParams, sharedRouteId]);
+
   const handleRouteDeleted = useCallback(
     (routeId: string) => {
       showSuccess("Маршрут удалён");
@@ -165,10 +178,9 @@ function RoutesPageContent() {
         next.delete(routeId);
         return next;
       });
-      setOpen(false);
-      setActiveRoute(null);
+      closeRouteModal();
     },
-    [showSuccess],
+    [closeRouteModal, showSuccess],
   );
 
   const fetchRoutes = useCallback(
@@ -201,11 +213,6 @@ function RoutesPageContent() {
   useEffect(() => {
     if (!sharedRouteId) return;
 
-    if (activeRoute?.id === sharedRouteId) {
-      setOpen(true);
-      return;
-    }
-
     let cancelled = false;
 
     fetch(`/api/routes/${sharedRouteId}`)
@@ -224,7 +231,7 @@ function RoutesPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [sharedRouteId, activeRoute?.id]);
+  }, [sharedRouteId]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const canPrev = page > 1;
@@ -753,7 +760,7 @@ function RoutesPageContent() {
           route={activeRoute}
           likedRouteIds={liked}
           onToggleLike={toggleLike}
-          onClose={() => setOpen(false)}
+          onClose={closeRouteModal}
           isAdmin={isAdmin}
           isAuthenticated={!!user}
           onRequireAuth={requireAuth}
