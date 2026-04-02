@@ -8,6 +8,13 @@ import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
 import { formatMultiValue } from "@/app/lib/photoMetadata";
 import { buildYandexMapsUrlFromString } from "@/app/lib/locationLinks";
 
+type RoutePhoto = {
+  src: string;
+  alt: string;
+  metro?: string[];
+  address?: string;
+};
+
 type RouteItem = {
   id: string;
   title: string;
@@ -15,13 +22,14 @@ type RouteItem = {
   authorUsername?: string;
   metro: string[];
   address: string;
-  photos: { src: string; alt: string; metro?: string[]; address?: string }[];
+  photos: RoutePhoto[];
 };
 
 export default function RouteModal({
   open,
   route,
-  liked,
+  routes,
+  likedRouteIds,
   onToggleLike,
   onClose,
   isAdmin,
@@ -32,25 +40,48 @@ export default function RouteModal({
 }: {
   open: boolean;
   route: RouteItem | null;
-  liked: boolean;
-  onToggleLike: () => void;
+  routes: RouteItem[];
+  likedRouteIds: Set<string>;
+  onToggleLike: (routeId: string) => void;
   onClose: () => void;
   isAdmin?: boolean;
   isAuthenticated?: boolean;
   onRequireAuth?: () => void;
-  onShare?: () => void;
+  onShare?: (routeId: string) => void;
   onRouteDeleted?: (routeId: string) => void;
 }) {
-  const photos = route?.photos ?? [];
-  const totalPages = Math.max(1, photos.length);
-  const [page, setPage] = useState(1);
+  const modalRoutes = useMemo(() => {
+    if (!route) return routes;
+    if (routes.some((item) => item.id === route.id)) return routes;
+    return [route, ...routes];
+  }, [route, routes]);
+
+  const totalRoutePages = Math.max(1, modalRoutes.length);
+  const initialRoutePage = useMemo(() => {
+    if (!route) return 1;
+    const index = modalRoutes.findIndex((item) => item.id === route.id);
+    return index >= 0 ? index + 1 : 1;
+  }, [route, modalRoutes]);
+
+  const [routePage, setRoutePage] = useState(1);
+  const [photoPage, setPhotoPage] = useState(1);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
-    setPage(1);
-  }, [open, route?.id]);
+    setRoutePage(initialRoutePage);
+  }, [open, initialRoutePage]);
+
+  const activeRoute = modalRoutes[routePage - 1] ?? route;
+  const photos = activeRoute?.photos ?? [];
+  const totalPhotos = photos.length;
+
+  useEffect(() => {
+    if (!open) return;
+    setPhotoPage(1);
+    setConfirmDeleteOpen(false);
+  }, [open, activeRoute?.id]);
 
   useEffect(() => {
     if (!open) return;
@@ -68,21 +99,35 @@ export default function RouteModal({
     };
   }, [open, onClose]);
 
-  const canPrev = page > 1;
-  const canNext = page < totalPages;
-  const go = (nextPage: number) => setPage(Math.min(totalPages, Math.max(1, nextPage)));
+  const canRoutePrev = routePage > 1;
+  const canRouteNext = routePage < totalRoutePages;
+  const goRoute = (nextPage: number) => {
+    setRoutePage(Math.min(totalRoutePages, Math.max(1, nextPage)));
+  };
 
-  const pagesToShow = useMemo(() => {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, index) => index + 1);
+  const routePagesToShow = useMemo(() => {
+    if (totalRoutePages <= 7) {
+      return Array.from({ length: totalRoutePages }, (_, index) => index + 1);
+    }
+
     const result: (number | "dots")[] = [1];
-    const left = Math.max(2, page - 1);
-    const right = Math.min(totalPages - 1, page + 1);
+    const left = Math.max(2, routePage - 1);
+    const right = Math.min(totalRoutePages - 1, routePage + 1);
+
     if (left > 2) result.push("dots");
-    for (let nextPage = left; nextPage <= right; nextPage += 1) result.push(nextPage);
-    if (right < totalPages - 1) result.push("dots");
-    result.push(totalPages);
+    for (let nextPage = left; nextPage <= right; nextPage += 1) {
+      result.push(nextPage);
+    }
+    if (right < totalRoutePages - 1) result.push("dots");
+    result.push(totalRoutePages);
+
     return result;
-  }, [page, totalPages]);
+  }, [routePage, totalRoutePages]);
+
+  const goPhoto = (nextPage: number) => {
+    if (totalPhotos === 0) return;
+    setPhotoPage(Math.min(totalPhotos, Math.max(1, nextPage)));
+  };
 
   const handleClose = () => {
     setConfirmDeleteOpen(false);
@@ -90,15 +135,15 @@ export default function RouteModal({
   };
 
   const performDelete = async () => {
-    if (!route || deleteSubmitting) return;
+    if (!activeRoute || deleteSubmitting) return;
     setDeleteSubmitting(true);
     try {
-      const response = await fetch(`/api/routes/${route.id}`, { method: "DELETE" });
+      const response = await fetch(`/api/routes/${activeRoute.id}`, { method: "DELETE" });
       if (!response.ok) {
         setConfirmDeleteOpen(false);
         return;
       }
-      onRouteDeleted?.(route.id);
+      onRouteDeleted?.(activeRoute.id);
       setConfirmDeleteOpen(false);
       handleClose();
     } catch {
@@ -108,25 +153,36 @@ export default function RouteModal({
     }
   };
 
-  if (!open || !route) return null;
+  if (!open || !route || !activeRoute) return null;
 
-  const index = page - 1;
-  const main = photos[index] ?? photos[0];
-  const prev = index - 1 >= 0 ? photos[index - 1] : null;
-  const next = index + 1 < photos.length ? photos[index + 1] : null;
-  const authorNick = route.authorUsername?.trim() ?? "";
+  const photoIndex = totalPhotos > 0 ? photoPage - 1 : 0;
+  const mainPhoto = totalPhotos > 0 ? (photos[photoIndex] ?? photos[0]) : undefined;
+  const prevPhoto = totalPhotos > 0 && photoIndex - 1 >= 0 ? photos[photoIndex - 1] : null;
+  const nextPhoto = totalPhotos > 0 && photoIndex + 1 < photos.length ? photos[photoIndex + 1] : null;
+  const authorNick = activeRoute.authorUsername?.trim() ?? "";
   const routeTitleFull =
-    authorNick.length > 0 ? `${route.title} от ${authorNick}` : route.title;
-  const mapsUrl = buildYandexMapsUrlFromString(main?.address ?? route.address);
+    authorNick.length > 0 ? `${activeRoute.title} от ${authorNick}` : activeRoute.title;
+  const mapsUrl = buildYandexMapsUrlFromString(mainPhoto?.address ?? activeRoute.address);
+  const liked = likedRouteIds.has(activeRoute.id);
 
   return (
     <>
       <div className={styles.overlay} onClick={handleClose} role="presentation">
-        <div className={`${styles.modal} ${styles.modalRoute}`} onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
-          <button type="button" className={styles.closeBtn} aria-label="Закрыть" onClick={handleClose} />
+        <div
+          className={`${styles.modal} ${styles.modalRoute}`}
+          onClick={(event) => event.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+        >
+          <button
+            type="button"
+            className={styles.closeBtn}
+            aria-label="Закрыть"
+            onClick={handleClose}
+          />
 
           <div className={styles.routeTitle} title={routeTitleFull}>
-            <span className={styles.routeTitleMain}>{route.title}</span>
+            <span className={styles.routeTitleMain}>{activeRoute.title}</span>
             {authorNick ? (
               <span className={styles.routeTitleAuthor}>
                 {" "}
@@ -135,14 +191,19 @@ export default function RouteModal({
             ) : null}
           </div>
 
-          <div className={styles.routeDesc}>{route.desc}</div>
+          <div className={styles.routeDesc}>{activeRoute.desc}</div>
 
           <div className={styles.photoRow}>
-            {prev ? (
-              <button type="button" className={styles.sideThumb} aria-label="Предыдущее фото" onClick={() => go(page - 1)}>
+            {prevPhoto ? (
+              <button
+                type="button"
+                className={styles.sideThumb}
+                aria-label="Предыдущее фото"
+                onClick={() => goPhoto(photoPage - 1)}
+              >
                 <OptimizedPhoto
-                  src={prev.src}
-                  alt={prev.alt}
+                  src={prevPhoto.src}
+                  alt={prevPhoto.alt}
                   width={88}
                   height={111}
                   sizes="88px"
@@ -155,10 +216,10 @@ export default function RouteModal({
             )}
 
             <div className={styles.mainPhoto}>
-              {main ? (
+              {mainPhoto ? (
                 <OptimizedPhoto
-                  src={main.src}
-                  alt={main.alt}
+                  src={mainPhoto.src}
+                  alt={mainPhoto.alt}
                   width={300}
                   height={375}
                   sizes="300px"
@@ -176,7 +237,16 @@ export default function RouteModal({
                     setConfirmDeleteOpen(true);
                   }}
                 >
-                  <svg className={styles.deleteRouteIcon} width="18" height="18" viewBox="0 0 24 24" aria-hidden fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg
+                    className={styles.deleteRouteIcon}
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    aria-hidden
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
                     <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" strokeLinecap="round" />
                   </svg>
                 </button>
@@ -193,11 +263,16 @@ export default function RouteModal({
               ) : null}
             </div>
 
-            {next ? (
-              <button type="button" className={styles.sideThumb} aria-label="Следующее фото" onClick={() => go(page + 1)}>
+            {nextPhoto ? (
+              <button
+                type="button"
+                className={styles.sideThumb}
+                aria-label="Следующее фото"
+                onClick={() => goPhoto(photoPage + 1)}
+              >
                 <OptimizedPhoto
-                  src={next.src}
-                  alt={next.alt}
+                  src={nextPhoto.src}
+                  alt={nextPhoto.alt}
                   width={88}
                   height={111}
                   sizes="88px"
@@ -211,45 +286,64 @@ export default function RouteModal({
           </div>
 
           <div className={styles.meta}>
-            <div>Метро: {formatMultiValue(main?.metro ?? route.metro)}</div>
+            <div>Метро: {formatMultiValue(mainPhoto?.metro ?? activeRoute.metro)}</div>
             <div>
               Адрес:{" "}
               {mapsUrl ? (
                 <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className={styles.metaLink}>
-                  {main?.address ?? route.address}
+                  {mainPhoto?.address ?? activeRoute.address}
                 </a>
               ) : (
-                main?.address ?? route.address
+                mainPhoto?.address ?? activeRoute.address
               )}
             </div>
           </div>
 
           <div className={styles.pagination}>
-            <button className={`${styles.pagBtn} ${!canPrev ? styles.pagBtnDisabled : ""}`} disabled={!canPrev} onClick={() => go(page - 1)} aria-label="Назад">
+            <button
+              className={`${styles.pagBtn} ${!canRoutePrev ? styles.pagBtnDisabled : ""}`}
+              disabled={!canRoutePrev}
+              onClick={() => goRoute(routePage - 1)}
+              aria-label="Назад"
+            >
               ←
             </button>
 
             <div className={styles.pages}>
-              {pagesToShow.map((pageNumber, indexValue) =>
+              {routePagesToShow.map((pageNumber, indexValue) =>
                 pageNumber === "dots" ? (
                   <span key={`d-${indexValue}`} className={styles.dots}>
                     ...
                   </span>
                 ) : (
-                  <button key={pageNumber} className={`${styles.page} ${pageNumber === page ? styles.pageActive : ""}`} onClick={() => go(pageNumber)} aria-current={pageNumber === page ? "page" : undefined}>
+                  <button
+                    key={pageNumber}
+                    className={`${styles.page} ${pageNumber === routePage ? styles.pageActive : ""}`}
+                    onClick={() => goRoute(pageNumber)}
+                    aria-current={pageNumber === routePage ? "page" : undefined}
+                  >
                     {pageNumber}
                   </button>
                 ),
               )}
             </div>
 
-            <button className={`${styles.pagBtn} ${!canNext ? styles.pagBtnDisabled : ""}`} disabled={!canNext} onClick={() => go(page + 1)} aria-label="Вперёд">
+            <button
+              className={`${styles.pagBtn} ${!canRouteNext ? styles.pagBtnDisabled : ""}`}
+              disabled={!canRouteNext}
+              onClick={() => goRoute(routePage + 1)}
+              aria-label="Вперёд"
+            >
               →
             </button>
           </div>
 
           <div className={styles.actions}>
-            <button type="button" className={styles.bigBtn} onClick={onToggleLike}>
+            <button
+              type="button"
+              className={styles.bigBtn}
+              onClick={() => onToggleLike(activeRoute.id)}
+            >
               <Image
                 src={liked ? "/images/city/heart_red.png" : "/images/city/heart_black.png"}
                 alt=""
@@ -269,10 +363,17 @@ export default function RouteModal({
                   onRequireAuth?.();
                   return;
                 }
-                onShare?.();
+                onShare?.(activeRoute.id);
               }}
             >
-              <Image src="/images/city/share.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
+              <Image
+                src="/images/city/share.png"
+                alt=""
+                width={23}
+                height={23}
+                className={styles.btnImg}
+                aria-hidden="true"
+              />
               ПОДЕЛИТЬСЯ МАРШРУТОМ
             </button>
           </div>

@@ -74,6 +74,13 @@ function buildFilterValue(selected: string[], options: string[]): string | null 
   return selected.join(",");
 }
 
+function buildRoutesSearch(filters: Record<string, string>, extras?: Record<string, string>) {
+  return new URLSearchParams({
+    ...filters,
+    ...extras,
+  });
+}
+
 function RoutesPageContent() {
   const pageSize = useRoutesBreakpoint();
   const searchParams = useSearchParams();
@@ -86,6 +93,7 @@ function RoutesPageContent() {
   const returnToRoutes = "/routes";
 
   const [routes, setRoutes] = useState<RouteItem[]>([]);
+  const [allRoutes, setAllRoutes] = useState<RouteItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -148,6 +156,7 @@ function RoutesPageContent() {
     (routeId: string) => {
       showSuccess("Маршрут удалён");
       setRoutes((prev) => prev.filter((route) => route.id !== routeId));
+      setAllRoutes((prev) => prev.filter((route) => route.id !== routeId));
       setTotal((currentTotal) => Math.max(0, currentTotal - 1));
       setLiked((prev) => {
         const next = new Set(prev);
@@ -164,19 +173,27 @@ function RoutesPageContent() {
     async (nextPage: number, filters: Record<string, string>) => {
       setLoading(true);
 
-      const search = new URLSearchParams({
+      const pageSearch = buildRoutesSearch(filters, {
         page: String(nextPage),
         pageSize: String(pageSize),
-        ...filters,
       });
+      const allSearch = buildRoutesSearch(filters, { all: "1" });
 
       try {
-        const response = await fetch(`/api/routes?${search}`);
-        const data = await response.json();
-        setRoutes(data.routes ?? []);
-        setTotal(data.total ?? 0);
+        const [pageResponse, allResponse] = await Promise.all([
+          fetch(`/api/routes?${pageSearch}`),
+          fetch(`/api/routes?${allSearch}`),
+        ]);
+        const [pageData, allData] = await Promise.all([
+          pageResponse.json(),
+          allResponse.json(),
+        ]);
+        setRoutes(pageData.routes ?? []);
+        setAllRoutes(allData.routes ?? []);
+        setTotal(pageData.total ?? 0);
       } catch {
         setRoutes([]);
+        setAllRoutes([]);
         setTotal(0);
       }
 
@@ -658,13 +675,14 @@ function RoutesPageContent() {
         <RouteModal
           open={open}
           route={activeRoute}
-          liked={liked.has(activeRoute.id)}
-          onToggleLike={() => toggleLike(activeRoute.id)}
+          routes={allRoutes}
+          likedRouteIds={liked}
+          onToggleLike={toggleLike}
           onClose={() => setOpen(false)}
           isAdmin={isAdmin}
           isAuthenticated={!!user}
           onRequireAuth={requireAuth}
-          onShare={() => void handleShareRoute(activeRoute.id)}
+          onShare={(routeId) => void handleShareRoute(routeId)}
           onRouteDeleted={handleRouteDeleted}
         />
       ) : null}

@@ -19,6 +19,7 @@ function getSelectedValues(sp: URLSearchParams, key: FilterKey): string[] {
 export async function GET(req: NextRequest) {
   try {
     const sp = req.nextUrl.searchParams;
+    const includeAll = sp.get("all") === "1";
     const page = Math.max(1, Number(sp.get("page")) || 1);
     const pageSize = Math.min(100, Math.max(1, Number(sp.get("pageSize")) || 32));
     const filters = {
@@ -50,7 +51,9 @@ export async function GET(req: NextRequest) {
     );
 
     const total = filteredRoutes.length;
-    const pagedRoutes = filteredRoutes.slice((page - 1) * pageSize, page * pageSize);
+    const pagedRoutes = includeAll
+      ? filteredRoutes
+      : filteredRoutes.slice((page - 1) * pageSize, page * pageSize);
 
     const items = pagedRoutes.map((route) => {
       const photos = route.routePhotos.map((routePhoto) => ({
@@ -73,7 +76,12 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return NextResponse.json({ routes: items, total, page, pageSize });
+    return NextResponse.json({
+      routes: items,
+      total,
+      page: includeAll ? 1 : page,
+      pageSize: includeAll ? total || items.length : pageSize,
+    });
   } catch {
     return NextResponse.json({ error: "Ошибка сервера" }, { status: 500 });
   }

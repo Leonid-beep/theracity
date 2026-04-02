@@ -76,6 +76,13 @@ function buildFilterValue(selected: string[], options: string[]): string | null 
   return selected.join(",");
 }
 
+function buildGallerySearch(filters: Record<string, string>, extras?: Record<string, string>) {
+  return new URLSearchParams({
+    ...filters,
+    ...extras,
+  });
+}
+
 export default function GalleryPage() {
   const pageSize = useGalleryBreakpoint();
   const router = useRouter();
@@ -85,6 +92,7 @@ export default function GalleryPage() {
   const returnToGallery = "/gallery";
 
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
+  const [allPhotos, setAllPhotos] = useState<PhotoItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -148,19 +156,27 @@ export default function GalleryPage() {
     async (nextPage: number, filters: Record<string, string>) => {
       setLoading(true);
 
-      const search = new URLSearchParams({
+      const pageSearch = buildGallerySearch(filters, {
         page: String(nextPage),
         pageSize: String(pageSize),
-        ...filters,
       });
+      const allSearch = buildGallerySearch(filters, { all: "1" });
 
       try {
-        const response = await fetch(`/api/photos?${search}`);
-        const data = await response.json();
-        setPhotos(data.photos ?? []);
-        setTotal(data.total ?? 0);
+        const [pageResponse, allResponse] = await Promise.all([
+          fetch(`/api/photos?${pageSearch}`),
+          fetch(`/api/photos?${allSearch}`),
+        ]);
+        const [pageData, allData] = await Promise.all([
+          pageResponse.json(),
+          allResponse.json(),
+        ]);
+        setPhotos(pageData.photos ?? []);
+        setAllPhotos(allData.photos ?? []);
+        setTotal(pageData.total ?? 0);
       } catch {
         setPhotos([]);
+        setAllPhotos([]);
         setTotal(0);
       }
 
@@ -170,7 +186,11 @@ export default function GalleryPage() {
   );
 
   useEffect(() => {
-    void fetchPhotos(page, appliedFilters);
+    const timer = window.setTimeout(() => {
+      void fetchPhotos(page, appliedFilters);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [page, appliedFilters, fetchPhotos]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -260,6 +280,7 @@ export default function GalleryPage() {
 
   const handlePhotoDeleted = useCallback((photoId: string) => {
     setPhotos((prev) => prev.filter((photo) => photo.id !== photoId));
+    setAllPhotos((prev) => prev.filter((photo) => photo.id !== photoId));
     setTotal((currentTotal) => Math.max(0, currentTotal - 1));
     setLiked((prev) => {
       const next = new Set(prev);
@@ -271,6 +292,9 @@ export default function GalleryPage() {
 
   const handlePhotoUpdated = useCallback((updatedPhoto: PhotoItem) => {
     setPhotos((prev) =>
+      prev.map((photo) => (photo.id === updatedPhoto.id ? updatedPhoto : photo)),
+    );
+    setAllPhotos((prev) =>
       prev.map((photo) => (photo.id === updatedPhoto.id ? updatedPhoto : photo)),
     );
     setSelected((prev) => (prev && prev.id === updatedPhoto.id ? updatedPhoto : prev));
@@ -564,7 +588,7 @@ export default function GalleryPage() {
       {selected ? (
         <PhotoModals
           photo={selected}
-          photos={photos}
+          photos={allPhotos.length > 0 ? allPhotos : photos}
           onClose={() => setSelected(null)}
           liked={liked}
           onToggleLike={toggleLike}

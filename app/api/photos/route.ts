@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
     console.log("[/api/photos] entered photos route");
 
     const sp = req.nextUrl.searchParams;
+    const includeAll = sp.get("all") === "1";
     const page = Math.max(1, Number(sp.get("page")) || 1);
     const pageSize = Math.min(100, Math.max(1, Number(sp.get("pageSize")) || 32));
     const filters = {
@@ -43,6 +44,7 @@ export async function GET(req: NextRequest) {
     console.log("[/api/photos] parsed query params", {
       page,
       pageSize,
+      includeAll,
       filters,
       raw: Object.fromEntries(sp.entries()),
     });
@@ -60,11 +62,14 @@ export async function GET(req: NextRequest) {
     );
 
     const total = filteredPhotos.length;
-    const photos = filteredPhotos.slice((page - 1) * pageSize, page * pageSize);
+    const photos = includeAll
+      ? filteredPhotos
+      : filteredPhotos.slice((page - 1) * pageSize, page * pageSize);
     console.log("[/api/photos] prisma query finished", {
       total,
       page,
       pageSize,
+      includeAll,
       returned: photos.length,
     });
 
@@ -85,7 +90,12 @@ export async function GET(req: NextRequest) {
     }));
     console.log("[/api/photos] photo url mapping finished", { count: withUrls.length });
 
-    return NextResponse.json({ photos: withUrls, total, page, pageSize });
+    return NextResponse.json({
+      photos: withUrls,
+      total,
+      page: includeAll ? 1 : page,
+      pageSize: includeAll ? total || withUrls.length : pageSize,
+    });
   } catch (error) {
     if (error instanceof Error) {
       console.error("[/api/photos] unhandled error in GET", {
