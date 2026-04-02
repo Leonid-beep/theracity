@@ -5,6 +5,7 @@ import Image from "next/image";
 import styles from "./routeModal.module.css";
 import ConfirmDeleteModal from "@/app/cabinet/_components/ConfirmDeleteModal";
 import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
+import { getOptimizedPhotoUrl, preloadOptimizedPhoto } from "@/app/ui/optimizedPhotoUrl";
 import { formatMultiValue } from "@/app/lib/photoMetadata";
 import { buildYandexMapsUrlFromString } from "@/app/lib/locationLinks";
 
@@ -14,6 +15,9 @@ type RoutePhoto = {
   metro?: string[];
   address?: string;
 };
+
+const ROUTE_MODAL_PHOTO_WIDTH = 640;
+const ROUTE_MODAL_PHOTO_QUALITY = 78;
 
 type RouteItem = {
   id: string;
@@ -58,6 +62,10 @@ export default function RouteModal({
   const activeRoute = route;
   const photos = activeRoute?.photos ?? [];
   const totalPhotos = photos.length;
+  const photoIndex = totalPhotos > 0 ? photoPage - 1 : 0;
+  const mainPhoto = totalPhotos > 0 ? (photos[photoIndex] ?? photos[0]) : undefined;
+  const prevPhoto = totalPhotos > 0 && photoIndex - 1 >= 0 ? photos[photoIndex - 1] : null;
+  const nextPhoto = totalPhotos > 0 && photoIndex + 1 < photos.length ? photos[photoIndex + 1] : null;
 
   useEffect(() => {
     if (!open) return;
@@ -142,17 +150,27 @@ export default function RouteModal({
   };
 
   if (!open || !activeRoute) return null;
-
-  const photoIndex = totalPhotos > 0 ? photoPage - 1 : 0;
-  const mainPhoto = totalPhotos > 0 ? (photos[photoIndex] ?? photos[0]) : undefined;
-  const prevPhoto = totalPhotos > 0 && photoIndex - 1 >= 0 ? photos[photoIndex - 1] : null;
-  const nextPhoto = totalPhotos > 0 && photoIndex + 1 < photos.length ? photos[photoIndex + 1] : null;
   const authorNick = activeRoute.authorUsername?.trim() ?? "";
   const routeTitleFull =
     authorNick.length > 0 ? `${activeRoute.title} от ${authorNick}` : activeRoute.title;
   const mapsUrl = buildYandexMapsUrlFromString(mainPhoto?.address ?? activeRoute.address);
   const liked = likedRouteIds.has(activeRoute.id);
   const canEdit = Boolean(activeRoute.canEdit);
+  const mainPhotoUrl = mainPhoto
+    ? getOptimizedPhotoUrl(mainPhoto.src, ROUTE_MODAL_PHOTO_WIDTH, ROUTE_MODAL_PHOTO_QUALITY)
+    : null;
+
+  useEffect(() => {
+    if (!open) return;
+
+    if (prevPhoto?.src) {
+      preloadOptimizedPhoto(prevPhoto.src, ROUTE_MODAL_PHOTO_WIDTH, ROUTE_MODAL_PHOTO_QUALITY);
+    }
+
+    if (nextPhoto?.src) {
+      preloadOptimizedPhoto(nextPhoto.src, ROUTE_MODAL_PHOTO_WIDTH, ROUTE_MODAL_PHOTO_QUALITY);
+    }
+  }, [nextPhoto?.src, open, prevPhoto?.src]);
 
   return (
     <>
@@ -205,15 +223,16 @@ export default function RouteModal({
             )}
 
             <div className={styles.mainPhoto}>
-              {mainPhoto ? (
-                <OptimizedPhoto
-                  src={mainPhoto.src}
+              {mainPhoto && mainPhotoUrl ? (
+                <Image
+                  src={mainPhotoUrl}
                   alt={mainPhoto.alt}
                   width={300}
                   height={375}
                   sizes="300px"
                   className={styles.mainImg}
-                  quality={78}
+                  unoptimized
+                  loading="eager"
                 />
               ) : (
                 <p className={styles.emptyRoutePhotos}>В этом маршруте пока нет фотографий</p>

@@ -1,12 +1,10 @@
 import Image, { type ImageLoaderProps, type ImageProps } from "next/image";
+import { getOptimizedPhotoUrl } from "@/app/ui/optimizedPhotoUrl";
 
 const DEFAULT_QUALITY = 72;
 
 function optimizedPhotoLoader({ src, width, quality }: ImageLoaderProps): string {
-  const url = new URL(src, "https://theracity.local");
-  url.searchParams.set("w", String(width));
-  url.searchParams.set("q", String(quality ?? DEFAULT_QUALITY));
-  return `${url.pathname}${url.search}`;
+  return getOptimizedPhotoUrl(src, width, quality ?? DEFAULT_QUALITY);
 }
 
 type OptimizedPhotoProps = Omit<ImageProps, "loader" | "src"> & {

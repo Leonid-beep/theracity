@@ -4,8 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import styles from "../../routes/_components/routeModal.module.css";
 import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
+import { getOptimizedPhotoUrl, preloadOptimizedPhoto } from "@/app/ui/optimizedPhotoUrl";
 import { formatMultiValue } from "@/app/lib/photoMetadata";
 import { buildYandexMapsUrlFromString } from "@/app/lib/locationLinks";
+
+const ROUTE_MODAL_PHOTO_WIDTH = 640;
+const ROUTE_MODAL_PHOTO_QUALITY = 78;
 
 export type CabinetRouteItem = {
   id: string;
@@ -43,6 +47,10 @@ export default function CabinetRouteModal({
   const hasPhotos = photos.length > 0;
   const totalPages = photos.length;
   const [page, setPage] = useState(1);
+  const index = hasPhotos ? page - 1 : 0;
+  const main = hasPhotos ? (photos[index] ?? photos[0]) : undefined;
+  const prev = hasPhotos && index - 1 >= 0 ? photos[index - 1] : null;
+  const next = hasPhotos && index + 1 < photos.length ? photos[index + 1] : null;
 
   useEffect(() => {
     if (!open) return;
@@ -90,13 +98,23 @@ export default function CabinetRouteModal({
   }, [page, totalPages, hasPhotos]);
 
   if (!open || !route) return null;
-
-  const index = hasPhotos ? page - 1 : 0;
-  const main = hasPhotos ? (photos[index] ?? photos[0]) : undefined;
-  const prev = hasPhotos && index - 1 >= 0 ? photos[index - 1] : null;
-  const next = hasPhotos && index + 1 < photos.length ? photos[index + 1] : null;
   const mapsUrl = buildYandexMapsUrlFromString(main?.address ?? route.address);
   const canEdit = Boolean(route.canEdit);
+  const mainPhotoUrl = main
+    ? getOptimizedPhotoUrl(main.src, ROUTE_MODAL_PHOTO_WIDTH, ROUTE_MODAL_PHOTO_QUALITY)
+    : null;
+
+  useEffect(() => {
+    if (!open) return;
+
+    if (prev?.src) {
+      preloadOptimizedPhoto(prev.src, ROUTE_MODAL_PHOTO_WIDTH, ROUTE_MODAL_PHOTO_QUALITY);
+    }
+
+    if (next?.src) {
+      preloadOptimizedPhoto(next.src, ROUTE_MODAL_PHOTO_WIDTH, ROUTE_MODAL_PHOTO_QUALITY);
+    }
+  }, [next?.src, open, prev?.src]);
 
   return (
     <div className={styles.overlay} onClick={onClose} role="presentation">
@@ -142,15 +160,16 @@ export default function CabinetRouteModal({
           )}
 
           <div className={styles.mainPhoto}>
-            {hasPhotos && main ? (
-              <OptimizedPhoto
-                src={main.src}
+            {hasPhotos && main && mainPhotoUrl ? (
+              <Image
+                src={mainPhotoUrl}
                 alt={main.alt}
                 width={300}
                 height={375}
                 sizes="300px"
                 className={styles.mainImg}
-                quality={78}
+                unoptimized
+                loading="eager"
               />
             ) : (
               <p className={styles.emptyRoutePhotos}>В этом маршруте пока нет фотографий</p>

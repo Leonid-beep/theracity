@@ -6,12 +6,16 @@ import styles from "./photoModals.module.css";
 import type { PhotoItem } from "../page";
 import ConfirmDeleteModal from "@/app/cabinet/_components/ConfirmDeleteModal";
 import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
+import { getOptimizedPhotoUrl, preloadOptimizedPhoto } from "@/app/ui/optimizedPhotoUrl";
 import { formatMultiValue } from "@/app/lib/photoMetadata";
 import UploadPhotoModal from "./UploadPhotoModal";
 import { buildYandexMapsUrl } from "@/app/lib/locationLinks";
 
 type RouteItem = { id: string; title: string; src: string };
 type Step = "photo" | "routeChoice" | "pickRoute" | "createRoute";
+
+const MODAL_PHOTO_WIDTH = 640;
+const MODAL_PHOTO_QUALITY = 78;
 
 export default function PhotoModals(props: {
   photo: PhotoItem | null;
@@ -114,9 +118,24 @@ export default function PhotoModals(props: {
     return result;
   }, [photoPage, totalPhotoPages]);
 
+  const open = !!photo;
   const activePhoto = photos[photoPage - 1] ?? photo;
+  const prevPhoto = photoPage > 1 ? photos[photoPage - 2] ?? null : null;
+  const nextPhoto = photoPage < totalPhotoPages ? photos[photoPage] ?? null : null;
   const likedNow = !!activePhoto && liked.has(activePhoto.id);
   const hasUserRoutes = routes.length > 0;
+
+  useEffect(() => {
+    if (!open) return;
+
+    if (prevPhoto?.src) {
+      preloadOptimizedPhoto(prevPhoto.src, MODAL_PHOTO_WIDTH, MODAL_PHOTO_QUALITY);
+    }
+
+    if (nextPhoto?.src) {
+      preloadOptimizedPhoto(nextPhoto.src, MODAL_PHOTO_WIDTH, MODAL_PHOTO_QUALITY);
+    }
+  }, [nextPhoto?.src, open, prevPhoto?.src]);
 
   const openAddToRoute = () => {
     if (!isAuthenticated) {
@@ -159,8 +178,6 @@ export default function PhotoModals(props: {
       setDeleteSubmitting(false);
     }
   };
-
-  const open = !!photo;
 
   const pickPageSize = 4;
   const pickTotalPages = Math.max(1, Math.ceil(routes.length / pickPageSize));
@@ -239,6 +256,11 @@ export default function PhotoModals(props: {
   if (!open || !photo || !activePhoto) return null;
 
   const mapsUrl = buildYandexMapsUrl({ lat: activePhoto.lat, lng: activePhoto.lng });
+  const activePhotoUrl = getOptimizedPhotoUrl(
+    activePhoto.src,
+    MODAL_PHOTO_WIDTH,
+    MODAL_PHOTO_QUALITY,
+  );
 
   return (
     <>
@@ -249,14 +271,15 @@ export default function PhotoModals(props: {
             <div className={styles.photoTitle}>{activePhoto.title}</div>
 
             <div className={styles.photoWrap}>
-              <OptimizedPhoto
-                src={activePhoto.src}
+              <Image
+                src={activePhotoUrl}
                 alt={activePhoto.title}
                 width={300}
                 height={375}
                 sizes="300px"
                 className={styles.photoImg}
-                quality={78}
+                unoptimized
+                loading="eager"
               />
               {isAdmin ? (
                 <>

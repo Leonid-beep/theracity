@@ -73,7 +73,7 @@ export async function GET(
       })
       .webp({
         quality,
-        effort: 4,
+        effort: 2,
       })
       .toBuffer();
 
@@ -82,8 +82,9 @@ export async function GET(
       headers: {
         "Content-Type": "image/webp",
         "Content-Length": String(optimizedBuffer.length),
-        "Cache-Control": "public, max-age=31536000, immutable",
-        "CDN-Cache-Control": "public, max-age=31536000, immutable",
+        "Cache-Control": "public, max-age=31536000, s-maxage=31536000, stale-while-revalidate=86400, immutable",
+        "CDN-Cache-Control": "public, max-age=31536000, s-maxage=31536000, stale-while-revalidate=86400, immutable",
+        "Vercel-CDN-Cache-Control": "public, max-age=31536000, s-maxage=31536000, stale-while-revalidate=86400, immutable",
         "Content-Disposition": "inline; filename=\"photo.webp\"",
       },
     });

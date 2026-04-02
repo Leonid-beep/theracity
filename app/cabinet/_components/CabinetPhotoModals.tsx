@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import styles from "./cabinetPhotoModals.module.css";
 import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
+import { getOptimizedPhotoUrl, preloadOptimizedPhoto } from "@/app/ui/optimizedPhotoUrl";
 import { formatMultiValue } from "@/app/lib/photoMetadata";
 
 export type CabinetPhotoItem = {
@@ -18,6 +19,9 @@ export type CabinetPhotoItem = {
 
 type RouteItem = { id: string; title: string; src: string };
 type Step = "photo" | "choice" | "pick" | "create";
+
+const MODAL_PHOTO_WIDTH = 640;
+const MODAL_PHOTO_QUALITY = 78;
 
 export default function CabinetPhotoModals({
   open,
@@ -99,8 +103,22 @@ export default function CabinetPhotoModals({
   }, [photoPage, totalPhotoPages]);
 
   const activePhoto = photos[photoPage - 1] ?? photo;
+  const prevPhoto = photoPage > 1 ? photos[photoPage - 2] ?? null : null;
+  const nextPhoto = photoPage < totalPhotoPages ? photos[photoPage] ?? null : null;
   const isFavNow = !!activePhoto && favIds.has(activePhoto.id);
   const hasUserRoutes = routes.length > 0;
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (prevPhoto?.src) {
+      preloadOptimizedPhoto(prevPhoto.src, MODAL_PHOTO_WIDTH, MODAL_PHOTO_QUALITY);
+    }
+
+    if (nextPhoto?.src) {
+      preloadOptimizedPhoto(nextPhoto.src, MODAL_PHOTO_WIDTH, MODAL_PHOTO_QUALITY);
+    }
+  }, [isOpen, nextPhoto?.src, prevPhoto?.src]);
 
   const openAddToRoute = () => {
     if (routesLoaded && !hasUserRoutes) {
@@ -213,6 +231,11 @@ export default function CabinetPhotoModals({
   const mapsUrl = !isNaN(lat) && !isNaN(lng)
     ? `https://yandex.ru/maps/?pt=${lng},${lat}&z=17&l=map`
     : null;
+  const activePhotoUrl = getOptimizedPhotoUrl(
+    activePhoto.src,
+    MODAL_PHOTO_WIDTH,
+    MODAL_PHOTO_QUALITY,
+  );
 
   return (
     <div className={styles.overlay} onClick={closeAll} role="presentation">
@@ -225,14 +248,15 @@ export default function CabinetPhotoModals({
           </div>
 
           <div className={styles.photoWrap}>
-            <OptimizedPhoto
-              src={activePhoto.src}
+            <Image
+              src={activePhotoUrl}
               alt={activePhoto.title}
               width={300}
               height={375}
               sizes="300px"
               className={styles.photoImg}
-              quality={78}
+              unoptimized
+              loading="eager"
             />
             {isFavNow ? (
               <Image src="/images/city/heart_red.png" alt="" width={23} height={23} className={styles.likeIcon} aria-hidden="true" />
