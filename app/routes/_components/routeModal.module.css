@@ -194,6 +194,8 @@
   position: absolute;
   left: 15px;
   top: calc(19.5px + 27px + 29px + 4.4em + 16px + 375px + 20px);
+  /* Резервируем место под блок кнопок (до 3 шт. + отступы), чтобы длинный список метро не наезжал на кнопки */
+  bottom: calc(10px + 3 * 37.5px + 2 * 14px + 12px);
   font-family: var(--font-text);
   font-size: 27px;
   line-height: 1.22;
@@ -201,6 +203,11 @@
   color: #111;
   width: calc(100% - 30px);
   max-width: 402px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  word-break: break-word;
 }
 
 .metaLink {
@@ -493,6 +500,7 @@
   }
   .meta {
     top: calc(19.5px + 24px + 22px + 4.2em + 14px + 325px + 24px);
+    bottom: calc(10px + 3 * 36px + 2 * 12px + 12px);
     width: calc(100% - 30px);
     font-size: 24px;
   }
@@ -564,6 +572,7 @@
   }
   .meta {
     top: calc(16px + 22px + 14px + 36px + 8px + 300px + 18px);
+    bottom: calc(10px + 3 * 34px + 2 * 10px + 12px);
     width: calc(100% - 28px);
     font-size: 20px;
     line-height: 1.35;
@@ -687,6 +696,7 @@
     position: relative;
     left: auto;
     top: auto;
+    bottom: auto;
     align-self: stretch;
     width: 100%;
     max-width: none;
@@ -696,6 +706,8 @@
     line-height: 1.35;
     word-break: break-word;
     box-sizing: border-box;
+    overflow-x: hidden;
+    overflow-y: visible;
   }
 
   .pagination {
