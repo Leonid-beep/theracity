@@ -382,6 +382,25 @@
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
 }
 
+.pickThumbEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.36);
+}
+
+.pickThumbEmptyLabel {
+  text-align: center;
+  font-family: var(--font-text);
+  font-size: 18px;
+  line-height: 1.25;
+  letter-spacing: 0.04em;
+  color: #111;
+  opacity: 0.9;
+}
+
 .pickImg {
   width: 150px;
   height: 200px;
@@ -710,6 +729,9 @@
     font-size: 20px;
     max-width: 130px;
   }
+  .pickThumbEmptyLabel {
+    font-size: 16px;
+  }
   .pickPagination {
     top: calc(108px + 173px + 10px + 20px + 14px + 173px + 10px + 20px + 24px);
   }
@@ -856,6 +878,9 @@
   .pickCap {
     font-size: 18px;
     max-width: 120px;
+  }
+  .pickThumbEmptyLabel {
+    font-size: 15px;
   }
   .pickPagination {
     top: calc(100px + 160px + 10px + 18px + 12px + 160px + 10px + 18px + 24px);
@@ -1081,6 +1106,9 @@
     font-size: 16px;
     max-width: 100%;
   }
+  .pickThumbEmptyLabel {
+    font-size: 14px;
+  }
   .pickPagination {
     position: relative;
     left: auto;
@@ -1249,6 +1277,9 @@
   }
   .pickCap {
     font-size: 14px;
+  }
+  .pickThumbEmptyLabel {
+    font-size: 13px;
   }
   .pickPagination {
     margin-top: 20px;

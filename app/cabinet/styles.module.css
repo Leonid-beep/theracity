@@ -92,6 +92,21 @@
   opacity: 0.78;
 }
 
+.unpublishedBadge {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  z-index: 2;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(17, 17, 17, 0.72);
+  font-family: var(--font-button);
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: #fff;
+}
+
 .cardLike {
   position: absolute;
   right: 10px;
@@ -114,6 +129,15 @@
   line-height: 110%;
   letter-spacing: 0.05em;
   color: #111;
+}
+
+.cardStatus {
+  margin-top: 6px;
+  font-family: var(--font-button);
+  font-size: 11px;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  color: rgba(17, 17, 17, 0.72);
 }
 
 .pagination {
@@ -264,6 +288,16 @@
   .thumbEmptyLabel {
     font-size: 13px;
   }
+  .unpublishedBadge {
+    left: 6px;
+    top: 6px;
+    padding: 4px 7px;
+    font-size: 8px;
+  }
+  .cardStatus {
+    margin-top: 5px;
+    font-size: 9px;
+  }
   .pagination {
     gap: 14px;
     margin-top: 22px;
@@ -353,6 +387,13 @@
   .thumbEmptyLabel {
     font-size: 12px;
   }
+  .unpublishedBadge {
+    font-size: 8px;
+  }
+  .cardStatus {
+    margin-top: 5px;
+    font-size: 9px;
+  }
   .pagination {
     gap: 12px;
     margin-top: 25px;
@@ -411,6 +452,16 @@
   .thumbEmptyLabel {
     font-size: 11px;
   }
+  .unpublishedBadge {
+    left: 5px;
+    top: 5px;
+    padding: 4px 6px;
+    font-size: 7px;
+  }
+  .cardStatus {
+    margin-top: 4px;
+    font-size: 8px;
+  }
 }
 
 /* ========== 700 ========== */
@@ -453,6 +504,16 @@
   }
   .thumbEmptyLabel {
     font-size: 11px;
+  }
+  .unpublishedBadge {
+    left: 5px;
+    top: 5px;
+    padding: 4px 6px;
+    font-size: 7px;
+  }
+  .cardStatus {
+    margin-top: 4px;
+    font-size: 8px;
   }
   .pagination {
     gap: 10px;
@@ -527,6 +588,17 @@
   }
   .thumbEmptyLabel {
     font-size: 10px;
+  }
+  .unpublishedBadge {
+    left: 5px;
+    top: 5px;
+    padding: 3px 5px;
+    font-size: 6px;
+  }
+  .cardStatus {
+    margin-top: 4px;
+    font-size: 7px;
+    text-align: center;
   }
   .pagination {
     gap: 8px;

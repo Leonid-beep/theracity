@@ -382,8 +382,14 @@ export default function CabinetPage() {
                       ) : (
                         <span className={styles.thumbEmptyLabel}>Пустой маршрут</span>
                       )}
+                      {!r.isPublished ? (
+                        <span className={styles.unpublishedBadge}>Не опубликован</span>
+                      ) : null}
                     </div>
                     <figcaption className={styles.cap}>{r.title}</figcaption>
+                    {!r.isPublished ? (
+                      <div className={styles.cardStatus}>Опубликуйте маршрут</div>
+                    ) : null}
                   </figure>
                 );
               })

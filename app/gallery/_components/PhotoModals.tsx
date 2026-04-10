@@ -11,7 +11,7 @@ import { formatMultiValue } from "@/app/lib/photoMetadata";
 import UploadPhotoModal from "./UploadPhotoModal";
 import { buildYandexMapsUrl } from "@/app/lib/locationLinks";
 
-type RouteItem = { id: string; title: string; src: string };
+type RouteItem = { id: string; title: string; src: string; isEmpty: boolean };
 type Step = "photo" | "routeChoice" | "pickRoute" | "createRoute";
 
 const MODAL_PHOTO_WIDTH = 640;
@@ -83,11 +83,14 @@ export default function PhotoModals(props: {
     fetch("/api/routes/my")
       .then((response) => response.json())
       .then((data) => {
-        const list = (data.routes ?? []).map((route: { id: string; title: string; coverUrl?: string }) => ({
-          id: route.id,
-          title: route.title,
-          src: route.coverUrl ?? "/images/city/city-1.jpg",
-        }));
+        const list = (data.routes ?? []).map(
+          (route: { id: string; title: string; coverUrl?: string }) => ({
+            id: route.id,
+            title: route.title,
+            src: route.coverUrl || "",
+            isEmpty: !route.coverUrl,
+          }),
+        );
         setRoutes(list);
         setRoutesLoaded(true);
       })
@@ -428,17 +431,23 @@ export default function PhotoModals(props: {
                     className={`${styles.pickCard} ${active ? styles.pickCardActive : ""}`}
                     onClick={() => setPickedRouteId(route.id)}
                   >
-                    <div className={styles.pickThumb}>
-                      <OptimizedPhoto
-                        src={route.src}
-                        alt={route.title}
-                        width={150}
-                        height={200}
-                        sizes="150px"
-                        className={styles.pickImg}
-                        quality={70}
-                      />
-                    </div>
+                    {route.isEmpty ? (
+                      <div className={`${styles.pickThumb} ${styles.pickThumbEmpty}`}>
+                        <span className={styles.pickThumbEmptyLabel}>Пустой маршрут</span>
+                      </div>
+                    ) : (
+                      <div className={styles.pickThumb}>
+                        <OptimizedPhoto
+                          src={route.src}
+                          alt={route.title}
+                          width={150}
+                          height={200}
+                          sizes="150px"
+                          className={styles.pickImg}
+                          quality={70}
+                        />
+                      </div>
+                    )}
                     <div className={styles.pickCap}>{route.title}</div>
                   </button>
                 );
