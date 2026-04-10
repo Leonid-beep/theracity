@@ -73,6 +73,8 @@
   display: grid;
   gap: 16px;
   min-height: 0;
+  min-width: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
@@ -81,6 +83,7 @@
 .formFields {
   display: grid;
   gap: 16px;
+  min-width: 0;
 }
 
 .dropzone {
@@ -164,6 +167,7 @@
 .field {
   display: grid;
   gap: 8px;
+  min-width: 0;
 }
 
 .label {
@@ -196,6 +200,7 @@
 
 .multi {
   position: relative;
+  min-width: 0;
 }
 
 .multi > summary {
@@ -222,6 +227,8 @@
   display: flex;
   align-items: center;
   cursor: pointer;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .selectValue {

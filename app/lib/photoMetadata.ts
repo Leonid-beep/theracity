@@ -121,14 +121,16 @@ export function findNearestMetroStations(lat: number, lng: number): string[] {
     }
   }
 
-  const result: string[] = [...clusters[0].names];
+  const nearest = clusters[0];
+  const result: string[] = [...nearest.names];
+  const hasCluster = nearest.names.length >= 2;
+  const maxExtra = hasCluster ? 2 : 2;
 
-  if (clusters.length > 1) {
-    result.push(...clusters[1].names);
-  }
-
-  if (clusters.length > 2 && clusters[2].distance <= clusters[1].distance * 1.5) {
-    result.push(...clusters[2].names);
+  let extra = 0;
+  for (let i = 1; i < clusters.length && extra < maxExtra; i++) {
+    if (extra > 0 && clusters[i].distance > clusters[1].distance * 1.5) break;
+    result.push(clusters[i].names[0]);
+    extra++;
   }
 
   return result;
