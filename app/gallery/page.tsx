@@ -9,6 +9,7 @@ import PhotoMap from "./_components/PhotoMap";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { SuccessToast, useSuccessToast } from "@/app/ui/SuccessToast";
 import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
+import { useResponsivePageSize } from "@/app/lib/useResponsivePageSize";
 import { useCloseDetailsOnOutsideClick } from "@/lib/useCloseDetailsOnOutsideClick";
 
 const PhotoModals = dynamic(() => import("./_components/PhotoModals"), {
@@ -17,27 +18,6 @@ const PhotoModals = dynamic(() => import("./_components/PhotoModals"), {
 const UploadPhotoModal = dynamic(() => import("./_components/UploadPhotoModal"), {
   ssr: false,
 });
-
-function useGalleryBreakpoint() {
-  const [pageSize, setPageSize] = useState(32);
-
-  useEffect(() => {
-    const calc = () => {
-      const width = window.innerWidth;
-      if (width <= 480) setPageSize(8);
-      else if (width <= 700) setPageSize(16);
-      else if (width <= 1024) setPageSize(25);
-      else if (width <= 1440) setPageSize(32);
-      else setPageSize(28);
-    };
-
-    calc();
-    window.addEventListener("resize", calc);
-    return () => window.removeEventListener("resize", calc);
-  }, []);
-
-  return pageSize;
-}
 
 export type PhotoItem = {
   id: string;
@@ -85,7 +65,7 @@ function buildGallerySearch(filters: Record<string, string>, extras?: Record<str
 }
 
 export default function GalleryPage() {
-  const pageSize = useGalleryBreakpoint();
+  const pageSize = useResponsivePageSize();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const isAdmin = user?.isAdmin ?? false;
@@ -116,6 +96,7 @@ export default function GalleryPage() {
 
   const [selected, setSelected] = useState<PhotoItem | null>(null);
   const { message: successMsg, showSuccess } = useSuccessToast();
+  const fetchRequestIdRef = useRef(0);
 
   const filterRef = useRef<HTMLElement>(null);
   useCloseDetailsOnOutsideClick(filterRef, "gallery-filters");
@@ -128,6 +109,19 @@ export default function GalleryPage() {
   const openPhoto = useCallback((photo: PhotoItem) => {
     setSelected(photo);
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const nextSearch = new URLSearchParams(window.location.search);
+    if (!nextSearch.get("createdRouteId")) return;
+
+    showSuccess("Маршрут создан. Теперь откройте фото и добавьте его в маршрут.");
+    nextSearch.delete("createdRouteId");
+
+    const nextQuery = nextSearch.toString();
+    router.replace(nextQuery ? `/gallery?${nextQuery}` : "/gallery", { scroll: false });
+  }, [router, showSuccess]);
 
   useEffect(() => {
     fetch("/api/filters")
@@ -155,6 +149,7 @@ export default function GalleryPage() {
 
   const fetchPhotos = useCallback(
     async (nextPage: number, filters: Record<string, string>) => {
+      const requestId = ++fetchRequestIdRef.current;
       setLoading(true);
 
       const pageSearch = buildGallerySearch(filters, {
@@ -172,16 +167,27 @@ export default function GalleryPage() {
           pageResponse.json(),
           allResponse.json(),
         ]);
+
+        if (fetchRequestIdRef.current !== requestId) {
+          return;
+        }
+
         setPhotos(pageData.photos ?? []);
         setAllPhotos(allData.photos ?? []);
         setTotal(pageData.total ?? 0);
       } catch {
+        if (fetchRequestIdRef.current !== requestId) {
+          return;
+        }
+
         setPhotos([]);
         setAllPhotos([]);
         setTotal(0);
       }
 
-      setLoading(false);
+      if (fetchRequestIdRef.current === requestId) {
+        setLoading(false);
+      }
     },
     [pageSize],
   );
@@ -193,6 +199,13 @@ export default function GalleryPage() {
 
     return () => window.clearTimeout(timer);
   }, [page, appliedFilters, fetchPhotos]);
+
+  useEffect(() => {
+    const nextTotalPages = Math.max(1, Math.ceil(total / pageSize));
+    if (page > nextTotalPages) {
+      setPage(nextTotalPages);
+    }
+  }, [page, pageSize, total]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const canPrev = page > 1;

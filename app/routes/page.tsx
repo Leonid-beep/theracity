@@ -8,6 +8,7 @@ import styles from "./styles.module.css";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { SuccessToast, useSuccessToast } from "@/app/ui/SuccessToast";
 import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
+import { useResponsivePageSize } from "@/app/lib/useResponsivePageSize";
 import { useCloseDetailsOnOutsideClick } from "@/lib/useCloseDetailsOnOutsideClick";
 import { copyRouteShareLink } from "@/app/lib/locationLinks";
 import RouteFormModal from "./_components/RouteFormModal";
@@ -15,27 +16,6 @@ import RouteFormModal from "./_components/RouteFormModal";
 const RouteModal = dynamic(() => import("./_components/RouteModal"), {
   ssr: false,
 });
-
-function useRoutesBreakpoint() {
-  const [pageSize, setPageSize] = useState(32);
-
-  useEffect(() => {
-    const calc = () => {
-      const width = window.innerWidth;
-      if (width <= 480) setPageSize(8);
-      else if (width <= 700) setPageSize(16);
-      else if (width <= 1024) setPageSize(25);
-      else if (width <= 1440) setPageSize(32);
-      else setPageSize(28);
-    };
-
-    calc();
-    window.addEventListener("resize", calc);
-    return () => window.removeEventListener("resize", calc);
-  }, []);
-
-  return pageSize;
-}
 
 export type RouteItem = {
   id: string;
@@ -83,7 +63,7 @@ function buildRoutesSearch(filters: Record<string, string>, extras?: Record<stri
 }
 
 function RoutesPageContent() {
-  const pageSize = useRoutesBreakpoint();
+  const pageSize = useResponsivePageSize();
   const searchParams = useSearchParams();
   const sharedRouteId = searchParams.get("routeId");
   const router = useRouter();
@@ -122,6 +102,7 @@ function RoutesPageContent() {
   const [selAtmo, setSelAtmo] = useState<string[]>([]);
   const [filtersInitialized, setFiltersInitialized] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<Record<string, string>>({});
+  const fetchRequestIdRef = useRef(0);
 
   const filterRef = useRef<HTMLElement>(null);
   useCloseDetailsOnOutsideClick(filterRef, "routes-filters");
@@ -185,6 +166,7 @@ function RoutesPageContent() {
 
   const fetchRoutes = useCallback(
     async (nextPage: number, filters: Record<string, string>) => {
+      const requestId = ++fetchRequestIdRef.current;
       setLoading(true);
 
       const pageSearch = buildRoutesSearch(filters, {
@@ -194,14 +176,25 @@ function RoutesPageContent() {
       try {
         const pageResponse = await fetch(`/api/routes?${pageSearch}`);
         const pageData = await pageResponse.json();
+
+        if (fetchRequestIdRef.current !== requestId) {
+          return;
+        }
+
         setRoutes(pageData.routes ?? []);
         setTotal(pageData.total ?? 0);
       } catch {
+        if (fetchRequestIdRef.current !== requestId) {
+          return;
+        }
+
         setRoutes([]);
         setTotal(0);
       }
 
-      setLoading(false);
+      if (fetchRequestIdRef.current === requestId) {
+        setLoading(false);
+      }
     },
     [pageSize],
   );
@@ -209,6 +202,13 @@ function RoutesPageContent() {
   useEffect(() => {
     void fetchRoutes(page, appliedFilters);
   }, [page, appliedFilters, fetchRoutes]);
+
+  useEffect(() => {
+    const nextTotalPages = Math.max(1, Math.ceil(total / pageSize));
+    if (page > nextTotalPages) {
+      setPage(nextTotalPages);
+    }
+  }, [page, pageSize, total]);
 
   useEffect(() => {
     if (!sharedRouteId) return;
@@ -403,8 +403,17 @@ function RoutesPageContent() {
 
         if (response.ok) {
           showSuccess("Маршрут создан");
+          const data = (await response.json().catch(() => ({}))) as {
+            route?: { id?: string };
+          };
+          const createdRouteId = data.route?.id;
+
           setRouteForm(null);
-          await fetchRoutes(page, appliedFilters);
+          router.push(
+            createdRouteId
+              ? `/gallery?createdRouteId=${encodeURIComponent(createdRouteId)}`
+              : "/gallery?createdRouteId=1",
+          );
         }
 
         return;

@@ -4,6 +4,19 @@ import { hash } from "bcrypt";
 
 const prisma = new PrismaClient();
 
+function normalizeEmails(value: string | undefined): string[] {
+  return (value ?? "")
+    .split(",")
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function getConfiguredAdminEmails(): string[] {
+  const fromList = normalizeEmails(process.env.ADMIN_EMAILS);
+  const fromLegacy = normalizeEmails(process.env.ADMIN_EMAIL);
+  return [...new Set([...fromList, ...fromLegacy])];
+}
+
 const photoData = [
   {
     s3Key: "1000045551.jpg",
@@ -68,8 +81,7 @@ const photoData = [
 ];
 
 async function main() {
-  const adminEmail =
-    process.env.ADMIN_EMAIL?.trim().toLowerCase() || "leonidusachev04@yandex.ru";
+  const adminEmail = getConfiguredAdminEmails()[0] || "leonidusachev04@yandex.ru";
   const adminHash = await hash("leonusik", 12);
   const admin = await prisma.user.upsert({
     where: { email: adminEmail },
