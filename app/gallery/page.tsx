@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import styles from "./styles.module.css";
+import PhotoMap from "./_components/PhotoMap";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { SuccessToast, useSuccessToast } from "@/app/ui/SuccessToast";
 import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
@@ -196,6 +197,7 @@ export default function GalleryPage() {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const canPrev = page > 1;
   const canNext = page < totalPages;
+  const mapPhotos = allPhotos.length > 0 ? allPhotos : photos;
 
   const go = (nextPage: number) => {
     setPage(Math.min(totalPages, Math.max(1, nextPage)));
@@ -451,6 +453,8 @@ export default function GalleryPage() {
               →
             </button>
           </div>
+
+          <PhotoMap photos={mapPhotos} onSelectPhoto={openPhoto} />
         </section>
 
         <aside ref={filterRef} className={styles.filter}>

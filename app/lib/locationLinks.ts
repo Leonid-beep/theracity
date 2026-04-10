@@ -3,7 +3,6 @@ type CoordinatePair = {
   lng: number;
 };
 
-const MAX_YANDEX_ROUTE_POINTS = 10;
 const EARTH_RADIUS_KM = 6371;
 const ROUTE_IMPROVEMENT_EPSILON = 0.000001;
 
@@ -175,28 +174,21 @@ export function buildYandexMapsRouteUrl(
     (coords ?? []).filter(
       (coordsItem): coordsItem is CoordinatePair => coordsItem !== null && coordsItem !== undefined,
     ),
-  ).slice(0, MAX_YANDEX_ROUTE_POINTS);
+  );
 
   if (normalized.length === 0) return null;
   if (normalized.length === 1) return buildYandexMapsUrl(normalized[0]);
 
-  // Approximate the shortest order locally, then let Yandex build the real road route.
+  // Approximate the shortest order locally, then let Yandex rebuild it as a pedestrian route.
   const optimized = optimizeRoutePoints(normalized);
   const params = new URLSearchParams({
     mode: "routes",
     rtext: optimized
       .map((coordsItem) => serializeCoordinatePair(coordsItem, "lat-lng"))
       .join("~"),
-    rtt: "auto",
+    rtt: "pd",
     rtm: "atm",
   });
-
-  if (optimized.length > 2) {
-    params.set(
-      "via",
-      Array.from({ length: optimized.length - 2 }, (_, index) => String(index + 1)).join("~"),
-    );
-  }
 
   return `https://yandex.ru/maps/?${params.toString()}`;
 }
