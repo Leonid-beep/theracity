@@ -24,7 +24,7 @@ export type RouteItem = {
   authorUsername: string;
   metro: string[];
   address: string;
-  photos: { src: string; alt: string; metro?: string[]; address?: string }[];
+  photos: { id: string; src: string; alt: string; metro?: string[]; address?: string }[];
   coverUrl: string;
   isPublished?: boolean;
   canEdit?: boolean;
@@ -87,6 +87,7 @@ function RoutesPageContent() {
     routeId?: string;
     initialTitle: string;
     initialDescription: string;
+    initialPhotos: RouteItem["photos"];
   } | null>(null);
   const [routeFormSubmitting, setRouteFormSubmitting] = useState(false);
 
@@ -267,26 +268,12 @@ function RoutesPageContent() {
     setOpen(true);
   };
 
-  const applyRouteChanges = useCallback((routeId: string, title: string, desc: string) => {
+  const applyRouteChanges = useCallback((updatedRoute: RouteItem) => {
     setRoutes((prev) =>
-      prev.map((route) =>
-        route.id === routeId
-          ? {
-              ...route,
-              title,
-              desc,
-            }
-          : route,
-      ),
+      prev.map((route) => (route.id === updatedRoute.id ? { ...route, ...updatedRoute } : route)),
     );
     setActiveRoute((prev) =>
-      prev?.id === routeId
-        ? {
-            ...prev,
-            title,
-            desc,
-          }
-        : prev,
+      prev?.id === updatedRoute.id ? { ...prev, ...updatedRoute } : prev,
     );
   }, []);
 
@@ -295,15 +282,17 @@ function RoutesPageContent() {
       mode: "create",
       initialTitle: "",
       initialDescription: "",
+      initialPhotos: [],
     });
   };
 
-  const openEditRouteForm = (route: Pick<RouteItem, "id" | "title" | "desc">) => {
+  const openEditRouteForm = (route: Pick<RouteItem, "id" | "title" | "desc" | "photos">) => {
     setRouteForm({
       mode: "edit",
       routeId: route.id,
       initialTitle: route.title,
       initialDescription: route.desc,
+      initialPhotos: route.photos,
     });
   };
 
@@ -373,9 +362,11 @@ function RoutesPageContent() {
   const handleRouteFormSubmit = async ({
     title,
     description,
+    photoIds,
   }: {
     title: string;
     description: string;
+    photoIds: string[];
   }) => {
     if (!routeForm || routeFormSubmitting || authLoading) return;
 
@@ -427,18 +418,19 @@ function RoutesPageContent() {
         body: JSON.stringify({
           title: normalizedTitle,
           description: normalizedDescription,
+          photoIds,
         }),
       });
 
       if (!response.ok) return;
 
       const data = (await response.json().catch(() => ({}))) as {
-        route?: { title?: string; desc?: string };
+        route?: RouteItem;
       };
-      const nextTitle = data.route?.title ?? normalizedTitle;
-      const nextDesc = data.route?.desc ?? normalizedDescription;
 
-      applyRouteChanges(routeForm.routeId, nextTitle, nextDesc);
+      if (data.route) {
+        applyRouteChanges(data.route);
+      }
       showSuccess("Маршрут обновлён");
       setRouteForm(null);
     } finally {
@@ -784,6 +776,7 @@ function RoutesPageContent() {
         mode={routeForm?.mode ?? "create"}
         initialTitle={routeForm?.initialTitle}
         initialDescription={routeForm?.initialDescription}
+        initialPhotos={routeForm?.initialPhotos}
         submitting={routeFormSubmitting}
         onClose={closeRouteForm}
         onSubmit={handleRouteFormSubmit}

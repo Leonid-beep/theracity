@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
 
     const items = routes.map((r) => {
       const photos = r.routePhotos.map((rp) => ({
+        id: rp.photo.id,
         src: getProxyPhotoUrl(rp.photo.s3Key),
         alt: rp.photo.title,
         metro: parseStoredMultiValue(rp.photo.metro),

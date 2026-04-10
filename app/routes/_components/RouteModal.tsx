@@ -13,6 +13,7 @@ import {
 } from "@/app/lib/locationLinks";
 
 type RoutePhoto = {
+  id: string;
   src: string;
   alt: string;
   metro?: string[];

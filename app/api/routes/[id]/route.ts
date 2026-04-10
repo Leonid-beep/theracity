@@ -5,6 +5,51 @@ import { isAdminUserEmail } from "@/app/lib/admin";
 import { getProxyPhotoUrl } from "@/app/lib/s3";
 import { parseStoredMultiValue } from "@/app/lib/photoMetadata";
 
+type RouteWithPhotos = {
+  id: string;
+  title: string;
+  description: string;
+  isPublished: boolean;
+  publishedAt: Date | null;
+  createdById: string;
+  createdBy?: { username: string | null } | null;
+  routePhotos: Array<{
+    photoId: string;
+    photo: {
+      id: string;
+      s3Key: string;
+      title: string;
+      metro: string;
+      lat: number;
+      lng: number;
+    };
+  }>;
+};
+
+function formatRouteResponse(route: RouteWithPhotos, canEdit: boolean) {
+  const photos = route.routePhotos.map((routePhoto) => ({
+    id: routePhoto.photo.id,
+    src: getProxyPhotoUrl(routePhoto.photo.s3Key),
+    alt: routePhoto.photo.title,
+    metro: parseStoredMultiValue(routePhoto.photo.metro),
+    address: `${routePhoto.photo.lat}, ${routePhoto.photo.lng}`,
+  }));
+  const firstPhoto = route.routePhotos[0]?.photo;
+
+  return {
+    id: route.id,
+    title: route.title,
+    desc: route.description,
+    authorUsername: route.createdBy?.username ?? "",
+    metro: firstPhoto ? parseStoredMultiValue(firstPhoto.metro) : [],
+    address: firstPhoto ? `${firstPhoto.lat}, ${firstPhoto.lng}` : "",
+    photos,
+    coverUrl: photos[0]?.src ?? "",
+    isPublished: route.isPublished,
+    canEdit,
+  };
+}
+
 async function getActorPermissions() {
   const session = await getSessionUser();
 
@@ -46,43 +91,24 @@ export async function GET(
     });
 
     if (!route) {
-      return NextResponse.json({ error: "Маршрут не найден" }, { status: 404 });
+      return NextResponse.json({ error: "РњР°СЂС€СЂСѓС‚ РЅРµ РЅР°Р№РґРµРЅ" }, { status: 404 });
     }
 
     if (!route.isPublished) {
       if (!session) {
-        return NextResponse.json({ error: "Маршрут не найден" }, { status: 404 });
+        return NextResponse.json({ error: "РњР°СЂС€СЂСѓС‚ РЅРµ РЅР°Р№РґРµРЅ" }, { status: 404 });
       }
 
       if (!isAdmin && route.createdById !== session.userId) {
-        return NextResponse.json({ error: "Нет доступа" }, { status: 403 });
+        return NextResponse.json({ error: "РќРµС‚ РґРѕСЃС‚СѓРїР°" }, { status: 403 });
       }
     }
 
-    const photos = route.routePhotos.map((routePhoto) => ({
-      src: getProxyPhotoUrl(routePhoto.photo.s3Key),
-      alt: routePhoto.photo.title,
-      metro: parseStoredMultiValue(routePhoto.photo.metro),
-      address: `${routePhoto.photo.lat}, ${routePhoto.photo.lng}`,
-    }));
-    const firstPhoto = route.routePhotos[0]?.photo;
-
     return NextResponse.json({
-      route: {
-        id: route.id,
-        title: route.title,
-        desc: route.description,
-        authorUsername: route.createdBy?.username ?? "",
-        metro: firstPhoto ? parseStoredMultiValue(firstPhoto.metro) : [],
-        address: firstPhoto ? `${firstPhoto.lat}, ${firstPhoto.lng}` : "",
-        photos,
-        coverUrl: photos[0]?.src ?? "",
-        isPublished: route.isPublished,
-        canEdit: !!session && (isAdmin || route.createdById === session.userId),
-      },
+      route: formatRouteResponse(route, !!session && (isAdmin || route.createdById === session.userId)),
     });
   } catch {
-    return NextResponse.json({ error: "Ошибка сервера" }, { status: 500 });
+    return NextResponse.json({ error: "РћС€РёР±РєР° СЃРµСЂРІРµСЂР°" }, { status: 500 });
   }
 }
 
@@ -94,25 +120,25 @@ export async function DELETE(
     const { session, isAdmin } = await getActorPermissions();
 
     if (!session) {
-      return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+      return NextResponse.json({ error: "РќРµ Р°РІС‚РѕСЂРёР·РѕРІР°РЅ" }, { status: 401 });
     }
 
     const { id } = await params;
     const route = await prisma.route.findUnique({ where: { id } });
 
     if (!route) {
-      return NextResponse.json({ error: "Маршрут не найден" }, { status: 404 });
+      return NextResponse.json({ error: "РњР°СЂС€СЂСѓС‚ РЅРµ РЅР°Р№РґРµРЅ" }, { status: 404 });
     }
 
     if (!isAdmin && route.createdById !== session.userId) {
-      return NextResponse.json({ error: "Нет доступа" }, { status: 403 });
+      return NextResponse.json({ error: "РќРµС‚ РґРѕСЃС‚СѓРїР°" }, { status: 403 });
     }
 
     await prisma.route.delete({ where: { id } });
 
     return NextResponse.json({ ok: true });
   } catch {
-    return NextResponse.json({ error: "Ошибка сервера" }, { status: 500 });
+    return NextResponse.json({ error: "РћС€РёР±РєР° СЃРµСЂРІРµСЂР°" }, { status: 500 });
   }
 }
 
@@ -124,7 +150,7 @@ export async function PATCH(
     const { session, isAdmin } = await getActorPermissions();
 
     if (!session) {
-      return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+      return NextResponse.json({ error: "РќРµ Р°РІС‚РѕСЂРёР·РѕРІР°РЅ" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -134,61 +160,113 @@ export async function PATCH(
     });
 
     if (!route) {
-      return NextResponse.json({ error: "Маршрут не найден" }, { status: 404 });
+      return NextResponse.json({ error: "РњР°СЂС€СЂСѓС‚ РЅРµ РЅР°Р№РґРµРЅ" }, { status: 404 });
     }
 
-    let payload: { title?: unknown; description?: unknown } = {};
+    let payload: { title?: unknown; description?: unknown; photoIds?: unknown } = {};
 
     try {
-      payload = (await req.json()) as { title?: unknown; description?: unknown };
+      payload = (await req.json()) as {
+        title?: unknown;
+        description?: unknown;
+        photoIds?: unknown;
+      };
     } catch {
       payload = {};
     }
 
     const hasEditableFields =
       Object.prototype.hasOwnProperty.call(payload, "title") ||
-      Object.prototype.hasOwnProperty.call(payload, "description");
+      Object.prototype.hasOwnProperty.call(payload, "description") ||
+      Object.prototype.hasOwnProperty.call(payload, "photoIds");
 
     if (hasEditableFields) {
       if (!isAdmin && route.createdById !== session.userId) {
-        return NextResponse.json({ error: "Нет доступа" }, { status: 403 });
+        return NextResponse.json({ error: "РќРµС‚ РґРѕСЃС‚СѓРїР°" }, { status: 403 });
       }
 
       const nextTitle =
         typeof payload.title === "string"
-          ? payload.title.trim() || "Новый маршрут"
+          ? payload.title.trim() || "РќРѕРІС‹Р№ РјР°СЂС€СЂСѓС‚"
           : route.title;
       const nextDescription =
         typeof payload.description === "string"
           ? payload.description.trim()
           : route.description;
+      const nextPhotoIds = Array.isArray(payload.photoIds)
+        ? [...new Set(payload.photoIds.map((photoId) => String(photoId).trim()).filter(Boolean))]
+        : route.routePhotos.map((routePhoto) => routePhoto.photoId);
 
-      const updated = await prisma.route.update({
-        where: { id },
-        data: {
-          title: nextTitle,
-          description: nextDescription,
-        },
+      if (Array.isArray(payload.photoIds) && nextPhotoIds.length > 0) {
+        const existingPhotosCount = await prisma.photo.count({
+          where: {
+            id: {
+              in: nextPhotoIds,
+            },
+          },
+        });
+
+        if (existingPhotosCount !== nextPhotoIds.length) {
+          return NextResponse.json(
+            { error: "Некоторые фото для маршрута не найдены" },
+            { status: 400 },
+          );
+        }
+      }
+
+      const updated = await prisma.$transaction(async (tx) => {
+        await tx.route.update({
+          where: { id },
+          data: {
+            title: nextTitle,
+            description: nextDescription,
+            isPublished: nextPhotoIds.length > 0 ? route.isPublished : false,
+            publishedAt: nextPhotoIds.length > 0 ? route.publishedAt : null,
+          },
+        });
+
+        if (Array.isArray(payload.photoIds)) {
+          await tx.routePhoto.deleteMany({ where: { routeId: id } });
+
+          if (nextPhotoIds.length > 0) {
+            await tx.routePhoto.createMany({
+              data: nextPhotoIds.map((photoId, index) => ({
+                routeId: id,
+                photoId,
+                order: index,
+              })),
+            });
+          }
+        }
+
+        return tx.route.findUnique({
+          where: { id },
+          include: {
+            createdBy: { select: { username: true } },
+            routePhotos: {
+              include: { photo: true },
+              orderBy: { order: "asc" },
+            },
+          },
+        });
       });
 
+      if (!updated) {
+        return NextResponse.json({ error: "РњР°СЂС€СЂСѓС‚ РЅРµ РЅР°Р№РґРµРЅ" }, { status: 404 });
+      }
+
       return NextResponse.json({
-        route: {
-          id: updated.id,
-          title: updated.title,
-          desc: updated.description,
-          isPublished: updated.isPublished,
-          canEdit: true,
-        },
+        route: formatRouteResponse(updated as RouteWithPhotos, true),
       });
     }
 
     if (route.createdById !== session.userId) {
-      return NextResponse.json({ error: "Нет доступа" }, { status: 403 });
+      return NextResponse.json({ error: "РќРµС‚ РґРѕСЃС‚СѓРїР°" }, { status: 403 });
     }
 
     if (route.routePhotos.length === 0) {
       return NextResponse.json(
-        { error: "Нельзя опубликовать пустой маршрут" },
+        { error: "РќРµР»СЊР·СЏ РѕРїСѓР±Р»РёРєРѕРІР°С‚СЊ РїСѓСЃС‚РѕР№ РјР°СЂС€СЂСѓС‚" },
         { status: 400 },
       );
     }
@@ -203,6 +281,6 @@ export async function PATCH(
 
     return NextResponse.json({ ok: true });
   } catch {
-    return NextResponse.json({ error: "Ошибка сервера" }, { status: 500 });
+    return NextResponse.json({ error: "РћС€РёР±РєР° СЃРµСЂРІРµСЂР°" }, { status: 500 });
   }
 }

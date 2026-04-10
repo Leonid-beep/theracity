@@ -126,6 +126,7 @@ export default function CabinetPage() {
     routeId: string;
     initialTitle: string;
     initialDescription: string;
+    initialPhotos: CabinetRouteItem["photos"];
   } | null>(null);
   const [routeFormSubmitting, setRouteFormSubmitting] = useState(false);
 
@@ -192,37 +193,19 @@ export default function CabinetPage() {
     setOpenPhotoFlow(true);
   };
 
-  const applyRouteChanges = useCallback((routeId: string, title: string, desc: string) => {
+  const applyRouteChanges = useCallback((updatedRoute: CabinetRouteItem) => {
     setMyRoutes((prev) =>
       prev.map((route) =>
-        String(route.id) === routeId
-          ? {
-              ...route,
-              title,
-              desc,
-            }
-          : route,
+        String(route.id) === String(updatedRoute.id) ? { ...route, ...updatedRoute } : route,
       ),
     );
     setFavRoutes((prev) =>
       prev.map((route) =>
-        String(route.id) === routeId
-          ? {
-              ...route,
-              title,
-              desc,
-            }
-          : route,
+        String(route.id) === String(updatedRoute.id) ? { ...route, ...updatedRoute } : route,
       ),
     );
     setActiveRoute((prev) =>
-      prev && String(prev.id) === routeId
-        ? {
-            ...prev,
-            title,
-            desc,
-          }
-        : prev,
+      prev && String(prev.id) === String(updatedRoute.id) ? { ...prev, ...updatedRoute } : prev,
     );
   }, []);
 
@@ -231,6 +214,7 @@ export default function CabinetPage() {
       routeId: String(route.id),
       initialTitle: route.title,
       initialDescription: route.desc,
+      initialPhotos: route.photos,
     });
   }, []);
 
@@ -240,7 +224,15 @@ export default function CabinetPage() {
   }, [routeFormSubmitting]);
 
   const handleRouteFormSubmit = useCallback(
-    async ({ title, description }: { title: string; description: string }) => {
+    async ({
+      title,
+      description,
+      photoIds,
+    }: {
+      title: string;
+      description: string;
+      photoIds: string[];
+    }) => {
       if (!routeForm || routeFormSubmitting) return;
 
       setRouteFormSubmitting(true);
@@ -251,21 +243,22 @@ export default function CabinetPage() {
         const response = await fetch(`/api/routes/${routeForm.routeId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: normalizedTitle,
-            description: normalizedDescription,
-          }),
-        });
+        body: JSON.stringify({
+          title: normalizedTitle,
+          description: normalizedDescription,
+          photoIds,
+        }),
+      });
 
         if (!response.ok) return;
 
         const data = (await response.json().catch(() => ({}))) as {
-          route?: { title?: string; desc?: string };
+          route?: CabinetRouteItem;
         };
-        const nextTitle = data.route?.title ?? normalizedTitle;
-        const nextDesc = data.route?.desc ?? normalizedDescription;
 
-        applyRouteChanges(routeForm.routeId, nextTitle, nextDesc);
+        if (data.route) {
+          applyRouteChanges(data.route);
+        }
         showSuccess("Маршрут обновлён");
         setRouteForm(null);
       } finally {
@@ -582,6 +575,7 @@ export default function CabinetPage() {
         mode="edit"
         initialTitle={routeForm?.initialTitle}
         initialDescription={routeForm?.initialDescription}
+        initialPhotos={routeForm?.initialPhotos}
         submitting={routeFormSubmitting}
         onClose={closeRouteForm}
         onSubmit={handleRouteFormSubmit}

@@ -21,7 +21,7 @@ export type CabinetRouteItem = {
   isPublished?: boolean;
   metro: string[];
   address: string;
-  photos: { src: string; alt: string; metro?: string[]; address?: string }[];
+  photos: { id: string; src: string; alt: string; metro?: string[]; address?: string }[];
   canEdit?: boolean;
 };
 

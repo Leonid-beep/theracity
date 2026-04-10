@@ -75,6 +75,7 @@ export async function GET(req: NextRequest) {
 
     const items = pagedRoutes.map((route) => {
       const photos = route.routePhotos.map((routePhoto) => ({
+        id: routePhoto.photo.id,
         src: getProxyPhotoUrl(routePhoto.photo.s3Key),
         alt: routePhoto.photo.title,
         metro: parseStoredMultiValue(routePhoto.photo.metro),
