@@ -5,6 +5,13 @@ import { getSessionUser } from "@/app/lib/auth";
 import { isAdminUserEmail } from "@/app/lib/admin";
 import { parseStoredMultiValue } from "@/app/lib/photoMetadata";
 
+function getRouteSortTimestamp(route: {
+  createdAt: Date;
+  publishedAt: Date | null;
+}): number {
+  return (route.publishedAt ?? route.createdAt).getTime();
+}
+
 export async function GET(req: NextRequest) {
   try {
     const session = await getSessionUser();
@@ -20,27 +27,27 @@ export async function GET(req: NextRequest) {
     });
     const isAdmin = isAdminUserEmail(actor?.email);
 
-    const [favs, total] = await Promise.all([
-      prisma.favoriteRoute.findMany({
-        where: { userId: session.userId },
-        include: {
-          route: {
-            include: {
-              routePhotos: {
-                include: { photo: true },
-                orderBy: { order: "asc" },
-              },
+    const favs = await prisma.favoriteRoute.findMany({
+      where: { userId: session.userId },
+      include: {
+        route: {
+          include: {
+            routePhotos: {
+              include: { photo: true },
+              orderBy: { order: "asc" },
             },
           },
         },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        orderBy: { route: { createdAt: "desc" } },
-      }),
-      prisma.favoriteRoute.count({ where: { userId: session.userId } }),
-    ]);
+      },
+    });
 
-    const items = favs.map((f) => {
+    const sortedFavs = favs.sort(
+      (a, b) => getRouteSortTimestamp(b.route) - getRouteSortTimestamp(a.route),
+    );
+    const total = sortedFavs.length;
+    const pagedFavs = sortedFavs.slice((page - 1) * pageSize, page * pageSize);
+
+    const items = pagedFavs.map((f) => {
       const photos = f.route.routePhotos.map((rp) => ({
         src: getProxyPhotoUrl(rp.photo.s3Key),
         alt: rp.photo.title,

@@ -195,7 +195,10 @@ export async function PATCH(
 
     await prisma.route.update({
       where: { id },
-      data: { isPublished: true },
+      data: {
+        isPublished: true,
+        publishedAt: route.publishedAt ?? new Date(),
+      },
     });
 
     return NextResponse.json({ ok: true });

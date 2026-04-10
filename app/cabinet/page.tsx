@@ -379,7 +379,9 @@ export default function CabinetPage() {
                           className={styles.img}
                           quality={70}
                         />
-                      ) : null}
+                      ) : (
+                        <span className={styles.thumbEmptyLabel}>Пустой маршрут</span>
+                      )}
                     </div>
                     <figcaption className={styles.cap}>{r.title}</figcaption>
                   </figure>
@@ -476,7 +478,9 @@ export default function CabinetPage() {
                           className={styles.img}
                           quality={70}
                         />
-                      ) : null}
+                      ) : (
+                        <span className={styles.thumbEmptyLabel}>Пустой маршрут</span>
+                      )}
                       <Image
                         src="/images/city/heart_red.png"
                         alt=""

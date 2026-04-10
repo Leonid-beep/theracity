@@ -7,7 +7,10 @@ import ConfirmDeleteModal from "@/app/cabinet/_components/ConfirmDeleteModal";
 import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
 import { getOptimizedPhotoUrl, preloadOptimizedPhoto } from "@/app/ui/optimizedPhotoUrl";
 import { formatMultiValue } from "@/app/lib/photoMetadata";
-import { buildYandexMapsUrlFromString } from "@/app/lib/locationLinks";
+import {
+  buildYandexMapsRouteUrlFromStrings,
+  buildYandexMapsUrlFromString,
+} from "@/app/lib/locationLinks";
 
 type RoutePhoto = {
   src: string;
@@ -154,6 +157,9 @@ export default function RouteModal({
   const routeTitleFull =
     authorNick.length > 0 ? `${activeRoute.title} от ${authorNick}` : activeRoute.title;
   const mapsUrl = buildYandexMapsUrlFromString(mainPhoto?.address ?? activeRoute.address);
+  const routeMapsUrl = buildYandexMapsRouteUrlFromStrings(
+    photos.map((photo) => photo.address),
+  );
   const liked = likedRouteIds.has(activeRoute.id);
   const canEdit = Boolean(activeRoute.canEdit);
   const mainPhotoUrl = mainPhoto
@@ -428,6 +434,18 @@ export default function RouteModal({
               />
               ПОДЕЛИТЬСЯ МАРШРУТОМ
             </button>
+
+            {routeMapsUrl ? (
+              <a
+                href={routeMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${styles.bigBtn} ${styles.yandexRouteBtn}`}
+                aria-label={"\u041E\u0442\u043A\u0440\u044B\u0442\u044C \u0432 \u042F\u043D\u0434\u0435\u043A\u0441 \u041A\u0430\u0440\u0442\u0430\u0445"}
+              >
+                РћРўРљР Р«РўР¬ Р’ РЇРќР”Р•РљРЎ РљРђР РўРђРҐ
+              </a>
+            ) : null}
           </div>
         </div>
       </div>

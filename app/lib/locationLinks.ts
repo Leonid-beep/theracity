@@ -3,6 +3,10 @@ type CoordinatePair = {
   lng: number;
 };
 
+const MAX_YANDEX_ROUTE_POINTS = 20;
+const EARTH_RADIUS_KM = 6371;
+const ROUTE_IMPROVEMENT_EPSILON = 0.000001;
+
 export function parseCoordinatePair(value: string | null | undefined): CoordinatePair | null {
   if (!value) return null;
 
@@ -17,13 +21,197 @@ export function parseCoordinatePair(value: string | null | undefined): Coordinat
   return { lat, lng };
 }
 
+function serializeCoordinatePair(
+  coords: CoordinatePair,
+  order: "lng-lat" | "lat-lng" = "lng-lat",
+): string {
+  if (order === "lat-lng") {
+    return `${coords.lat},${coords.lng}`;
+  }
+
+  return `${coords.lng},${coords.lat}`;
+}
+
+function dedupeCoordinatePairs(coords: CoordinatePair[]): CoordinatePair[] {
+  const seen = new Set<string>();
+
+  return coords.filter((coordsItem) => {
+    const key = `${coordsItem.lat},${coordsItem.lng}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function toRadians(value: number): number {
+  return (value * Math.PI) / 180;
+}
+
+function getDistanceKm(a: CoordinatePair, b: CoordinatePair): number {
+  const dLat = toRadians(b.lat - a.lat);
+  const dLng = toRadians(b.lng - a.lng);
+  const lat1 = toRadians(a.lat);
+  const lat2 = toRadians(b.lat);
+
+  const sinLat = Math.sin(dLat / 2);
+  const sinLng = Math.sin(dLng / 2);
+  const haversine =
+    sinLat * sinLat + Math.cos(lat1) * Math.cos(lat2) * sinLng * sinLng;
+
+  return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(haversine));
+}
+
+function getPathDistance(coords: CoordinatePair[]): number {
+  let total = 0;
+
+  for (let index = 1; index < coords.length; index += 1) {
+    total += getDistanceKm(coords[index - 1], coords[index]);
+  }
+
+  return total;
+}
+
+function buildNearestNeighborPath(
+  points: CoordinatePair[],
+  startIndex: number,
+): CoordinatePair[] {
+  const remaining = new Set(points.map((_, index) => index));
+  const ordered: CoordinatePair[] = [];
+  let currentIndex = startIndex;
+
+  while (remaining.size > 0) {
+    ordered.push(points[currentIndex]);
+    remaining.delete(currentIndex);
+
+    if (remaining.size === 0) break;
+
+    let nextIndex = -1;
+    let minDistance = Number.POSITIVE_INFINITY;
+
+    remaining.forEach((candidateIndex) => {
+      const distance = getDistanceKm(points[currentIndex], points[candidateIndex]);
+
+      if (distance < minDistance) {
+        minDistance = distance;
+        nextIndex = candidateIndex;
+      }
+    });
+
+    currentIndex = nextIndex;
+  }
+
+  return ordered;
+}
+
+function reverseSegment(
+  points: CoordinatePair[],
+  startIndex: number,
+  endIndex: number,
+): CoordinatePair[] {
+  return [
+    ...points.slice(0, startIndex),
+    ...points.slice(startIndex, endIndex + 1).reverse(),
+    ...points.slice(endIndex + 1),
+  ];
+}
+
+function improvePathWithTwoOpt(points: CoordinatePair[]): CoordinatePair[] {
+  if (points.length < 4) return points;
+
+  let best = points.slice();
+  let improved = true;
+
+  while (improved) {
+    improved = false;
+    const bestDistance = getPathDistance(best);
+
+    for (let startIndex = 0; startIndex < best.length - 2; startIndex += 1) {
+      for (let endIndex = startIndex + 1; endIndex < best.length; endIndex += 1) {
+        const candidate = reverseSegment(best, startIndex, endIndex);
+        const candidateDistance = getPathDistance(candidate);
+
+        if (candidateDistance + ROUTE_IMPROVEMENT_EPSILON < bestDistance) {
+          best = candidate;
+          improved = true;
+          break;
+        }
+      }
+
+      if (improved) break;
+    }
+  }
+
+  return best;
+}
+
+function optimizeRoutePoints(points: CoordinatePair[]): CoordinatePair[] {
+  if (points.length <= 2) return points;
+
+  let best = points.slice();
+  let bestDistance = Number.POSITIVE_INFINITY;
+
+  for (let startIndex = 0; startIndex < points.length; startIndex += 1) {
+    const candidate = improvePathWithTwoOpt(buildNearestNeighborPath(points, startIndex));
+    const candidateDistance = getPathDistance(candidate);
+
+    if (candidateDistance < bestDistance) {
+      best = candidate;
+      bestDistance = candidateDistance;
+    }
+  }
+
+  return best;
+}
+
 export function buildYandexMapsUrl(coords: CoordinatePair | null): string | null {
   if (!coords) return null;
-  return `https://yandex.ru/maps/?pt=${coords.lng},${coords.lat}&z=17&l=map`;
+  return `https://yandex.ru/maps/?pt=${serializeCoordinatePair(coords)}&z=17&l=map`;
+}
+
+export function buildYandexMapsRouteUrl(
+  coords: CoordinatePair[] | null | undefined,
+): string | null {
+  const normalized = dedupeCoordinatePairs(
+    (coords ?? []).filter(
+      (coordsItem): coordsItem is CoordinatePair => coordsItem !== null && coordsItem !== undefined,
+    ),
+  ).slice(0, MAX_YANDEX_ROUTE_POINTS);
+
+  if (normalized.length === 0) return null;
+  if (normalized.length === 1) return buildYandexMapsUrl(normalized[0]);
+
+  // Approximate the shortest order locally, then let Yandex build the real road route.
+  const optimized = optimizeRoutePoints(normalized);
+  const params = new URLSearchParams({
+    mode: "routes",
+    rtext: optimized
+      .map((coordsItem) => serializeCoordinatePair(coordsItem, "lat-lng"))
+      .join("~"),
+    rtt: "auto",
+  });
+
+  if (optimized.length > 2) {
+    params.set(
+      "via",
+      Array.from({ length: optimized.length - 2 }, (_, index) => String(index + 1)).join("~"),
+    );
+  }
+
+  return `https://yandex.ru/maps/?${params.toString()}`;
 }
 
 export function buildYandexMapsUrlFromString(value: string | null | undefined): string | null {
   return buildYandexMapsUrl(parseCoordinatePair(value));
+}
+
+export function buildYandexMapsRouteUrlFromStrings(
+  values: Array<string | null | undefined>,
+): string | null {
+  return buildYandexMapsRouteUrl(
+    values
+      .map((value) => parseCoordinatePair(value))
+      .filter((coords): coords is CoordinatePair => coords !== null),
+  );
 }
 
 export function buildRouteShareUrl(routeId: string, origin: string): string {

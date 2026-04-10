@@ -318,7 +318,7 @@
   width: 100%;
   max-width: 402px;
   display: grid;
-  gap: 20px;
+  gap: 14px;
   box-sizing: border-box;
 }
 
@@ -333,12 +333,16 @@
   cursor: pointer;
   font-family: var(--font-button);
   font-size: 16px;
+  line-height: 1.1;
   letter-spacing: 0.05em;
   color: #111;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
+  padding: 0 14px;
+  text-align: center;
+  text-decoration: none;
   box-shadow: 0 12px 20px rgba(0, 0, 0, 0.16);
 }
 
@@ -351,6 +355,24 @@
   text-decoration-color: #ee0a0a;
   text-decoration-thickness: 2px;
   text-underline-offset: 3px;
+}
+
+.yandexRouteBtn {
+  position: relative;
+  color: transparent;
+}
+
+.yandexRouteBtn::after {
+  content: "\041E\0422\041A\0420\042B\0422\042C \0412 \042F\041D\0414\0415\041A\0421 \041A\0410\0420\0422\0410\0425";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  color: #111;
+  font-size: inherit;
+  line-height: 1.1;
 }
 
 
@@ -495,7 +517,7 @@
     max-width: 356px;
     top: auto;
     bottom: 10px;
-    gap: 16px;
+    gap: 12px;
   }
   .bigBtn {
     max-width: 360px;
@@ -569,7 +591,7 @@
     max-width: 318px;
     top: auto;
     bottom: 10px;
-    gap: 12px;
+    gap: 10px;
   }
   .bigBtn {
     max-width: 320px;

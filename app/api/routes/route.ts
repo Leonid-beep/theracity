@@ -10,6 +10,13 @@ import {
 
 type FilterKey = "metro" | "spaceType" | "mood" | "atmosphere";
 
+function getRouteSortTimestamp(route: {
+  createdAt: Date;
+  publishedAt: Date | null;
+}): number {
+  return (route.publishedAt ?? route.createdAt).getTime();
+}
+
 function getSelectedValues(sp: URLSearchParams, key: FilterKey): string[] {
   return (sp.get(key) ?? "")
     .split(",")
@@ -50,14 +57,16 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    const filteredRoutes = routes.filter((route) =>
-      route.routePhotos.some(({ photo }) =>
-        matchesSelectedValues(photo.metro, filters.metro) &&
-        matchesSelectedValues(photo.spaceType, filters.spaceType) &&
-        matchesSelectedValues(photo.mood, filters.mood) &&
-        matchesSelectedValues(photo.atmosphere, filters.atmosphere),
-      ),
-    );
+    const filteredRoutes = routes
+      .filter((route) =>
+        route.routePhotos.some(({ photo }) =>
+          matchesSelectedValues(photo.metro, filters.metro) &&
+          matchesSelectedValues(photo.spaceType, filters.spaceType) &&
+          matchesSelectedValues(photo.mood, filters.mood) &&
+          matchesSelectedValues(photo.atmosphere, filters.atmosphere),
+        ),
+      )
+      .sort((a, b) => getRouteSortTimestamp(b) - getRouteSortTimestamp(a));
 
     const total = filteredRoutes.length;
     const pagedRoutes = includeAll

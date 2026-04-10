@@ -6,7 +6,10 @@ import styles from "../../routes/_components/routeModal.module.css";
 import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
 import { getOptimizedPhotoUrl, preloadOptimizedPhoto } from "@/app/ui/optimizedPhotoUrl";
 import { formatMultiValue } from "@/app/lib/photoMetadata";
-import { buildYandexMapsUrlFromString } from "@/app/lib/locationLinks";
+import {
+  buildYandexMapsRouteUrlFromStrings,
+  buildYandexMapsUrlFromString,
+} from "@/app/lib/locationLinks";
 
 const ROUTE_MODAL_PHOTO_WIDTH = 640;
 const ROUTE_MODAL_PHOTO_QUALITY = 78;
@@ -99,6 +102,9 @@ export default function CabinetRouteModal({
 
   if (!open || !route) return null;
   const mapsUrl = buildYandexMapsUrlFromString(main?.address ?? route.address);
+  const routeMapsUrl = buildYandexMapsRouteUrlFromStrings(
+    photos.map((photo) => photo.address),
+  );
   const canEdit = Boolean(route.canEdit);
   const mainPhotoUrl = main
     ? getOptimizedPhotoUrl(main.src, ROUTE_MODAL_PHOTO_WIDTH, ROUTE_MODAL_PHOTO_QUALITY)
@@ -314,6 +320,18 @@ export default function CabinetRouteModal({
               ПОДЕЛИТЬСЯ МАРШРУТОМ
             </button>
           )}
+
+          {routeMapsUrl ? (
+            <a
+              href={routeMapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${styles.bigBtn} ${styles.yandexRouteBtn}`}
+              aria-label={"\u041E\u0442\u043A\u0440\u044B\u0442\u044C \u0432 \u042F\u043D\u0434\u0435\u043A\u0441 \u041A\u0430\u0440\u0442\u0430\u0445"}
+            >
+              РћРўРљР Р«РўР¬ Р’ РЇРќР”Р•РљРЎ РљРђР РўРђРҐ
+            </a>
+          ) : null}
 
           <button
             type="button"
