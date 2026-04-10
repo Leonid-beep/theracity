@@ -15,6 +15,7 @@ import {
   MAX_UPLOAD_FILE_BYTES,
   MAX_UPLOAD_FILE_LABEL,
 } from "@/app/lib/upload";
+import { findNearestMetroStations } from "@/app/lib/photoMetadata";
 
 type Filters = {
   metro: string[];
@@ -186,7 +187,7 @@ export default function UploadPhotoModal({
   }, []);
 
   const handleFile = useCallback(
-    (nextFile: File) => {
+    async (nextFile: File) => {
       if (
         !ALLOWED_IMAGE_MIME_TYPES.includes(
           nextFile.type as (typeof ALLOWED_IMAGE_MIME_TYPES)[number],
@@ -203,6 +204,21 @@ export default function UploadPhotoModal({
       setError("");
       setFile(nextFile);
       replacePreview(URL.createObjectURL(nextFile));
+
+      try {
+        const exifr = await import("exifr");
+        const coords = await exifr.gps(nextFile);
+        if (coords?.latitude && coords?.longitude) {
+          setLat(String(Math.round(coords.latitude * 10000) / 10000));
+          setLng(String(Math.round(coords.longitude * 10000) / 10000));
+          const stations = findNearestMetroStations(coords.latitude, coords.longitude);
+          if (stations.length > 0) {
+            setMetro(stations);
+          }
+        }
+      } catch {
+        // EXIF GPS not available — user fills in manually
+      }
     },
     [replacePreview],
   );
