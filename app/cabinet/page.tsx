@@ -127,6 +127,7 @@ export default function CabinetPage() {
     initialTitle: string;
     initialDescription: string;
     initialPhotos: CabinetRouteItem["photos"];
+    isPublished?: boolean;
   } | null>(null);
   const [routeFormSubmitting, setRouteFormSubmitting] = useState(false);
 
@@ -215,6 +216,7 @@ export default function CabinetPage() {
       initialTitle: route.title,
       initialDescription: route.desc,
       initialPhotos: route.photos,
+      isPublished: route.isPublished,
     });
   }, []);
 
@@ -576,6 +578,7 @@ export default function CabinetPage() {
         initialTitle={routeForm?.initialTitle}
         initialDescription={routeForm?.initialDescription}
         initialPhotos={routeForm?.initialPhotos}
+        isPublished={routeForm?.isPublished}
         submitting={routeFormSubmitting}
         onClose={closeRouteForm}
         onSubmit={handleRouteFormSubmit}

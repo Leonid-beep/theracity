@@ -197,6 +197,13 @@ export async function PATCH(
         ? [...new Set(payload.photoIds.map((photoId) => String(photoId).trim()).filter(Boolean))]
         : route.routePhotos.map((routePhoto) => routePhoto.photoId);
 
+      if (Array.isArray(payload.photoIds) && nextPhotoIds.length === 0 && route.isPublished) {
+        return NextResponse.json(
+          { error: "В опубликованном маршруте должно быть хотя бы одно фото" },
+          { status: 400 },
+        );
+      }
+
       if (Array.isArray(payload.photoIds) && nextPhotoIds.length > 0) {
         const existingPhotosCount = await prisma.photo.count({
           where: {

@@ -88,6 +88,7 @@ function RoutesPageContent() {
     initialTitle: string;
     initialDescription: string;
     initialPhotos: RouteItem["photos"];
+    isPublished?: boolean;
   } | null>(null);
   const [routeFormSubmitting, setRouteFormSubmitting] = useState(false);
 
@@ -293,6 +294,7 @@ function RoutesPageContent() {
       initialTitle: route.title,
       initialDescription: route.desc,
       initialPhotos: route.photos,
+      isPublished: true,
     });
   };
 
@@ -777,6 +779,7 @@ function RoutesPageContent() {
         initialTitle={routeForm?.initialTitle}
         initialDescription={routeForm?.initialDescription}
         initialPhotos={routeForm?.initialPhotos}
+        isPublished={routeForm?.isPublished}
         submitting={routeFormSubmitting}
         onClose={closeRouteForm}
         onSubmit={handleRouteFormSubmit}

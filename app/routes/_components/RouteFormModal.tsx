@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
 import styles from "@/app/gallery/_components/photoModals.module.css";
 
@@ -22,6 +22,7 @@ export default function RouteFormModal({
   initialTitle,
   initialDescription,
   initialPhotos,
+  isPublished,
   submitting,
   onClose,
   onSubmit,
@@ -31,6 +32,7 @@ export default function RouteFormModal({
   initialTitle?: string;
   initialDescription?: string;
   initialPhotos?: EditableRoutePhoto[];
+  isPublished?: boolean;
   submitting?: boolean;
   onClose: () => void;
   onSubmit: (values: RouteFormValues) => void | Promise<void>;
@@ -59,9 +61,20 @@ export default function RouteFormModal({
     });
   };
 
-  const removePhoto = (photoId: string) => {
-    setPhotos((prev) => prev.filter((photo) => photo.id !== photoId));
-  };
+  const [lastPhotoWarning, setLastPhotoWarning] = useState(false);
+
+  const isLastPhotoInPublished = isPublished && photos.length <= 1;
+
+  const removePhoto = useCallback(
+    (photoId: string) => {
+      if (isLastPhotoInPublished) {
+        setLastPhotoWarning(true);
+        return;
+      }
+      setPhotos((prev) => prev.filter((photo) => photo.id !== photoId));
+    },
+    [isLastPhotoInPublished],
+  );
 
   if (!open) return null;
 
@@ -118,6 +131,12 @@ export default function RouteFormModal({
                 Меняйте порядок фото и удаляйте лишние из маршрута.
               </div>
 
+              {lastPhotoWarning && (
+                <div className={styles.routeEditorWarning}>
+                  В опубликованном маршруте должно быть хотя бы одно фото.
+                </div>
+              )}
+
               {photos.length > 0 ? (
                 <div className={styles.routePhotoList}>
                   {photos.map((photo, index) => (
@@ -161,7 +180,7 @@ export default function RouteFormModal({
                             type="button"
                             className={`${styles.routePhotoAction} ${styles.routePhotoActionDanger}`}
                             onClick={() => removePhoto(photo.id)}
-                            disabled={submitting}
+                            disabled={submitting || isLastPhotoInPublished}
                             aria-label="Удалить фото из маршрута"
                           >
                             Удалить

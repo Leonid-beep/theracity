@@ -681,6 +681,17 @@
   color: rgba(17, 17, 17, 0.76);
 }
 
+.routeEditorWarning {
+  font-family: var(--font-text);
+  font-size: 13px;
+  line-height: 1.35;
+  letter-spacing: 0.04em;
+  color: #b33;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(238, 10, 10, 0.08);
+}
+
 .routePhotoList {
   display: grid;
   gap: 10px;
