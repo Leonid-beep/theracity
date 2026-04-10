@@ -16,6 +16,7 @@ import {
   MAX_UPLOAD_FILE_LABEL,
 } from "@/app/lib/upload";
 import { findNearestMetroStations } from "@/app/lib/photoMetadata";
+import exifr from "exifr";
 
 type Filters = {
   metro: string[];
@@ -90,6 +91,7 @@ export default function UploadPhotoModal({
   });
   const [filtersLoaded, setFiltersLoaded] = useState(false);
 
+  const [exifLoading, setExifLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
@@ -144,6 +146,7 @@ export default function UploadPhotoModal({
     setError("");
     setProgress(0);
     setUploading(false);
+    setExifLoading(false);
     setDragActive(false);
   }, [replacePreview]);
 
@@ -204,9 +207,9 @@ export default function UploadPhotoModal({
       setError("");
       setFile(nextFile);
       replacePreview(URL.createObjectURL(nextFile));
+      setExifLoading(true);
 
       try {
-        const { default: exifr } = await import("exifr");
         const coords = await exifr.gps(nextFile);
         if (coords?.latitude && coords?.longitude) {
           setLat(coords.latitude.toFixed(7));
@@ -218,6 +221,8 @@ export default function UploadPhotoModal({
         }
       } catch {
         // EXIF GPS not available — user fills in manually
+      } finally {
+        setExifLoading(false);
       }
     },
     [replacePreview],
@@ -436,6 +441,10 @@ export default function UploadPhotoModal({
                 </button>
               </div>
             )
+          ) : null}
+
+          {exifLoading ? (
+            <div className={styles.exifHint}>Определяем координаты и метро...</div>
           ) : null}
 
           <div className={styles.formFields}>

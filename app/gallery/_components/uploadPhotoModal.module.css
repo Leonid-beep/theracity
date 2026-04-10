@@ -313,6 +313,20 @@
   transition: width 0.3s ease;
 }
 
+.exifHint {
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: #555;
+  text-align: center;
+  padding: 6px 0;
+  animation: exifPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes exifPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
 .error {
   font-family: var(--font-text);
   font-size: 14px;

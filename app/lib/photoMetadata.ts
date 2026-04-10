@@ -101,14 +101,34 @@ export function findNearestMetroStations(lat: number, lng: number): string[] {
     }))
     .sort((a, b) => a.distance - b.distance);
 
-  const nearest = sorted[0];
-  const result = [nearest.name];
+  type Cluster = { lat: number; lng: number; distance: number; names: string[] };
+  const clusters: Cluster[] = [];
 
-  for (let i = 1; i < sorted.length; i++) {
-    const betweenStations = distanceMeters(nearest.lat, nearest.lng, sorted[i].lat, sorted[i].lng);
-    if (betweenStations <= TRANSFER_RADIUS_METERS) {
-      result.push(sorted[i].name);
+  for (const station of sorted) {
+    const existing = clusters.find(
+      (c) => distanceMeters(c.lat, c.lng, station.lat, station.lng) <= TRANSFER_RADIUS_METERS,
+    );
+
+    if (existing) {
+      existing.names.push(station.name);
+    } else {
+      clusters.push({
+        lat: station.lat,
+        lng: station.lng,
+        distance: station.distance,
+        names: [station.name],
+      });
     }
+  }
+
+  const result: string[] = [...clusters[0].names];
+
+  if (clusters.length > 1) {
+    result.push(...clusters[1].names);
+  }
+
+  if (clusters.length > 2 && clusters[2].distance <= clusters[1].distance * 1.5) {
+    result.push(...clusters[2].names);
   }
 
   return result;
