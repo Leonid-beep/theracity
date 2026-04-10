@@ -209,8 +209,8 @@ export default function UploadPhotoModal({
         const { default: exifr } = await import("exifr");
         const coords = await exifr.gps(nextFile);
         if (coords?.latitude && coords?.longitude) {
-          setLat(String(coords.latitude));
-          setLng(String(coords.longitude));
+          setLat(coords.latitude.toFixed(7));
+          setLng(coords.longitude.toFixed(7));
           const stations = findNearestMetroStations(coords.latitude, coords.longitude);
           if (stations.length > 0) {
             setMetro(stations);
