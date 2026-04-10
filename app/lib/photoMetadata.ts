@@ -124,13 +124,16 @@ export function findNearestMetroStations(lat: number, lng: number): string[] {
   const nearest = clusters[0];
   const result: string[] = [...nearest.names];
   const hasCluster = nearest.names.length >= 2;
-  const maxExtra = hasCluster ? 2 : 2;
 
-  let extra = 0;
-  for (let i = 1; i < clusters.length && extra < maxExtra; i++) {
-    if (extra > 0 && clusters[i].distance > clusters[1].distance * 1.5) break;
-    result.push(clusters[i].names[0]);
-    extra++;
+  if (clusters.length > 1) {
+    const next = clusters[1];
+    if (hasCluster) {
+      if (next.distance <= nearest.distance * 2.5) {
+        result.push(next.names[0]);
+      }
+    } else {
+      result.push(next.names[0]);
+    }
   }
 
   return result;
