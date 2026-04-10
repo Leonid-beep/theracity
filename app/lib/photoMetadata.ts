@@ -79,7 +79,17 @@ export const METRO_STATION_COORDS: MetroStationCoords[] = [
 
 export const PETERSBURG_METRO_STATIONS = METRO_STATION_COORDS.map((s) => s.name);
 
-const TRANSFER_RADIUS_METERS = 400;
+const METRO_CLUSTERS: string[][] = [
+  ["Путиловская", "Кировский завод"],
+  ["Садовая", "Спасская", "Сенная площадь"],
+  ["Невский проспект", "Гостиный двор"],
+  ["Пушкинская", "Звенигородская"],
+  ["Достоевская", "Владимирская"],
+  ["Площадь Восстания", "Маяковская"],
+  ["Площадь Александра Невского-I", "Площадь Александра Невского-II"],
+];
+
+const NEARBY_RADIUS_METERS = 1000;
 const LAT_METER_SCALE = 111_320;
 const LNG_METER_SCALE = 55_660; // at ~60°N
 
@@ -89,54 +99,41 @@ function distanceMeters(lat1: number, lng1: number, lat2: number, lng2: number):
   return Math.sqrt(dLat * dLat + dLng * dLng);
 }
 
+function getClusterMembers(name: string): string[] {
+  return METRO_CLUSTERS.find((c) => c.includes(name)) ?? [];
+}
+
 export function findNearestMetroStations(lat: number, lng: number): string[] {
   if (!METRO_STATION_COORDS.length) return [];
 
   const sorted = METRO_STATION_COORDS
     .map((station) => ({
       name: station.name,
-      lat: station.lat,
-      lng: station.lng,
       distance: distanceMeters(lat, lng, station.lat, station.lng),
     }))
     .sort((a, b) => a.distance - b.distance);
 
-  type Cluster = { lat: number; lng: number; distance: number; names: string[] };
-  const clusters: Cluster[] = [];
+  const distMap = new Map(sorted.map((s) => [s.name, s.distance]));
+  const result = new Set<string>();
 
-  for (const station of sorted) {
-    const existing = clusters.find(
-      (c) => distanceMeters(c.lat, c.lng, station.lat, station.lng) <= TRANSFER_RADIUS_METERS,
-    );
+  const nearby = sorted.filter((s) => s.distance <= NEARBY_RADIUS_METERS);
 
-    if (existing) {
-      existing.names.push(station.name);
-    } else {
-      clusters.push({
-        lat: station.lat,
-        lng: station.lng,
-        distance: station.distance,
-        names: [station.name],
-      });
-    }
-  }
-
-  const nearest = clusters[0];
-  const result: string[] = [...nearest.names];
-  const hasCluster = nearest.names.length >= 2;
-
-  if (clusters.length > 1) {
-    const next = clusters[1];
-    if (hasCluster) {
-      if (next.distance <= nearest.distance * 2.5) {
-        result.push(next.names[0]);
+  if (nearby.length > 0) {
+    for (const station of nearby) {
+      result.add(station.name);
+      for (const member of getClusterMembers(station.name)) {
+        result.add(member);
       }
-    } else {
-      result.push(next.names[0]);
+    }
+  } else {
+    const nearest = sorted[0];
+    result.add(nearest.name);
+    for (const member of getClusterMembers(nearest.name)) {
+      result.add(member);
     }
   }
 
-  return result;
+  return [...result].sort((a, b) => (distMap.get(a) ?? 0) - (distMap.get(b) ?? 0));
 }
 
 export const DEFAULT_SPACE_TYPES = ["Брандмауэры", "Дворы", "Улицы"];
