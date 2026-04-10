@@ -722,7 +722,8 @@
   }
 
   .pages {
-    width: min(170px, calc(100% - 80px));
+    width: min(158px, calc(100% - 72px));
+    gap: 4px;
   }
 
   .pagBtn {
@@ -823,34 +824,36 @@
   }
 
   .pagination {
-    max-width: calc(100% - 4px);
-    gap: 2px;
+    width: min(220px, calc(100% - 2px));
+    max-width: calc(100% - 2px);
+    gap: 0;
   }
 
   .photoPagination {
-    width: calc(100% - 10px);
-    max-width: calc(100% - 10px);
-    padding: 4px 5px;
+    width: calc(100% - 8px);
+    max-width: calc(100% - 8px);
+    padding: 4px;
   }
 
   .pages {
-    width: min(150px, calc(100% - 72px));
+    width: min(136px, calc(100% - 60px));
+    gap: 3px;
   }
 
   .pagBtn {
-    width: 24px;
-    height: 24px;
-    font-size: 12px;
+    width: 22px;
+    height: 22px;
+    font-size: 11px;
   }
 
   .page {
-    width: 20px;
-    height: 20px;
-    font-size: 11px;
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
   }
 
   .dots {
-    font-size: 11px;
+    font-size: 10px;
   }
 
   .actions {

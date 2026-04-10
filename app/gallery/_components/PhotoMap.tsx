@@ -10,14 +10,28 @@ type PositionedPhoto = {
   photo: PhotoItem;
 };
 
+type MarkerDimensions = {
+  width: number;
+  height: number;
+  radius: number;
+};
+
 type WindowWithYMaps = Window & {
   ymaps?: any;
 };
 
 const YANDEX_MAPS_API_KEY = process.env.NEXT_PUBLIC_YANDEX_MAPS_API_KEY ?? "";
 const YANDEX_MAPS_SCRIPT_ID = "theracity-yandex-maps-api";
-const DESKTOP_MARKER_SIZE = 64;
-const MOBILE_MARKER_SIZE = 44;
+const DESKTOP_MARKER_DIMENSIONS: MarkerDimensions = {
+  width: 72,
+  height: 96,
+  radius: 12,
+};
+const MOBILE_MARKER_DIMENSIONS: MarkerDimensions = {
+  width: 50,
+  height: 67,
+  radius: 10,
+};
 const DUPLICATE_POINT_RADIUS = 0.00018;
 
 let yandexMapsPromise: Promise<any> | null = null;
@@ -90,9 +104,54 @@ function loadYandexMaps(apiKey: string): Promise<any> {
   return yandexMapsPromise;
 }
 
-function getMarkerSize(): number {
-  if (typeof window === "undefined") return DESKTOP_MARKER_SIZE;
-  return window.innerWidth <= 700 ? MOBILE_MARKER_SIZE : DESKTOP_MARKER_SIZE;
+function getMarkerDimensions(): MarkerDimensions {
+  if (typeof window === "undefined") return DESKTOP_MARKER_DIMENSIONS;
+  return window.innerWidth <= 700 ? MOBILE_MARKER_DIMENSIONS : DESKTOP_MARKER_DIMENSIONS;
+}
+
+function shouldUseWheelZoom(): boolean {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return false;
+  }
+
+  return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+}
+
+function createMarkerLayout(ymaps: any, markerDimensions: MarkerDimensions) {
+  const markerLayout = ymaps.templateLayoutFactory.createClass(
+    `
+      <div
+        class="${styles.marker}"
+        style="width:${markerDimensions.width}px;height:${markerDimensions.height}px;border-radius:${markerDimensions.radius}px;"
+      >
+        <div
+          class="${styles.markerImage}"
+          style="border-radius:${Math.max(markerDimensions.radius - 2, 0)}px;"
+        ></div>
+      </div>
+    `,
+    {
+      build(this: any) {
+        markerLayout.superclass.build.call(this);
+
+        const element = this.getElement() as HTMLElement | null;
+        const imageElement = element?.querySelector(`.${styles.markerImage}`) as HTMLElement | null;
+        const iconHref = this.getData().properties.get("iconHref");
+        const iconAlt = this.getData().properties.get("iconAlt");
+
+        if (element && iconAlt) {
+          element.setAttribute("aria-label", iconAlt);
+          element.title = iconAlt;
+        }
+
+        if (imageElement && iconHref) {
+          imageElement.style.backgroundImage = `url("${iconHref}")`;
+        }
+      },
+    },
+  );
+
+  return markerLayout;
 }
 
 function createDuplicateAwarePositions(photos: PhotoItem[]): PositionedPhoto[] {
@@ -168,6 +227,10 @@ export default function PhotoMap({
   const mapRootRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markerRefs = useRef<any[]>([]);
+  const [markerDimensions, setMarkerDimensions] = useState<MarkerDimensions>(() =>
+    getMarkerDimensions(),
+  );
+  const [allowWheelZoom, setAllowWheelZoom] = useState<boolean>(() => shouldUseWheelZoom());
   const [loadState, setLoadState] = useState<"idle" | "ready" | "error" | "missing-key">(
     "idle",
   );
@@ -181,6 +244,26 @@ export default function PhotoMap({
       ),
     [photos],
   );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const updateViewportSettings = () => {
+      setMarkerDimensions(getMarkerDimensions());
+      setAllowWheelZoom(shouldUseWheelZoom());
+    };
+
+    updateViewportSettings();
+    window.addEventListener("resize", updateViewportSettings);
+
+    const mediaQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
+    mediaQuery.addEventListener?.("change", updateViewportSettings);
+
+    return () => {
+      window.removeEventListener("resize", updateViewportSettings);
+      mediaQuery.removeEventListener?.("change", updateViewportSettings);
+    };
+  }, []);
 
   useEffect(() => {
     if (!YANDEX_MAPS_API_KEY) {
@@ -199,7 +282,7 @@ export default function PhotoMap({
         const ymaps = await loadYandexMaps(YANDEX_MAPS_API_KEY);
         if (cancelled || !mapRootRef.current) return;
 
-        const markerSize = getMarkerSize();
+        const currentMarkerLayout = createMarkerLayout(ymaps, markerDimensions);
 
         if (!mapRef.current) {
           mapRef.current = new ymaps.Map(
@@ -216,7 +299,11 @@ export default function PhotoMap({
               autoFitToViewport: "ifNull",
             },
           );
+        }
 
+        if (allowWheelZoom) {
+          mapRef.current.behaviors.enable("scrollZoom");
+        } else {
           mapRef.current.behaviors.disable("scrollZoom");
         }
 
@@ -230,17 +317,17 @@ export default function PhotoMap({
             coords,
             {
               hintContent: photo.title,
+              iconHref: getOptimizedPhotoUrl(photo.src, markerDimensions.width * 2, 78),
+              iconAlt: photo.title || "Фото на карте",
             },
             {
-              iconLayout: "default#image",
-              iconImageHref: getOptimizedPhotoUrl(photo.src, markerSize * 2, 70),
-              iconImageSize: [markerSize, markerSize],
-              iconImageOffset: [-markerSize / 2, -markerSize / 2],
+              iconLayout: currentMarkerLayout,
+              iconOffset: [-markerDimensions.width / 2, -markerDimensions.height / 2],
               iconShape: {
                 type: "Rectangle",
                 coordinates: [
                   [0, 0],
-                  [markerSize, markerSize],
+                  [markerDimensions.width, markerDimensions.height],
                 ],
               },
               hideIconOnBalloonOpen: false,
@@ -277,7 +364,24 @@ export default function PhotoMap({
     return () => {
       cancelled = true;
     };
-  }, [mapPhotos, onSelectPhoto]);
+  }, [allowWheelZoom, mapPhotos, markerDimensions, onSelectPhoto]);
+
+  useEffect(() => {
+    if (!mapRootRef.current || loadState !== "ready" || !allowWheelZoom) {
+      return;
+    }
+
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+    };
+
+    const mapRoot = mapRootRef.current;
+    mapRoot.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      mapRoot.removeEventListener("wheel", handleWheel);
+    };
+  }, [allowWheelZoom, loadState]);
 
   useEffect(() => {
     if (!mapRootRef.current || !mapRef.current || typeof ResizeObserver === "undefined") {
