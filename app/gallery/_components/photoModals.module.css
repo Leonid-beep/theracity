@@ -530,23 +530,28 @@
   min-height: 0;
   max-height: calc(100vh - 40px);
   overflow: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .createTitle {
-  position: absolute;
-  left: 15px;
-  top: 19.5px;
+  position: static;
+  margin: 0;
+  padding: 19.5px 48px 0 15px;
+  box-sizing: border-box;
+  align-self: stretch;
   font-family: var(--font-text);
   font-size: 30px;
+  line-height: 1.25;
   letter-spacing: 0.05em;
   color: #111;
-  max-width: calc(450px - 60px);
+  max-width: none;
 }
 
 .createBody {
   position: relative;
-  margin-top: calc(19.5px + 30px + 18px);
-  padding: 0 15px 18px 15px;
+  margin-top: 0;
+  padding: 18px 15px 18px 15px;
   display: grid;
   gap: 18px;
 }
@@ -900,11 +905,10 @@
   }
   .createTitle {
     font-size: 26px;
-    max-width: calc(400px - 60px);
+    padding: 19.5px 48px 0 12px;
   }
   .createBody {
-    margin-top: calc(19.5px + 26px + 14px);
-    padding: 0 12px 14px 12px;
+    padding: 14px 12px 14px 12px;
     gap: 14px;
   }
   .createInput {
@@ -1067,12 +1071,10 @@
   }
   .createTitle {
     font-size: 24px;
-    top: 16px;
-    max-width: calc(360px - 56px);
+    padding: 16px 48px 0 12px;
   }
   .createBody {
-    margin-top: calc(16px + 24px + 12px);
-    padding: 0 12px 12px 12px;
+    padding: 12px 12px 12px 12px;
     gap: 12px;
   }
   .createLabel {
@@ -1335,14 +1337,11 @@
     overscroll-behavior: contain;
   }
   .createTitle {
-    left: 12px;
-    top: 16px;
     font-size: 22px;
-    max-width: calc(100% - 52px);
+    padding: 16px 48px 0 12px;
   }
   .createBody {
-    margin-top: calc(16px + 22px + 10px);
-    padding: 0 12px 12px 12px;
+    padding: 10px 12px 12px 12px;
     gap: 10px;
   }
   .createInput,
@@ -1540,13 +1539,11 @@
     padding-bottom: 20px;
   }
   .createTitle {
-    left: 10px;
-    top: 12px;
     font-size: 20px;
+    padding: 12px 44px 0 10px;
   }
   .createBody {
-    margin-top: calc(12px + 20px + 8px);
-    padding: 0 10px 20px 10px;
+    padding: 8px 10px 20px 10px;
   }
   .createInput,
   .createTextarea,

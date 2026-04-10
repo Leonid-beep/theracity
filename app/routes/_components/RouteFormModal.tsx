@@ -77,16 +77,18 @@ export default function RouteFormModal({
           type="button"
           className={styles.closeBtn}
           onClick={onClose}
-          aria-label="Р—Р°РєСЂС‹С‚СЊ"
+          aria-label="Закрыть"
         />
 
         <div className={styles.createTitle}>
-          {mode === "edit" ? "Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ РјР°СЂС€СЂСѓС‚Р°" : "РЎРѕР·РґР°РЅРёРµ РјР°СЂС€СЂСѓС‚Р°"}
+          {mode === "edit" ? "Редактирование маршрута" : "Создание маршрута"}
         </div>
 
         <div className={styles.createBody}>
           <div className={styles.createField}>
-            <div className={styles.createLabel}>РџР РР”РЈРњРђР™РўР• РќРђР—Р’РђРќРР•</div>
+            <div className={styles.createLabel}>
+              {mode === "edit" ? "Название маршрута" : "ПРИДУМАЙТЕ НАЗВАНИЕ"}
+            </div>
             <input
               className={styles.createInput}
               value={title}
@@ -95,7 +97,9 @@ export default function RouteFormModal({
           </div>
 
           <div className={styles.createField}>
-            <div className={styles.createLabel}>РџР РР”РЈРњРђР™РўР• РћРџРРЎРђРќРР•</div>
+            <div className={styles.createLabel}>
+              {mode === "edit" ? "Описание маршрута" : "ПРИДУМАЙТЕ ОПИСАНИЕ"}
+            </div>
             <textarea
               className={styles.createTextarea}
               value={description}
@@ -106,7 +110,7 @@ export default function RouteFormModal({
           {mode === "edit" ? (
             <div className={styles.routeEditorSection}>
               <div className={styles.routeEditorHeader}>
-                <div className={styles.createLabel}>Р¤РћРўРћ Р’ РњРђР РЁР РЈРўР•</div>
+                <div className={styles.createLabel}>ФОТО В МАРШРУТЕ</div>
                 <span className={styles.routeEditorCount}>{photos.length}</span>
               </div>
 
@@ -181,11 +185,11 @@ export default function RouteFormModal({
           >
             {submitting
               ? mode === "edit"
-                ? "РЎРћРҐР РђРќР•РќРР•..."
-                : "РЎРћР—Р”РђРќРР•..."
+                ? "СОХРАНЕНИЕ..."
+                : "СОЗДАНИЕ..."
               : mode === "edit"
-                ? "РЎРћРҐР РђРќРРўР¬ РР—РњР•РќР•РќРРЇ"
-                : "РЎРћР—Р”РђРўР¬ РќРћР’Р«Р™ РњРђР РЁР РЈРў"}
+                ? "СОХРАНИТЬ ИЗМЕНЕНИЯ"
+                : "СОЗДАТЬ НОВЫЙ МАРШРУТ"}
           </button>
         </div>
       </div>
