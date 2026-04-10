@@ -3,7 +3,7 @@ type CoordinatePair = {
   lng: number;
 };
 
-const MAX_YANDEX_ROUTE_POINTS = 20;
+const MAX_YANDEX_ROUTE_POINTS = 10;
 const EARTH_RADIUS_KM = 6371;
 const ROUTE_IMPROVEMENT_EPSILON = 0.000001;
 
@@ -188,6 +188,7 @@ export function buildYandexMapsRouteUrl(
       .map((coordsItem) => serializeCoordinatePair(coordsItem, "lat-lng"))
       .join("~"),
     rtt: "auto",
+    rtm: "atm",
   });
 
   if (optimized.length > 2) {

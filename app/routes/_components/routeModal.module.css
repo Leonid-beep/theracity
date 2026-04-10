@@ -363,7 +363,7 @@
 }
 
 .yandexRouteBtn::after {
-  content: "\041E\0422\041A\0420\042B\0422\042C \0412 \042F\041D\0414\0415\041A\0421 \041A\0410\0420\0422\0410\0425";
+  content: attr(aria-label);
   position: absolute;
   inset: 0;
   display: flex;
