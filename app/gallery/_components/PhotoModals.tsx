@@ -29,7 +29,7 @@ export default function PhotoModals(props: {
   onPhotoDeleted?: (photoId: string) => void;
   onPhotoUpdated?: (photo: PhotoItem) => void;
   onActionSuccess?: (message: string) => void;
-  onBreakShareLink?: () => void;
+  onBreakShareLink?: (photoToKeep?: PhotoItem | null) => void;
 }) {
   const {
     photo,
@@ -107,12 +107,13 @@ export default function PhotoModals(props: {
     }
   }, [photo]);
 
-  const breakShareLink = () => {
-    onBreakShareLink?.();
+  const breakShareLink = (photoToKeep?: PhotoItem | null) => {
+    onBreakShareLink?.(photoToKeep);
   };
 
   const goPhoto = (nextPage: number) => {
-    breakShareLink();
+    const nextPhotoItem = photos[nextPage - 1] ?? photo;
+    breakShareLink(nextPhotoItem);
     setPhotoPage(Math.min(totalPhotoPages, Math.max(1, nextPage)));
   };
   const canPhotoPrev = photoPage > 1;
@@ -150,7 +151,7 @@ export default function PhotoModals(props: {
   }, [nextPhoto?.src, open, prevPhoto?.src]);
 
   const openAddToRoute = () => {
-    breakShareLink();
+    breakShareLink(activePhoto);
 
     if (!isAuthenticated) {
       onRequireAuth?.();
@@ -221,7 +222,7 @@ export default function PhotoModals(props: {
 
   const handleConfirmPick = async () => {
     if (!pickedRouteId || !activePhoto) return;
-    breakShareLink();
+    breakShareLink(activePhoto);
     if (!isAuthenticated) {
       onRequireAuth?.();
       return;
@@ -246,7 +247,7 @@ export default function PhotoModals(props: {
 
   const handleCreateConfirm = async () => {
     if (!activePhoto) return;
-    breakShareLink();
+    breakShareLink(activePhoto);
     if (!isAuthenticated) {
       onRequireAuth?.();
       return;
@@ -281,7 +282,7 @@ export default function PhotoModals(props: {
   );
 
   const handleSharePhoto = async () => {
-    breakShareLink();
+    breakShareLink(activePhoto);
 
     try {
       await copyPhotoShareLink(activePhoto.id);
@@ -318,7 +319,7 @@ export default function PhotoModals(props: {
                     aria-label="Удалить фото"
                     onClick={(event) => {
                       event.stopPropagation();
-                      breakShareLink();
+                      breakShareLink(activePhoto);
                       setConfirmDeleteOpen(true);
                     }}
                   >
@@ -332,7 +333,7 @@ export default function PhotoModals(props: {
                     aria-label="Редактировать фото"
                     onClick={(event) => {
                       event.stopPropagation();
-                      breakShareLink();
+                      breakShareLink(activePhoto);
                       setEditOpen(true);
                     }}
                   >
@@ -358,7 +359,7 @@ export default function PhotoModals(props: {
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ color: "inherit", textDecoration: "underline" }}
-                    onClick={breakShareLink}
+                    onClick={() => breakShareLink(activePhoto)}
                   >
                     {activePhoto.coords}
                   </a>
@@ -413,7 +414,7 @@ export default function PhotoModals(props: {
                 type="button"
                 className={styles.bigBtn}
                 onClick={() => {
-                  breakShareLink();
+                  breakShareLink(activePhoto);
                   onToggleLike(activePhoto.id);
                 }}
               >

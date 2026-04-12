@@ -127,7 +127,11 @@ function GalleryPageContent() {
     [router, searchParams],
   );
 
-  const resetSharedPhotoLink = useCallback(() => {
+  const resetSharedPhotoLink = useCallback((photoToKeep?: PhotoItem | null) => {
+    if (photoToKeep) {
+      setSelected(photoToKeep);
+    }
+
     if (!sharedPhotoId) return;
 
     replaceGallerySearch((params) => {
