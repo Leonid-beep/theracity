@@ -924,13 +924,16 @@
     height: auto;
     gap: 1px;
     grid-template-rows: auto minmax(18px, auto);
+    justify-items: center;
   }
   .field + .field {
     margin-top: 0;
   }
   .fieldLabel {
+    width: 100%;
     font-size: 9px;
     line-height: 1.15;
+    text-align: center;
     white-space: normal;
     word-wrap: break-word;
     overflow-wrap: break-word;

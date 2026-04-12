@@ -647,7 +647,7 @@
   max-width: 413px;
   display: grid;
   gap: 10px;
-  justify-self: center;
+  justify-self: start;
 }
 
 .routeEditorHeader {
