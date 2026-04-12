@@ -64,21 +64,16 @@ export default function PhotoModals(props: {
 
   const [pickPage, setPickPage] = useState(1);
   const [pickedRouteId, setPickedRouteId] = useState<string | null>(null);
-  const [photoPage, setPhotoPage] = useState(1);
 
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
 
   const totalPhotoPages = Math.max(1, photos.length);
-  const initialPhotoPage = useMemo(() => {
-    if (!photo) return 1;
-    const idx = photos.findIndex((item) => item.id === photo.id);
-    return idx >= 0 ? idx + 1 : 1;
+  const activePhotoIndex = useMemo(() => {
+    if (!photo) return -1;
+    return photos.findIndex((item) => item.id === photo.id);
   }, [photo, photos]);
-
-  useEffect(() => {
-    setPhotoPage(initialPhotoPage);
-  }, [initialPhotoPage]);
+  const photoPage = activePhotoIndex >= 0 ? activePhotoIndex + 1 : 1;
 
   useEffect(() => {
     if (!photo) return;
@@ -113,10 +108,9 @@ export default function PhotoModals(props: {
   const goPhoto = (nextPage: number) => {
     const nextPhotoItem = photos[nextPage - 1] ?? photo;
     breakShareLink(nextPhotoItem);
-    setPhotoPage(Math.min(totalPhotoPages, Math.max(1, nextPage)));
   };
-  const canPhotoPrev = photoPage > 1;
-  const canPhotoNext = photoPage < totalPhotoPages;
+  const canPhotoPrev = activePhotoIndex > 0;
+  const canPhotoNext = activePhotoIndex >= 0 && activePhotoIndex < totalPhotoPages - 1;
 
   const photoPagesToShow = useMemo(() => {
     if (totalPhotoPages <= 7) return Array.from({ length: totalPhotoPages }, (_, index) => index + 1);
@@ -131,9 +125,12 @@ export default function PhotoModals(props: {
   }, [photoPage, totalPhotoPages]);
 
   const open = !!photo;
-  const activePhoto = photos[photoPage - 1] ?? photo;
-  const prevPhoto = photoPage > 1 ? photos[photoPage - 2] ?? null : null;
-  const nextPhoto = photoPage < totalPhotoPages ? photos[photoPage] ?? null : null;
+  const activePhoto = photo;
+  const prevPhoto = activePhotoIndex > 0 ? photos[activePhotoIndex - 1] ?? null : null;
+  const nextPhoto =
+    activePhotoIndex >= 0 && activePhotoIndex < totalPhotoPages - 1
+      ? photos[activePhotoIndex + 1] ?? null
+      : null;
   const likedNow = !!activePhoto && liked.has(activePhoto.id);
   const hasUserRoutes = routes.length > 0;
 
@@ -307,6 +304,7 @@ export default function PhotoModals(props: {
 
             <div className={styles.photoWrap}>
               <Image
+                key={activePhoto.id}
                 src={activePhotoUrl}
                 alt={activePhoto.title}
                 width={300}
@@ -315,6 +313,7 @@ export default function PhotoModals(props: {
                 className={styles.photoImg}
                 unoptimized
                 loading="eager"
+                priority
               />
               {isAdmin ? (
                 <>

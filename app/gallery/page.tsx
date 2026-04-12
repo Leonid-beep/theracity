@@ -8,6 +8,7 @@ import styles from "./styles.module.css";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { SuccessToast, useSuccessToast } from "@/app/ui/SuccessToast";
 import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
+import { preloadOptimizedPhoto } from "@/app/ui/optimizedPhotoUrl";
 import { useResponsivePageSize } from "@/app/lib/useResponsivePageSize";
 import { useCloseDetailsOnOutsideClick } from "@/lib/useCloseDetailsOnOutsideClick";
 import {
@@ -25,6 +26,8 @@ const UploadPhotoModal = dynamic(() => import("./_components/UploadPhotoModal"),
 const PhotoMap = dynamic(() => import("./_components/PhotoMap"), {
   ssr: false,
 });
+const MODAL_PHOTO_WIDTH = 640;
+const MODAL_PHOTO_QUALITY = 78;
 
 export type PhotoItem = {
   id: string;
@@ -136,6 +139,9 @@ function GalleryPageContent() {
   }, [replaceGallerySearch, sharedPhotoId]);
 
   const openPhoto = useCallback((photo: PhotoItem, options?: { preserveSharedLink?: boolean }) => {
+    if (photo.src) {
+      preloadOptimizedPhoto(photo.src, MODAL_PHOTO_WIDTH, MODAL_PHOTO_QUALITY);
+    }
     if (!options?.preserveSharedLink) {
       resetSharedPhotoLink();
     }
