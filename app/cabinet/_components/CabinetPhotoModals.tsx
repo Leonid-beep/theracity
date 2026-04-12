@@ -6,6 +6,10 @@ import styles from "./cabinetPhotoModals.module.css";
 import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
 import { getOptimizedPhotoUrl, preloadOptimizedPhoto } from "@/app/ui/optimizedPhotoUrl";
 import { formatMultiValue } from "@/app/lib/photoMetadata";
+import {
+  buildYandexMapsUrlFromString,
+  copyPhotoShareLink,
+} from "@/app/lib/locationLinks";
 
 export type CabinetPhotoItem = {
   id: string;
@@ -225,17 +229,21 @@ export default function CabinetPhotoModals({
 
   if (!isOpen || !photo || !activePhoto) return null;
 
-  const coordParts = activePhoto.coords.split(",").map((s) => s.trim());
-  const lat = activePhoto.lat ?? parseFloat(coordParts[0]);
-  const lng = activePhoto.lng ?? parseFloat(coordParts[1]);
-  const mapsUrl = !isNaN(lat) && !isNaN(lng)
-    ? `https://yandex.ru/maps/?pt=${lng},${lat}&z=17&l=map`
-    : null;
+  const mapsUrl = buildYandexMapsUrlFromString(activePhoto.coords);
   const activePhotoUrl = getOptimizedPhotoUrl(
     activePhoto.src,
     MODAL_PHOTO_WIDTH,
     MODAL_PHOTO_QUALITY,
   );
+
+  const handleSharePhoto = async () => {
+    try {
+      await copyPhotoShareLink(activePhoto.id);
+      onActionSuccess?.("\u0421\u0441\u044b\u043b\u043a\u0430 \u043d\u0430 \u0444\u043e\u0442\u043e \u0441\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d\u0430");
+    } catch {
+      onActionSuccess?.("\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0441\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0441\u0441\u044b\u043b\u043a\u0443");
+    }
+  };
 
   return (
     <div className={styles.overlay} onClick={closeAll} role="presentation">
@@ -333,6 +341,11 @@ export default function CabinetPhotoModals({
             >
               <Image src={isFavNow ? "/images/city/heart_red.png" : "/images/city/heart_black.png"} alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
               {isFavNow ? "УДАЛИТЬ ИЗ ИЗБРАННОГО" : "ДОБАВИТЬ В ИЗБРАННОЕ"}
+            </button>
+
+            <button type="button" className={styles.bigBtn} onClick={() => void handleSharePhoto()}>
+              <Image src="/images/city/share.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
+              {"\u041f\u041e\u0414\u0415\u041b\u0418\u0422\u042c\u0421\u042f \u0424\u041e\u0422\u041e"}
             </button>
           </div>
         </div>

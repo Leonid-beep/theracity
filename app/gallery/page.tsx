@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import styles from "./styles.module.css";
 import PhotoMap from "./_components/PhotoMap";
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -64,8 +64,9 @@ function buildGallerySearch(filters: Record<string, string>, extras?: Record<str
   });
 }
 
-export default function GalleryPage() {
+function GalleryPageContent() {
   const pageSize = useResponsivePageSize();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const isAdmin = user?.isAdmin ?? false;
@@ -97,6 +98,15 @@ export default function GalleryPage() {
   const [selected, setSelected] = useState<PhotoItem | null>(null);
   const { message: successMsg, showSuccess } = useSuccessToast();
   const fetchRequestIdRef = useRef(0);
+  const sharedPhotoRequestRef = useRef<string | null>(null);
+  const sharedPhotoId = searchParams.get("photoId");
+  const createdRouteId = searchParams.get("createdRouteId");
+  const sharedPhoto = useMemo(() => {
+    if (!sharedPhotoId) return null;
+
+    const availablePhotos = allPhotos.length > 0 ? allPhotos : photos;
+    return availablePhotos.find((photo) => photo.id === sharedPhotoId) ?? null;
+  }, [allPhotos, photos, sharedPhotoId]);
 
   const filterRef = useRef<HTMLElement>(null);
   useCloseDetailsOnOutsideClick(filterRef, "gallery-filters");
@@ -106,22 +116,40 @@ export default function GalleryPage() {
     router.push(`/auth/login?returnTo=${encodeURIComponent(returnToGallery)}`);
   }, [authLoading, router]);
 
-  const openPhoto = useCallback((photo: PhotoItem) => {
+  const replaceGallerySearch = useCallback(
+    (mutate: (params: URLSearchParams) => void) => {
+      const nextSearch = new URLSearchParams(searchParams.toString());
+      mutate(nextSearch);
+
+      const nextQuery = nextSearch.toString();
+      router.replace(nextQuery ? `/gallery?${nextQuery}` : "/gallery", { scroll: false });
+    },
+    [router, searchParams],
+  );
+
+  const resetSharedPhotoLink = useCallback(() => {
+    if (!sharedPhotoId) return;
+
+    replaceGallerySearch((params) => {
+      params.delete("photoId");
+    });
+  }, [replaceGallerySearch, sharedPhotoId]);
+
+  const openPhoto = useCallback((photo: PhotoItem, options?: { preserveSharedLink?: boolean }) => {
+    if (!options?.preserveSharedLink) {
+      resetSharedPhotoLink();
+    }
     setSelected(photo);
-  }, []);
+  }, [resetSharedPhotoLink]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const nextSearch = new URLSearchParams(window.location.search);
-    if (!nextSearch.get("createdRouteId")) return;
+    if (!createdRouteId) return;
 
     showSuccess("Маршрут создан. Теперь откройте фото и добавьте его в маршрут.");
-    nextSearch.delete("createdRouteId");
-
-    const nextQuery = nextSearch.toString();
-    router.replace(nextQuery ? `/gallery?${nextQuery}` : "/gallery", { scroll: false });
-  }, [router, showSuccess]);
+    replaceGallerySearch((params) => {
+      params.delete("createdRouteId");
+    });
+  }, [createdRouteId, replaceGallerySearch, showSuccess]);
 
   useEffect(() => {
     fetch("/api/filters")
@@ -206,6 +234,42 @@ export default function GalleryPage() {
       setPage(nextTotalPages);
     }
   }, [page, pageSize, total]);
+
+  useEffect(() => {
+    if (!sharedPhotoId) {
+      sharedPhotoRequestRef.current = null;
+      return;
+    }
+
+    if (sharedPhoto) {
+      return;
+    }
+
+    if (loading || sharedPhotoRequestRef.current === sharedPhotoId) {
+      return;
+    }
+
+    sharedPhotoRequestRef.current = sharedPhotoId;
+
+    let cancelled = false;
+
+    fetch(`/api/photos/${sharedPhotoId}`)
+      .then(async (response) => {
+        if (!response.ok) return null;
+        const data = await response.json();
+        return data.photo as PhotoItem | undefined;
+      })
+      .then((photo) => {
+        if (!photo || cancelled) return;
+
+        setAllPhotos((prev) => (prev.some((item) => item.id === photo.id) ? prev : [photo, ...prev]));
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, sharedPhoto, sharedPhotoId]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const canPrev = page > 1;
@@ -299,6 +363,7 @@ export default function GalleryPage() {
   };
 
   const handlePhotoDeleted = useCallback((photoId: string) => {
+    resetSharedPhotoLink();
     setPhotos((prev) => prev.filter((photo) => photo.id !== photoId));
     setAllPhotos((prev) => prev.filter((photo) => photo.id !== photoId));
     setTotal((currentTotal) => Math.max(0, currentTotal - 1));
@@ -308,7 +373,7 @@ export default function GalleryPage() {
       return next;
     });
     setSelected(null);
-  }, []);
+  }, [resetSharedPhotoLink]);
 
   const handlePhotoUpdated = useCallback((updatedPhoto: PhotoItem) => {
     setPhotos((prev) =>
@@ -319,6 +384,8 @@ export default function GalleryPage() {
     );
     setSelected((prev) => (prev && prev.id === updatedPhoto.id ? updatedPhoto : prev));
   }, []);
+
+  const displayedSelectedPhoto = selected ?? sharedPhoto;
 
   const toggleLike = async (photoId: string) => {
     if (authLoading) return;
@@ -607,9 +674,9 @@ export default function GalleryPage() {
         </aside>
       </div>
 
-      {selected ? (
+      {displayedSelectedPhoto ? (
         <PhotoModals
-          photo={selected}
+          photo={displayedSelectedPhoto}
           photos={allPhotos.length > 0 ? allPhotos : photos}
           onClose={() => setSelected(null)}
           liked={liked}
@@ -620,6 +687,7 @@ export default function GalleryPage() {
           onPhotoDeleted={handlePhotoDeleted}
           onPhotoUpdated={handlePhotoUpdated}
           onActionSuccess={showSuccess}
+          onBreakShareLink={resetSharedPhotoLink}
         />
       ) : null}
 
@@ -636,5 +704,13 @@ export default function GalleryPage() {
 
       <SuccessToast message={successMsg} />
     </main>
+  );
+}
+
+export default function GalleryPage() {
+  return (
+    <Suspense fallback={<main className={styles.root} />}>
+      <GalleryPageContent />
+    </Suspense>
   );
 }

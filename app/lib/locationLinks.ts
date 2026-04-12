@@ -5,6 +5,7 @@ type CoordinatePair = {
 
 const EARTH_RADIUS_KM = 6371;
 const ROUTE_IMPROVEMENT_EPSILON = 0.000001;
+const YANDEX_MAPS_ZOOM = "17";
 
 export function parseCoordinatePair(value: string | null | undefined): CoordinatePair | null {
   if (!value) return null;
@@ -29,6 +30,19 @@ function serializeCoordinatePair(
   }
 
   return `${coords.lng},${coords.lat}`;
+}
+
+function buildYandexPointParams(coords: CoordinatePair): URLSearchParams {
+  const point = serializeCoordinatePair(coords);
+
+  return new URLSearchParams({
+    ll: point,
+    z: YANDEX_MAPS_ZOOM,
+    l: "map",
+    mode: "whatshere",
+    "whatshere[point]": point,
+    "whatshere[zoom]": YANDEX_MAPS_ZOOM,
+  });
 }
 
 function dedupeCoordinatePairs(coords: CoordinatePair[]): CoordinatePair[] {
@@ -164,7 +178,7 @@ function optimizeRoutePoints(points: CoordinatePair[]): CoordinatePair[] {
 
 export function buildYandexMapsUrl(coords: CoordinatePair | null): string | null {
   if (!coords) return null;
-  return `https://yandex.ru/maps/?pt=${serializeCoordinatePair(coords)}&z=17&l=map`;
+  return `https://yandex.ru/maps/?${buildYandexPointParams(coords).toString()}`;
 }
 
 export function buildYandexMapsRouteUrl(
@@ -211,16 +225,35 @@ export function buildRouteShareUrl(routeId: string, origin: string): string {
   return `${origin}/routes?routeId=${encodeURIComponent(routeId)}`;
 }
 
-export async function copyRouteShareLink(routeId: string): Promise<string> {
+export function buildPhotoShareUrl(photoId: string, origin: string): string {
+  return `${origin}/gallery?photoId=${encodeURIComponent(photoId)}`;
+}
+
+async function copyShareLink(url: string): Promise<string> {
   if (typeof window === "undefined") {
     throw new Error("Window is unavailable");
   }
 
-  const url = buildRouteShareUrl(routeId, window.location.origin);
   if (!navigator.clipboard?.writeText) {
     throw new Error("Clipboard is unavailable");
   }
 
   await navigator.clipboard.writeText(url);
   return url;
+}
+
+export async function copyRouteShareLink(routeId: string): Promise<string> {
+  if (typeof window === "undefined") {
+    throw new Error("Window is unavailable");
+  }
+
+  return copyShareLink(buildRouteShareUrl(routeId, window.location.origin));
+}
+
+export async function copyPhotoShareLink(photoId: string): Promise<string> {
+  if (typeof window === "undefined") {
+    throw new Error("Window is unavailable");
+  }
+
+  return copyShareLink(buildPhotoShareUrl(photoId, window.location.origin));
 }

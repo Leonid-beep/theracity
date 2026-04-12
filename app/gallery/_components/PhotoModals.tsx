@@ -9,7 +9,7 @@ import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
 import { getOptimizedPhotoUrl, preloadOptimizedPhoto } from "@/app/ui/optimizedPhotoUrl";
 import { formatMultiValue } from "@/app/lib/photoMetadata";
 import UploadPhotoModal from "./UploadPhotoModal";
-import { buildYandexMapsUrl } from "@/app/lib/locationLinks";
+import { buildYandexMapsUrl, copyPhotoShareLink } from "@/app/lib/locationLinks";
 
 type RouteItem = { id: string; title: string; src: string; isEmpty: boolean };
 type Step = "photo" | "routeChoice" | "pickRoute" | "createRoute";
@@ -29,6 +29,7 @@ export default function PhotoModals(props: {
   onPhotoDeleted?: (photoId: string) => void;
   onPhotoUpdated?: (photo: PhotoItem) => void;
   onActionSuccess?: (message: string) => void;
+  onBreakShareLink?: () => void;
 }) {
   const {
     photo,
@@ -42,6 +43,7 @@ export default function PhotoModals(props: {
     onPhotoDeleted,
     onPhotoUpdated,
     onActionSuccess,
+    onBreakShareLink,
   } = props;
 
   const [step, setStep] = useState<Step>("photo");
@@ -105,7 +107,14 @@ export default function PhotoModals(props: {
     }
   }, [photo]);
 
-  const goPhoto = (nextPage: number) => setPhotoPage(Math.min(totalPhotoPages, Math.max(1, nextPage)));
+  const breakShareLink = () => {
+    onBreakShareLink?.();
+  };
+
+  const goPhoto = (nextPage: number) => {
+    breakShareLink();
+    setPhotoPage(Math.min(totalPhotoPages, Math.max(1, nextPage)));
+  };
   const canPhotoPrev = photoPage > 1;
   const canPhotoNext = photoPage < totalPhotoPages;
 
@@ -141,6 +150,8 @@ export default function PhotoModals(props: {
   }, [nextPhoto?.src, open, prevPhoto?.src]);
 
   const openAddToRoute = () => {
+    breakShareLink();
+
     if (!isAuthenticated) {
       onRequireAuth?.();
       return;
@@ -154,6 +165,7 @@ export default function PhotoModals(props: {
   };
 
   const closeAll = () => {
+    breakShareLink();
     setStep("photo");
     setPickPage(1);
     setPickedRouteId(null);
@@ -164,6 +176,7 @@ export default function PhotoModals(props: {
 
   const performDelete = async () => {
     if (!activePhoto || deleteSubmitting) return;
+    breakShareLink();
     setDeleteSubmitting(true);
     try {
       const response = await fetch(`/api/photos/${activePhoto.id}`, { method: "DELETE" });
@@ -208,6 +221,7 @@ export default function PhotoModals(props: {
 
   const handleConfirmPick = async () => {
     if (!pickedRouteId || !activePhoto) return;
+    breakShareLink();
     if (!isAuthenticated) {
       onRequireAuth?.();
       return;
@@ -232,6 +246,7 @@ export default function PhotoModals(props: {
 
   const handleCreateConfirm = async () => {
     if (!activePhoto) return;
+    breakShareLink();
     if (!isAuthenticated) {
       onRequireAuth?.();
       return;
@@ -265,6 +280,17 @@ export default function PhotoModals(props: {
     MODAL_PHOTO_QUALITY,
   );
 
+  const handleSharePhoto = async () => {
+    breakShareLink();
+
+    try {
+      await copyPhotoShareLink(activePhoto.id);
+      onActionSuccess?.("\u0421\u0441\u044b\u043b\u043a\u0430 \u043d\u0430 \u0444\u043e\u0442\u043e \u0441\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d\u0430");
+    } catch {
+      onActionSuccess?.("\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0441\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0441\u0441\u044b\u043b\u043a\u0443");
+    }
+  };
+
   return (
     <>
       <div className={styles.overlay} onClick={closeAll} role="presentation">
@@ -292,6 +318,7 @@ export default function PhotoModals(props: {
                     aria-label="Удалить фото"
                     onClick={(event) => {
                       event.stopPropagation();
+                      breakShareLink();
                       setConfirmDeleteOpen(true);
                     }}
                   >
@@ -305,6 +332,7 @@ export default function PhotoModals(props: {
                     aria-label="Редактировать фото"
                     onClick={(event) => {
                       event.stopPropagation();
+                      breakShareLink();
                       setEditOpen(true);
                     }}
                   >
@@ -325,7 +353,13 @@ export default function PhotoModals(props: {
               <div>
                 Адрес:{" "}
                 {mapsUrl ? (
-                  <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>
+                  <a
+                    href={mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "inherit", textDecoration: "underline" }}
+                    onClick={breakShareLink}
+                  >
                     {activePhoto.coords}
                   </a>
                 ) : (
@@ -375,7 +409,14 @@ export default function PhotoModals(props: {
             </div>
 
             <div className={styles.actions}>
-              <button type="button" className={styles.bigBtn} onClick={() => onToggleLike(activePhoto.id)}>
+              <button
+                type="button"
+                className={styles.bigBtn}
+                onClick={() => {
+                  breakShareLink();
+                  onToggleLike(activePhoto.id);
+                }}
+              >
                 <Image
                   src={likedNow ? "/images/city/heart_red.png" : "/images/city/heart_black.png"}
                   alt=""
@@ -390,6 +431,11 @@ export default function PhotoModals(props: {
               <button type="button" className={styles.bigBtn} onClick={openAddToRoute}>
                 <Image src="/images/city/plus.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
                 ДОБАВИТЬ В МАРШРУТ
+              </button>
+
+              <button type="button" className={styles.bigBtn} onClick={() => void handleSharePhoto()}>
+                <Image src="/images/city/share.png" alt="" width={23} height={23} className={styles.btnImg} aria-hidden="true" />
+                {"\u041f\u041e\u0414\u0415\u041b\u0418\u0422\u042c\u0421\u042f \u0424\u041e\u0422\u041e"}
               </button>
             </div>
           </div>
