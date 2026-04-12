@@ -10,6 +10,11 @@ import {
   buildYandexMapsUrlFromString,
   copyPhotoShareLink,
 } from "@/app/lib/locationLinks";
+import {
+  fetchRouteOptions,
+  invalidateRouteOptionsCache,
+  type RouteOption,
+} from "@/app/lib/clientRouteOptions";
 
 export type CabinetPhotoItem = {
   id: string;
@@ -21,7 +26,6 @@ export type CabinetPhotoItem = {
   lng?: number;
 };
 
-type RouteItem = { id: string; title: string; src: string };
 type Step = "photo" | "choice" | "pick" | "create";
 
 const MODAL_PHOTO_WIDTH = 640;
@@ -50,7 +54,7 @@ export default function CabinetPhotoModals({
 }) {
   const [step, setStep] = useState<Step>("photo");
 
-  const [routes, setRoutes] = useState<RouteItem[]>([]);
+  const [routes, setRoutes] = useState<RouteOption[]>([]);
   const [routesLoaded, setRoutesLoaded] = useState(false);
 
   const [pickPage, setPickPage] = useState(1);
@@ -76,15 +80,9 @@ export default function CabinetPhotoModals({
 
   useEffect(() => {
     if (!isOpen || routesLoaded) return;
-    fetch("/api/routes/my")
-      .then((r) => r.json())
-      .then((d) => {
-        const list = (d.routes ?? []).map((r: { id: string; title: string; coverUrl?: string }) => ({
-          id: r.id,
-          title: r.title,
-          src: r.coverUrl ?? "/images/city/city-1.jpg",
-        }));
-        setRoutes(list);
+    fetchRouteOptions()
+      .then((data) => {
+        setRoutes(data);
         setRoutesLoaded(true);
       })
       .catch(() => setRoutesLoaded(true));
@@ -141,7 +139,7 @@ export default function CabinetPhotoModals({
   const canNext = useMemo(() => (isOpen ? pickPage < pickTotalPages : false), [isOpen, pickPage, pickTotalPages]);
 
   const pickItems = useMemo(() => {
-    if (!isOpen) return [] as RouteItem[];
+    if (!isOpen) return [] as RouteOption[];
     const start = (pickPage - 1) * pickPageSize;
     return routes.slice(start, start + pickPageSize);
   }, [isOpen, routes, pickPage]);
@@ -164,6 +162,9 @@ export default function CabinetPhotoModals({
   const goPick = (p: number) => setPickPage(Math.min(pickTotalPages, Math.max(1, p)));
 
   const closeAll = () => {
+    if (step === "create" || step === "pick") {
+      invalidateRouteOptionsCache();
+    }
     setStep("photo");
     setPickPage(1);
     setPickedRouteId(null);
@@ -387,17 +388,23 @@ export default function CabinetPhotoModals({
                   className={`${styles.pickCard} ${active ? styles.pickCardActive : ""}`}
                   onClick={() => setPickedRouteId(r.id)}
                 >
-                  <div className={styles.pickThumb}>
-                    <OptimizedPhoto
-                      src={r.src}
-                      alt={r.title}
-                      width={150}
-                      height={200}
-                      sizes="150px"
-                      className={styles.pickImg}
-                      quality={70}
-                    />
-                  </div>
+                  {r.isEmpty ? (
+                    <div className={`${styles.pickThumb} ${styles.pickThumbEmpty}`}>
+                      <span className={styles.pickThumbEmptyLabel}>РџСѓСЃС‚РѕР№ РјР°СЂС€СЂСѓС‚</span>
+                    </div>
+                  ) : (
+                    <div className={styles.pickThumb}>
+                      <OptimizedPhoto
+                        src={r.src}
+                        alt={r.title}
+                        width={150}
+                        height={200}
+                        sizes="150px"
+                        className={styles.pickImg}
+                        quality={70}
+                      />
+                    </div>
+                  )}
                   <div className={styles.pickCap}>{r.title}</div>
                 </button>
               );

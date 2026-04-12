@@ -224,6 +224,7 @@ export default function PhotoMap({
   photos: PhotoItem[];
   onSelectPhoto: (photo: PhotoItem) => void;
 }) {
+  const sectionRef = useRef<HTMLElement>(null);
   const mapRootRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markerRefs = useRef<any[]>([]);
@@ -234,6 +235,7 @@ export default function PhotoMap({
   const [loadState, setLoadState] = useState<"idle" | "ready" | "error" | "missing-key">(
     "idle",
   );
+  const [shouldInitMap, setShouldInitMap] = useState(false);
 
   const mapPhotos = useMemo(
     () =>
@@ -244,6 +246,34 @@ export default function PhotoMap({
       ),
     [photos],
   );
+
+  useEffect(() => {
+    if (mapPhotos.length === 0) {
+      setShouldInitMap(false);
+      return;
+    }
+
+    if (shouldInitMap || typeof IntersectionObserver === "undefined") {
+      setShouldInitMap(true);
+      return;
+    }
+
+    const section = sectionRef.current;
+    if (!section) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShouldInitMap(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "320px 0px" },
+    );
+
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, [mapPhotos.length, shouldInitMap]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -266,6 +296,10 @@ export default function PhotoMap({
   }, []);
 
   useEffect(() => {
+    if (!shouldInitMap) {
+      return;
+    }
+
     if (!YANDEX_MAPS_API_KEY) {
       setLoadState("missing-key");
       return;
@@ -364,7 +398,7 @@ export default function PhotoMap({
     return () => {
       cancelled = true;
     };
-  }, [allowWheelZoom, mapPhotos, markerDimensions, onSelectPhoto]);
+  }, [allowWheelZoom, mapPhotos, markerDimensions, onSelectPhoto, shouldInitMap]);
 
   useEffect(() => {
     if (!mapRootRef.current || loadState !== "ready" || !allowWheelZoom) {
@@ -407,7 +441,7 @@ export default function PhotoMap({
 
   if (photos.length === 0) {
     return (
-      <section className={styles.section} aria-label="Карта фотографий">
+      <section ref={sectionRef} className={styles.section} aria-label="Карта фотографий">
         <h2 className={styles.title}>
           <span className={styles.mark}>Карта</span> фотографий
         </h2>
@@ -420,7 +454,7 @@ export default function PhotoMap({
 
   if (mapPhotos.length === 0) {
     return (
-      <section className={styles.section} aria-label="Карта фотографий">
+      <section ref={sectionRef} className={styles.section} aria-label="Карта фотографий">
         <h2 className={styles.title}>
           <span className={styles.mark}>Карта</span> фотографий
         </h2>
@@ -432,7 +466,7 @@ export default function PhotoMap({
   }
 
   return (
-    <section className={styles.section} aria-label="Карта фотографий">
+    <section ref={sectionRef} className={styles.section} aria-label="Карта фотографий">
       <h2 className={styles.title}>
         <span className={styles.mark}>Карта</span> фотографий
       </h2>
@@ -448,9 +482,11 @@ export default function PhotoMap({
           <div className={styles.status}>Не удалось загрузить Яндекс.Карту.</div>
         ) : null}
 
-        {loadState !== "missing-key" && loadState !== "error" ? (
+        {loadState !== "missing-key" && loadState !== "error" && shouldInitMap ? (
           <div ref={mapRootRef} className={styles.canvas} />
         ) : null}
+
+        {!shouldInitMap ? <div className={styles.canvas} aria-hidden="true" /> : null}
       </div>
     </section>
   );

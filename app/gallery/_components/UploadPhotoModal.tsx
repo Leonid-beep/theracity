@@ -15,15 +15,14 @@ import {
   MAX_UPLOAD_FILE_BYTES,
   MAX_UPLOAD_FILE_LABEL,
 } from "@/app/lib/upload";
+import {
+  fetchFilterOptions,
+  getEmptyFilterOptions,
+  invalidateFilterOptionsCache,
+  type FilterOptions,
+} from "@/app/lib/clientFilters";
 import { findNearestMetroStations } from "@/app/lib/photoMetadata";
 import exifr from "exifr";
-
-type Filters = {
-  metro: string[];
-  spaceType: string[];
-  mood: string[];
-  atmosphere: string[];
-};
 
 type SavedPhoto = {
   id: string;
@@ -83,12 +82,7 @@ export default function UploadPhotoModal({
   const [mood, setMood] = useState<string[]>([]);
   const [atmosphere, setAtmosphere] = useState<string[]>([]);
 
-  const [filters, setFilters] = useState<Filters>({
-    metro: [],
-    spaceType: [],
-    mood: [],
-    atmosphere: [],
-  });
+  const [filters, setFilters] = useState<FilterOptions>(getEmptyFilterOptions);
   const [filtersLoaded, setFiltersLoaded] = useState(false);
 
   const [exifLoading, setExifLoading] = useState(false);
@@ -111,8 +105,7 @@ export default function UploadPhotoModal({
 
   useEffect(() => {
     if (!open || filtersLoaded) return;
-    fetch("/api/filters")
-      .then((response) => response.json())
+    fetchFilterOptions()
       .then((data) => {
         setFilters(data);
         setFiltersLoaded(true);
@@ -347,6 +340,8 @@ export default function UploadPhotoModal({
         : await handleCreateSubmit();
 
       setProgress(100);
+      invalidateFilterOptionsCache();
+      setFiltersLoaded(false);
       onUploaded(savedPhoto);
       onClose();
     } catch (err) {

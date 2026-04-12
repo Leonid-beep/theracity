@@ -5,17 +5,24 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import styles from "./styles.module.css";
-import PhotoMap from "./_components/PhotoMap";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { SuccessToast, useSuccessToast } from "@/app/ui/SuccessToast";
 import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
 import { useResponsivePageSize } from "@/app/lib/useResponsivePageSize";
 import { useCloseDetailsOnOutsideClick } from "@/lib/useCloseDetailsOnOutsideClick";
+import {
+  fetchFilterOptions,
+  getEmptyFilterOptions,
+  type FilterOptions,
+} from "@/app/lib/clientFilters";
 
 const PhotoModals = dynamic(() => import("./_components/PhotoModals"), {
   ssr: false,
 });
 const UploadPhotoModal = dynamic(() => import("./_components/UploadPhotoModal"), {
+  ssr: false,
+});
+const PhotoMap = dynamic(() => import("./_components/PhotoMap"), {
   ssr: false,
 });
 
@@ -27,13 +34,6 @@ export type PhotoItem = {
   coords: string;
   lat: number;
   lng: number;
-  spaceType: string[];
-  mood: string[];
-  atmosphere: string[];
-};
-
-type Filters = {
-  metro: string[];
   spaceType: string[];
   mood: string[];
   atmosphere: string[];
@@ -82,12 +82,7 @@ function GalleryPageContent() {
 
   const [liked, setLiked] = useState<Set<string>>(() => new Set());
 
-  const [filterOptions, setFilterOptions] = useState<Filters>({
-    metro: [],
-    spaceType: [],
-    mood: [],
-    atmosphere: [],
-  });
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>(getEmptyFilterOptions);
   const [selMetro, setSelMetro] = useState<string[]>([]);
   const [selSpace, setSelSpace] = useState<string[]>([]);
   const [selMood, setSelMood] = useState<string[]>([]);
@@ -97,7 +92,8 @@ function GalleryPageContent() {
 
   const [selected, setSelected] = useState<PhotoItem | null>(null);
   const { message: successMsg, showSuccess } = useSuccessToast();
-  const fetchRequestIdRef = useRef(0);
+  const pageFetchRequestIdRef = useRef(0);
+  const allPhotosFetchRequestIdRef = useRef(0);
   const sharedPhotoRequestRef = useRef<string | null>(null);
   const sharedPhotoId = searchParams.get("photoId");
   const createdRouteId = searchParams.get("createdRouteId");
@@ -156,9 +152,8 @@ function GalleryPageContent() {
   }, [createdRouteId, replaceGallerySearch, showSuccess]);
 
   useEffect(() => {
-    fetch("/api/filters")
-      .then((response) => response.json())
-      .then((data: Filters) => {
+    fetchFilterOptions()
+      .then((data) => {
         setFilterOptions(data);
 
         if (!filtersInitialized) {
@@ -173,51 +168,49 @@ function GalleryPageContent() {
   }, [filtersInitialized]);
 
   useEffect(() => {
+    if (authLoading) return;
+
+    if (!user) {
+      setLiked(new Set());
+      return;
+    }
+
     fetch("/api/photos/favorites/ids")
       .then((response) => response.json())
       .then((data) => setLiked(new Set(data.ids ?? [])))
       .catch(() => {});
-  }, []);
+  }, [authLoading, user]);
 
-  const fetchPhotos = useCallback(
+  const fetchPagePhotos = useCallback(
     async (nextPage: number, filters: Record<string, string>) => {
-      const requestId = ++fetchRequestIdRef.current;
+      const requestId = ++pageFetchRequestIdRef.current;
       setLoading(true);
 
       const pageSearch = buildGallerySearch(filters, {
         page: String(nextPage),
         pageSize: String(pageSize),
       });
-      const allSearch = buildGallerySearch(filters, { all: "1" });
 
       try {
-        const [pageResponse, allResponse] = await Promise.all([
-          fetch(`/api/photos?${pageSearch}`),
-          fetch(`/api/photos?${allSearch}`),
-        ]);
-        const [pageData, allData] = await Promise.all([
-          pageResponse.json(),
-          allResponse.json(),
-        ]);
+        const pageResponse = await fetch(`/api/photos?${pageSearch}`);
+        const pageData = await pageResponse.json();
 
-        if (fetchRequestIdRef.current !== requestId) {
+        if (pageFetchRequestIdRef.current !== requestId) {
           return;
         }
 
         setPhotos(pageData.photos ?? []);
-        setAllPhotos(allData.photos ?? []);
         setTotal(pageData.total ?? 0);
       } catch {
-        if (fetchRequestIdRef.current !== requestId) {
+        if (pageFetchRequestIdRef.current !== requestId) {
           return;
         }
 
         setPhotos([]);
-        setAllPhotos([]);
         setTotal(0);
       }
 
-      if (fetchRequestIdRef.current === requestId) {
+      if (pageFetchRequestIdRef.current === requestId) {
         setLoading(false);
       }
     },
@@ -225,12 +218,34 @@ function GalleryPageContent() {
   );
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void fetchPhotos(page, appliedFilters);
-    }, 0);
+    void fetchPagePhotos(page, appliedFilters);
+  }, [page, appliedFilters, fetchPagePhotos]);
 
-    return () => window.clearTimeout(timer);
-  }, [page, appliedFilters, fetchPhotos]);
+  const fetchAllPhotos = useCallback(async (filters: Record<string, string>) => {
+    const requestId = ++allPhotosFetchRequestIdRef.current;
+    const allSearch = buildGallerySearch(filters, { all: "1" });
+
+    try {
+      const response = await fetch(`/api/photos?${allSearch}`);
+      const data = await response.json();
+
+      if (allPhotosFetchRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      setAllPhotos(data.photos ?? []);
+    } catch {
+      if (allPhotosFetchRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      setAllPhotos([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchAllPhotos(appliedFilters);
+  }, [appliedFilters, fetchAllPhotos]);
 
   useEffect(() => {
     const nextTotalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -700,7 +715,8 @@ function GalleryPageContent() {
           open
           onClose={() => setUploadOpen(false)}
           onUploaded={() => {
-            void fetchPhotos(page, appliedFilters);
+            void fetchPagePhotos(page, appliedFilters);
+            void fetchAllPhotos(appliedFilters);
             showSuccess("Фото загружено");
           }}
         />

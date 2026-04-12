@@ -11,10 +11,12 @@ import type { CabinetPhotoItem } from "./_components/CabinetPhotoModals";
 import ConfirmDeleteModal from "./_components/ConfirmDeleteModal";
 import { SuccessToast, useSuccessToast } from "@/app/ui/SuccessToast";
 import { copyRouteShareLink } from "@/app/lib/locationLinks";
-import RouteFormModal from "../routes/_components/RouteFormModal";
 
 const CabinetRouteModal = dynamic(() => import("./_components/CabinetRouteModal"), { ssr: false });
 const CabinetPhotoModals = dynamic(() => import("./_components/CabinetPhotoModals"), { ssr: false });
+const RouteFormModal = dynamic(() => import("../routes/_components/RouteFormModal"), {
+  ssr: false,
+});
 
 const PAGE_SIZE = 10;
 
@@ -92,12 +94,8 @@ function Pager({
 }
 
 export default function CabinetPage() {
-  const { user, loading, refreshUser } = useAuth();
+  const { user, loading } = useAuth();
   const { message: successMsg, showSuccess } = useSuccessToast();
-
-  useEffect(() => {
-    void refreshUser();
-  }, [refreshUser]);
 
   const [myRoutes, setMyRoutes] = useState<CabinetRouteItem[]>([]);
   const [myRoutesTotal, setMyRoutesTotal] = useState(0);

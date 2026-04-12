@@ -1,23 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import styles from "./styles.module.css";
-import ForgotPasswordModal from "./_components/ForgotPasswordModal";
 import { useAuth } from "@/app/providers/AuthProvider";
 
-export default function LoginPage() {
+const ForgotPasswordModal = dynamic(() => import("./_components/ForgotPasswordModal"), {
+  ssr: false,
+});
+
+function LoginPageContent() {
+  const searchParams = useSearchParams();
   const { login } = useAuth();
   const [forgotOpen, setForgotOpen] = useState(false);
   const [loginVal, setLoginVal] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [returnTo, setReturnTo] = useState<string | null>(null);
-
-  useEffect(() => {
-    setReturnTo(new URLSearchParams(window.location.search).get("returnTo"));
-  }, []);
+  const returnTo = searchParams.get("returnTo");
 
   const handleLogin = async () => {
     setErrors([]);
@@ -92,5 +94,13 @@ export default function LoginPage() {
 
       <ForgotPasswordModal open={forgotOpen} onClose={() => setForgotOpen(false)} />
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<main className={styles.root} />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

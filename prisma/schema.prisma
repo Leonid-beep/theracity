@@ -39,6 +39,7 @@ model Photo {
   routePhotos RoutePhoto[]
   favoritedBy FavoritePhoto[]
 
+  @@index([createdAt])
   @@index([metro])
   @@index([spaceType])
   @@index([mood])
@@ -58,6 +59,7 @@ model Route {
   routePhotos RoutePhoto[]
   favoritedBy FavoriteRoute[]
 
+  @@index([createdById, createdAt])
   @@index([isPublished, publishedAt])
 }
 
@@ -71,6 +73,7 @@ model RoutePhoto {
 
   @@id([routeId, photoId])
   @@index([routeId])
+  @@index([photoId])
 }
 
 model FavoritePhoto {

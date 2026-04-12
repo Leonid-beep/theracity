@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import styles from "./photoModals.module.css";
 import type { PhotoItem } from "../page";
@@ -8,14 +9,21 @@ import ConfirmDeleteModal from "@/app/cabinet/_components/ConfirmDeleteModal";
 import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
 import { getOptimizedPhotoUrl, preloadOptimizedPhoto } from "@/app/ui/optimizedPhotoUrl";
 import { formatMultiValue } from "@/app/lib/photoMetadata";
-import UploadPhotoModal from "./UploadPhotoModal";
 import { buildYandexMapsUrl, copyPhotoShareLink } from "@/app/lib/locationLinks";
+import { invalidateFilterOptionsCache } from "@/app/lib/clientFilters";
+import {
+  fetchRouteOptions,
+  invalidateRouteOptionsCache,
+  type RouteOption,
+} from "@/app/lib/clientRouteOptions";
 
-type RouteItem = { id: string; title: string; src: string; isEmpty: boolean };
 type Step = "photo" | "routeChoice" | "pickRoute" | "createRoute";
 
 const MODAL_PHOTO_WIDTH = 640;
 const MODAL_PHOTO_QUALITY = 78;
+const UploadPhotoModal = dynamic(() => import("./UploadPhotoModal"), {
+  ssr: false,
+});
 
 export default function PhotoModals(props: {
   photo: PhotoItem | null;
@@ -51,7 +59,7 @@ export default function PhotoModals(props: {
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
 
-  const [routes, setRoutes] = useState<RouteItem[]>([]);
+  const [routes, setRoutes] = useState<RouteOption[]>([]);
   const [routesLoaded, setRoutesLoaded] = useState(false);
 
   const [pickPage, setPickPage] = useState(1);
@@ -82,18 +90,9 @@ export default function PhotoModals(props: {
     }
 
     if (routesLoaded) return;
-    fetch("/api/routes/my")
-      .then((response) => response.json())
+    fetchRouteOptions()
       .then((data) => {
-        const list = (data.routes ?? []).map(
-          (route: { id: string; title: string; coverUrl?: string }) => ({
-            id: route.id,
-            title: route.title,
-            src: route.coverUrl || "",
-            isEmpty: !route.coverUrl,
-          }),
-        );
-        setRoutes(list);
+        setRoutes(data);
         setRoutesLoaded(true);
       })
       .catch(() => setRoutesLoaded(true));
@@ -167,6 +166,9 @@ export default function PhotoModals(props: {
 
   const closeAll = () => {
     breakShareLink();
+    if (step === "createRoute") {
+      invalidateRouteOptionsCache();
+    }
     setStep("photo");
     setPickPage(1);
     setPickedRouteId(null);
@@ -186,6 +188,8 @@ export default function PhotoModals(props: {
         return;
       }
       onActionSuccess?.("Фото удалено");
+      invalidateFilterOptionsCache();
+      invalidateRouteOptionsCache();
       onPhotoDeleted?.(activePhoto.id);
       setConfirmDeleteOpen(false);
       closeAll();
@@ -235,6 +239,7 @@ export default function PhotoModals(props: {
         body: JSON.stringify({ photoId: activePhoto.id }),
       });
       if (response.ok) {
+        invalidateRouteOptionsCache();
         const data = (await response.json().catch(() => ({}))) as { message?: string };
         const duplicate = typeof data.message === "string" && data.message.includes("уже");
         onActionSuccess?.(duplicate ? "Фото уже в этом маршруте" : "Фото добавлено в маршрут");

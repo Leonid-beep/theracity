@@ -19,6 +19,18 @@ export const runtime = "nodejs";
 
 type FilterKey = "metro" | "spaceType" | "mood" | "atmosphere";
 
+const photoListSelect = {
+  id: true,
+  s3Key: true,
+  title: true,
+  metro: true,
+  lat: true,
+  lng: true,
+  spaceType: true,
+  mood: true,
+  atmosphere: true,
+} as const;
+
 function getSelectedValues(sp: URLSearchParams, key: FilterKey): string[] {
   return (sp.get(key) ?? "")
     .split(",")
@@ -28,8 +40,6 @@ function getSelectedValues(sp: URLSearchParams, key: FilterKey): string[] {
 
 export async function GET(req: NextRequest) {
   try {
-    console.log("[/api/photos] entered photos route");
-
     const sp = req.nextUrl.searchParams;
     const includeAll = sp.get("all") === "1";
     const page = Math.max(1, Number(sp.get("page")) || 1);
@@ -40,43 +50,45 @@ export async function GET(req: NextRequest) {
       mood: getSelectedValues(sp, "mood"),
       atmosphere: getSelectedValues(sp, "atmosphere"),
     };
+    const hasFilters = Object.values(filters).some((selectedValues) => selectedValues.length > 0);
 
-    console.log("[/api/photos] parsed query params", {
-      page,
-      pageSize,
-      includeAll,
-      filters,
-      raw: Object.fromEntries(sp.entries()),
-    });
+    const photos = hasFilters
+      ? await prisma.photo.findMany({
+          select: photoListSelect,
+          orderBy: { createdAt: "desc" },
+        })
+      : await prisma.photo.findMany({
+          select: photoListSelect,
+          orderBy: { createdAt: "desc" },
+          ...(includeAll
+            ? {}
+            : {
+                skip: (page - 1) * pageSize,
+                take: pageSize,
+              }),
+        });
 
-    console.log("[/api/photos] prisma query started", { filters, page, pageSize });
-    const allPhotos = await prisma.photo.findMany({
-      orderBy: { createdAt: "desc" },
-    });
+    const filteredPhotos = hasFilters
+      ? photos.filter((photo) =>
+          matchesSelectedValues(photo.metro, filters.metro) &&
+          matchesSelectedValues(photo.spaceType, filters.spaceType) &&
+          matchesSelectedValues(photo.mood, filters.mood) &&
+          matchesSelectedValues(photo.atmosphere, filters.atmosphere),
+        )
+      : photos;
 
-    const filteredPhotos = allPhotos.filter((photo) =>
-      matchesSelectedValues(photo.metro, filters.metro) &&
-      matchesSelectedValues(photo.spaceType, filters.spaceType) &&
-      matchesSelectedValues(photo.mood, filters.mood) &&
-      matchesSelectedValues(photo.atmosphere, filters.atmosphere),
-    );
+    const pagedPhotos =
+      hasFilters && !includeAll
+        ? filteredPhotos.slice((page - 1) * pageSize, page * pageSize)
+        : filteredPhotos;
 
-    const total = filteredPhotos.length;
-    const photos = includeAll
-      ? filteredPhotos
-      : filteredPhotos.slice((page - 1) * pageSize, page * pageSize);
-    console.log("[/api/photos] prisma query finished", {
-      total,
-      page,
-      pageSize,
-      includeAll,
-      returned: photos.length,
-    });
+    const total = hasFilters
+      ? filteredPhotos.length
+      : includeAll
+        ? photos.length
+        : await prisma.photo.count();
 
-    console.log("[/api/photos] photo count", { count: photos.length });
-
-    console.log("[/api/photos] photo url mapping started");
-    const withUrls = photos.map((photo) => ({
+    const withUrls = pagedPhotos.map((photo) => ({
       id: photo.id,
       src: getProxyPhotoUrl(photo.s3Key),
       title: photo.title,
@@ -88,7 +100,6 @@ export async function GET(req: NextRequest) {
       mood: parseStoredMultiValue(photo.mood),
       atmosphere: parseStoredMultiValue(photo.atmosphere),
     }));
-    console.log("[/api/photos] photo url mapping finished", { count: withUrls.length });
 
     return NextResponse.json({
       photos: withUrls,
@@ -106,17 +117,15 @@ export async function GET(req: NextRequest) {
       console.error("[/api/photos] unhandled non-error value in GET", { error });
     }
 
-    return NextResponse.json({ error: "Ошибка сервера" }, { status: 500 });
+    return NextResponse.json({ error: "РћС€РёР±РєР° СЃРµСЂРІРµСЂР°" }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    console.log("[/api/photos] POST entered photos route");
-
     const session = await getSessionUser();
     if (!session) {
-      return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+      return NextResponse.json({ error: "РќРµ Р°РІС‚РѕСЂРёР·РѕРІР°РЅ" }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
@@ -124,7 +133,7 @@ export async function POST(req: NextRequest) {
       select: { email: true },
     });
     if (!user || !isAdminUserEmail(user.email)) {
-      return NextResponse.json({ error: "Нет прав на загрузку" }, { status: 403 });
+      return NextResponse.json({ error: "РќРµС‚ РїСЂР°РІ РЅР° Р·Р°РіСЂСѓР·РєСѓ" }, { status: 403 });
     }
 
     const form = await req.formData();
@@ -153,19 +162,6 @@ export async function POST(req: NextRequest) {
       .map((value) => value.trim())
       .filter(Boolean);
 
-    console.log("[/api/photos] POST parsed form data", {
-      hasFile: !!file,
-      hasTitle: !!title,
-      metroCount: metro.length,
-      lat,
-      lng,
-      spaceTypeCount: spaceType.length,
-      moodCount: mood.length,
-      atmosphereCount: atmosphere.length,
-      fileSize: file?.size,
-      fileType: file?.type,
-    });
-
     if (
       !file ||
       !title ||
@@ -176,7 +172,7 @@ export async function POST(req: NextRequest) {
       !mood.length ||
       !atmosphere.length
     ) {
-      return NextResponse.json({ error: "Заполните все поля" }, { status: 400 });
+      return NextResponse.json({ error: "Р—Р°РїРѕР»РЅРёС‚Рµ РІСЃРµ РїРѕР»СЏ" }, { status: 400 });
     }
 
     if (
@@ -185,7 +181,7 @@ export async function POST(req: NextRequest) {
       )
     ) {
       return NextResponse.json(
-        { error: "Допустимые форматы: JPEG, PNG, WebP" },
+        { error: "Р”РѕРїСѓСЃС‚РёРјС‹Рµ С„РѕСЂРјР°С‚С‹: JPEG, PNG, WebP" },
         { status: 400 },
       );
     }
@@ -193,7 +189,7 @@ export async function POST(req: NextRequest) {
     if (file.size > MAX_UPLOAD_FILE_BYTES) {
       return NextResponse.json(
         {
-          error: `Максимальный размер файла для серверной загрузки: ${MAX_UPLOAD_FILE_LABEL}`,
+          error: `РњР°РєСЃРёРјР°Р»СЊРЅС‹Р№ СЂР°Р·РјРµСЂ С„Р°Р№Р»Р° РґР»СЏ СЃРµСЂРІРµСЂРЅРѕР№ Р·Р°РіСЂСѓР·РєРё: ${MAX_UPLOAD_FILE_LABEL}`,
         },
         { status: 400 },
       );
@@ -203,15 +199,8 @@ export async function POST(req: NextRequest) {
     const s3Key = `photos/${crypto.randomUUID()}.${ext}`;
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    console.log("[/api/photos] POST upload to S3 started", {
-      s3Key,
-      fileType: file.type,
-      fileSize: file.size,
-    });
     await uploadToS3(s3Key, buffer, file.type);
-    console.log("[/api/photos] POST upload to S3 finished", { s3Key });
 
-    console.log("[/api/photos] POST prisma create started");
     const photo = await prisma.photo.create({
       data: {
         s3Key,
@@ -225,7 +214,6 @@ export async function POST(req: NextRequest) {
         uploadedById: session.userId,
       },
     });
-    console.log("[/api/photos] POST prisma create finished", { photoId: photo.id });
 
     return NextResponse.json({
       photo: {
@@ -251,6 +239,6 @@ export async function POST(req: NextRequest) {
       console.error("[/api/photos] unhandled non-error value in POST", { error });
     }
 
-    return NextResponse.json({ error: "Ошибка сервера" }, { status: 500 });
+    return NextResponse.json({ error: "РћС€РёР±РєР° СЃРµСЂРІРµСЂР°" }, { status: 500 });
   }
 }

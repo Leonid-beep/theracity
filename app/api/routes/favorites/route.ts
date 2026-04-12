@@ -5,18 +5,12 @@ import { getSessionUser } from "@/app/lib/auth";
 import { isAdminUserEmail } from "@/app/lib/admin";
 import { parseStoredMultiValue } from "@/app/lib/photoMetadata";
 
-function getRouteSortTimestamp(route: {
-  createdAt: Date;
-  publishedAt: Date | null;
-}): number {
-  return (route.publishedAt ?? route.createdAt).getTime();
-}
-
 export async function GET(req: NextRequest) {
   try {
     const session = await getSessionUser();
-    if (!session)
-      return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+    if (!session) {
+      return NextResponse.json({ error: "РќРµ Р°РІС‚РѕСЂРёР·РѕРІР°РЅ" }, { status: 401 });
+    }
 
     const sp = req.nextUrl.searchParams;
     const page = Math.max(1, Number(sp.get("page")) || 1);
@@ -27,61 +21,82 @@ export async function GET(req: NextRequest) {
     });
     const isAdmin = isAdminUserEmail(actor?.email);
 
-    const favs = await prisma.favoriteRoute.findMany({
-      where: { userId: session.userId },
-      include: {
-        route: {
-          include: {
-            routePhotos: {
-              include: { photo: true },
-              orderBy: { order: "asc" },
+    const [favs, total] = await Promise.all([
+      prisma.favoriteRoute.findMany({
+        where: { userId: session.userId },
+        select: {
+          route: {
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              createdById: true,
+              routePhotos: {
+                select: {
+                  photo: {
+                    select: {
+                      id: true,
+                      s3Key: true,
+                      title: true,
+                      metro: true,
+                      lat: true,
+                      lng: true,
+                    },
+                  },
+                },
+                orderBy: { order: "asc" },
+              },
             },
           },
         },
-      },
-    });
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        orderBy: [
+          { route: { publishedAt: "desc" } },
+          { route: { createdAt: "desc" } },
+        ],
+      }),
+      prisma.favoriteRoute.count({ where: { userId: session.userId } }),
+    ]);
 
-    const sortedFavs = favs.sort(
-      (a, b) => getRouteSortTimestamp(b.route) - getRouteSortTimestamp(a.route),
-    );
-    const total = sortedFavs.length;
-    const pagedFavs = sortedFavs.slice((page - 1) * pageSize, page * pageSize);
-
-    const items = pagedFavs.map((f) => {
-      const photos = f.route.routePhotos.map((rp) => ({
-        id: rp.photo.id,
-        src: getProxyPhotoUrl(rp.photo.s3Key),
-        alt: rp.photo.title,
-        metro: parseStoredMultiValue(rp.photo.metro),
-        address: `${rp.photo.lat}, ${rp.photo.lng}`,
+    const items = favs.map(({ route }) => {
+      const photos = route.routePhotos.map((routePhoto) => ({
+        id: routePhoto.photo.id,
+        src: getProxyPhotoUrl(routePhoto.photo.s3Key),
+        alt: routePhoto.photo.title,
+        metro: parseStoredMultiValue(routePhoto.photo.metro),
+        address: `${routePhoto.photo.lat}, ${routePhoto.photo.lng}`,
       }));
-      const firstPhoto = f.route.routePhotos[0]?.photo;
+      const firstPhoto = route.routePhotos[0]?.photo;
+
       return {
-        id: f.route.id,
-        title: f.route.title,
-        desc: f.route.description,
+        id: route.id,
+        title: route.title,
+        desc: route.description,
         metro: firstPhoto ? parseStoredMultiValue(firstPhoto.metro) : [],
         address: firstPhoto ? `${firstPhoto.lat}, ${firstPhoto.lng}` : "",
         photos,
-        canEdit: isAdmin || f.route.createdById === session.userId,
+        canEdit: isAdmin || route.createdById === session.userId,
       };
     });
 
     return NextResponse.json({ routes: items, total, page, pageSize });
   } catch {
-    return NextResponse.json({ error: "Ошибка сервера" }, { status: 500 });
+    return NextResponse.json({ error: "РћС€РёР±РєР° СЃРµСЂРІРµСЂР°" }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
     const session = await getSessionUser();
-    if (!session)
-      return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+    if (!session) {
+      return NextResponse.json({ error: "РќРµ Р°РІС‚РѕСЂРёР·РѕРІР°РЅ" }, { status: 401 });
+    }
 
     const { routeId } = await req.json();
-    if (!routeId)
-      return NextResponse.json({ error: "routeId обязателен" }, { status: 400 });
+    if (!routeId) {
+      return NextResponse.json({ error: "routeId РѕР±СЏР·Р°С‚РµР»РµРЅ" }, { status: 400 });
+    }
 
     await prisma.favoriteRoute.upsert({
       where: { userId_routeId: { userId: session.userId, routeId } },
@@ -91,19 +106,21 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch {
-    return NextResponse.json({ error: "Ошибка сервера" }, { status: 500 });
+    return NextResponse.json({ error: "РћС€РёР±РєР° СЃРµСЂРІРµСЂР°" }, { status: 500 });
   }
 }
 
 export async function DELETE(req: NextRequest) {
   try {
     const session = await getSessionUser();
-    if (!session)
-      return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+    if (!session) {
+      return NextResponse.json({ error: "РќРµ Р°РІС‚РѕСЂРёР·РѕРІР°РЅ" }, { status: 401 });
+    }
 
     const { routeId } = await req.json();
-    if (!routeId)
-      return NextResponse.json({ error: "routeId обязателен" }, { status: 400 });
+    if (!routeId) {
+      return NextResponse.json({ error: "routeId РѕР±СЏР·Р°С‚РµР»РµРЅ" }, { status: 400 });
+    }
 
     await prisma.favoriteRoute.deleteMany({
       where: { userId: session.userId, routeId },
@@ -111,6 +128,6 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch {
-    return NextResponse.json({ error: "Ошибка сервера" }, { status: 500 });
+    return NextResponse.json({ error: "РћС€РёР±РєР° СЃРµСЂРІРµСЂР°" }, { status: 500 });
   }
 }

@@ -1,5 +1,3 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
 import styles from "./styles.module.css";
@@ -19,6 +17,7 @@ export default function LoginPage() {
               alt=""
               width={70}
               height={70}
+              priority
               className={styles.logoIconImg}
             />
           </span>

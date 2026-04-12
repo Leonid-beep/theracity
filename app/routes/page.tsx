@@ -11,9 +11,16 @@ import OptimizedPhoto from "@/app/ui/OptimizedPhoto";
 import { useResponsivePageSize } from "@/app/lib/useResponsivePageSize";
 import { useCloseDetailsOnOutsideClick } from "@/lib/useCloseDetailsOnOutsideClick";
 import { copyRouteShareLink } from "@/app/lib/locationLinks";
-import RouteFormModal from "./_components/RouteFormModal";
+import {
+  fetchFilterOptions,
+  getEmptyFilterOptions,
+  type FilterOptions,
+} from "@/app/lib/clientFilters";
 
 const RouteModal = dynamic(() => import("./_components/RouteModal"), {
+  ssr: false,
+});
+const RouteFormModal = dynamic(() => import("./_components/RouteFormModal"), {
   ssr: false,
 });
 
@@ -28,13 +35,6 @@ export type RouteItem = {
   coverUrl: string;
   isPublished?: boolean;
   canEdit?: boolean;
-};
-
-type Filters = {
-  metro: string[];
-  spaceType: string[];
-  mood: string[];
-  atmosphere: string[];
 };
 
 function isAllSelected(selected: string[], options: string[]): boolean {
@@ -92,12 +92,7 @@ function RoutesPageContent() {
   } | null>(null);
   const [routeFormSubmitting, setRouteFormSubmitting] = useState(false);
 
-  const [filterOptions, setFilterOptions] = useState<Filters>({
-    metro: [],
-    spaceType: [],
-    mood: [],
-    atmosphere: [],
-  });
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>(getEmptyFilterOptions);
   const [selMetro, setSelMetro] = useState<string[]>([]);
   const [selSpace, setSelSpace] = useState<string[]>([]);
   const [selMood, setSelMood] = useState<string[]>([]);
@@ -115,16 +110,22 @@ function RoutesPageContent() {
   }, [authLoading, router]);
 
   useEffect(() => {
+    if (authLoading) return;
+
+    if (!user) {
+      setLiked(new Set());
+      return;
+    }
+
     fetch("/api/routes/favorites/ids")
       .then((response) => response.json())
       .then((data) => setLiked(new Set(data.ids ?? [])))
       .catch(() => {});
-  }, []);
+  }, [authLoading, user]);
 
   useEffect(() => {
-    fetch("/api/filters")
-      .then((response) => response.json())
-      .then((data: Filters) => {
+    fetchFilterOptions()
+      .then((data) => {
         setFilterOptions(data);
 
         if (!filtersInitialized) {

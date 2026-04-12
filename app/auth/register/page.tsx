@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import styles from "./styles.module.css";
 import { useAuth } from "@/app/providers/AuthProvider";
 
-export default function RegisterPage() {
+function RegisterPageContent() {
+  const searchParams = useSearchParams();
   const { register } = useAuth();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -14,11 +16,7 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; username?: string }>({});
   const [submitting, setSubmitting] = useState(false);
-  const [returnTo, setReturnTo] = useState<string | null>(null);
-
-  useEffect(() => {
-    setReturnTo(new URLSearchParams(window.location.search).get("returnTo"));
-  }, []);
+  const returnTo = searchParams.get("returnTo");
 
   const loginHref =
     returnTo != null && returnTo !== ""
@@ -122,5 +120,13 @@ export default function RegisterPage() {
         </Link>
       </p>
     </main>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<main className={styles.root} />}>
+      <RegisterPageContent />
+    </Suspense>
   );
 }
