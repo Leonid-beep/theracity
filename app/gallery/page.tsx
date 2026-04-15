@@ -16,6 +16,7 @@ import {
   getEmptyFilterOptions,
   type FilterOptions,
 } from "@/app/lib/clientFilters";
+import { invalidateRouteOptionsCache } from "@/app/lib/clientRouteOptions";
 
 const PhotoModals = dynamic(() => import("./_components/PhotoModals"), {
   ssr: false,
@@ -150,6 +151,8 @@ function GalleryPageContent() {
 
   useEffect(() => {
     if (!createdRouteId) return;
+
+    invalidateRouteOptionsCache();
 
     showSuccess("Маршрут создан. Теперь откройте фото и добавьте его в маршрут.");
     replaceGallerySearch((params) => {

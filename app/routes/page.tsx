@@ -16,6 +16,7 @@ import {
   getEmptyFilterOptions,
   type FilterOptions,
 } from "@/app/lib/clientFilters";
+import { invalidateRouteOptionsCache } from "@/app/lib/clientRouteOptions";
 
 const RouteModal = dynamic(() => import("./_components/RouteModal"), {
   ssr: false,
@@ -154,6 +155,7 @@ function RoutesPageContent() {
 
   const handleRouteDeleted = useCallback(
     (routeId: string) => {
+      invalidateRouteOptionsCache();
       showSuccess("Маршрут удалён");
       setRoutes((prev) => prev.filter((route) => route.id !== routeId));
       setTotal((currentTotal) => Math.max(0, currentTotal - 1));
@@ -396,6 +398,7 @@ function RoutesPageContent() {
         });
 
         if (response.ok) {
+          invalidateRouteOptionsCache();
           showSuccess("Маршрут создан");
           const data = (await response.json().catch(() => ({}))) as {
             route?: { id?: string };
@@ -426,6 +429,8 @@ function RoutesPageContent() {
       });
 
       if (!response.ok) return;
+
+      invalidateRouteOptionsCache();
 
       const data = (await response.json().catch(() => ({}))) as {
         route?: RouteItem;

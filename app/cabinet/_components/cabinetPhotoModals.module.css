@@ -1081,7 +1081,8 @@
     top: auto;
     bottom: auto;
     transform: none;
-    margin-top: 22px;
+    align-self: center;
+    margin: 22px auto 0;
     padding-bottom: 12px;
     width: min(260px, calc(100% - 28px));
     max-width: 100%;
@@ -1245,7 +1246,7 @@
     font-size: 14px;
   }
   .pickPagination {
-    margin-top: 20px;
+    margin: 20px auto 0;
     padding-bottom: 14px;
   }
   .pickConfirm {
