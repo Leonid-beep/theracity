@@ -33,7 +33,7 @@ export default function PhotoModals(props: {
   onToggleLike: (photoId: string) => void;
   isAdmin?: boolean;
   isAuthenticated?: boolean;
-  onRequireAuth?: () => void;
+  onRequireAuth?: (photoId?: string | null) => void;
   onPhotoDeleted?: (photoId: string) => void;
   onPhotoUpdated?: (photo: PhotoItem) => void;
   onActionSuccess?: (message: string) => void;
@@ -150,7 +150,7 @@ export default function PhotoModals(props: {
     breakShareLink(activePhoto);
 
     if (!isAuthenticated) {
-      onRequireAuth?.();
+      onRequireAuth?.(activePhoto?.id);
       return;
     }
 
@@ -225,7 +225,7 @@ export default function PhotoModals(props: {
     if (!pickedRouteId || !activePhoto) return;
     breakShareLink(activePhoto);
     if (!isAuthenticated) {
-      onRequireAuth?.();
+      onRequireAuth?.(activePhoto.id);
       return;
     }
 
@@ -251,7 +251,7 @@ export default function PhotoModals(props: {
     if (!activePhoto) return;
     breakShareLink(activePhoto);
     if (!isAuthenticated) {
-      onRequireAuth?.();
+      onRequireAuth?.(activePhoto.id);
       return;
     }
 

@@ -72,8 +72,6 @@ function RoutesPageContent() {
   const isAdmin = user?.isAdmin ?? false;
   const { message: successMsg, showSuccess } = useSuccessToast();
 
-  const returnToRoutes = "/routes";
-
   const [routes, setRoutes] = useState<RouteItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -105,10 +103,23 @@ function RoutesPageContent() {
   const filterRef = useRef<HTMLElement>(null);
   useCloseDetailsOnOutsideClick(filterRef, "routes-filters");
 
-  const requireAuth = useCallback(() => {
-    if (authLoading) return;
-    router.push(`/auth/login?returnTo=${encodeURIComponent(returnToRoutes)}`);
-  }, [authLoading, router]);
+  const buildRouteReturnTo = useCallback(
+    (routeId?: string | null) => {
+      const targetRouteId = routeId ?? activeRoute?.id ?? sharedRouteId;
+      return targetRouteId
+        ? `/routes?routeId=${encodeURIComponent(targetRouteId)}`
+        : "/routes";
+    },
+    [activeRoute?.id, sharedRouteId],
+  );
+
+  const requireAuth = useCallback(
+    (routeId?: string | null) => {
+      if (authLoading) return;
+      router.push(`/auth/login?returnTo=${encodeURIComponent(buildRouteReturnTo(routeId))}`);
+    },
+    [authLoading, buildRouteReturnTo, router],
+  );
 
   useEffect(() => {
     if (authLoading) return;
@@ -153,22 +164,6 @@ function RoutesPageContent() {
     router.replace(nextQuery ? `/routes?${nextQuery}` : "/routes", { scroll: false });
   }, [router, searchParams, sharedRouteId]);
 
-  const handleRouteDeleted = useCallback(
-    (routeId: string) => {
-      invalidateRouteOptionsCache();
-      showSuccess("Маршрут удалён");
-      setRoutes((prev) => prev.filter((route) => route.id !== routeId));
-      setTotal((currentTotal) => Math.max(0, currentTotal - 1));
-      setLiked((prev) => {
-        const next = new Set(prev);
-        next.delete(routeId);
-        return next;
-      });
-      closeRouteModal();
-    },
-    [closeRouteModal, showSuccess],
-  );
-
   const fetchRoutes = useCallback(
     async (nextPage: number, filters: Record<string, string>) => {
       const requestId = ++fetchRequestIdRef.current;
@@ -202,6 +197,32 @@ function RoutesPageContent() {
       }
     },
     [pageSize],
+  );
+
+  const handleRouteDeleted = useCallback(
+    (routeId: string) => {
+      const nextTotal = Math.max(0, total - 1);
+      const nextTotalPages = Math.max(1, Math.ceil(nextTotal / pageSize));
+      const nextPage = Math.min(page, nextTotalPages);
+
+      invalidateRouteOptionsCache();
+      showSuccess("Маршрут удалён");
+      setRoutes((prev) => prev.filter((route) => route.id !== routeId));
+      setTotal(nextTotal);
+      setLiked((prev) => {
+        const next = new Set(prev);
+        next.delete(routeId);
+        return next;
+      });
+      closeRouteModal();
+
+      if (nextPage !== page) {
+        setPage(nextPage);
+      } else {
+        void fetchRoutes(nextPage, appliedFilters);
+      }
+    },
+    [appliedFilters, closeRouteModal, fetchRoutes, page, pageSize, showSuccess, total],
   );
 
   useEffect(() => {
@@ -310,7 +331,7 @@ function RoutesPageContent() {
     if (authLoading) return;
 
     if (!user) {
-      requireAuth();
+      requireAuth(routeId);
       return;
     }
 
@@ -376,7 +397,7 @@ function RoutesPageContent() {
     if (!routeForm || routeFormSubmitting || authLoading) return;
 
     if (!user) {
-      requireAuth();
+      requireAuth(routeForm.routeId ?? activeRoute?.id);
       return;
     }
 

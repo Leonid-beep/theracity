@@ -75,8 +75,6 @@ function GalleryPageContent() {
   const { user, loading: authLoading } = useAuth();
   const isAdmin = user?.isAdmin ?? false;
 
-  const returnToGallery = "/gallery";
-
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [allPhotos, setAllPhotos] = useState<PhotoItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -111,10 +109,23 @@ function GalleryPageContent() {
   const filterRef = useRef<HTMLElement>(null);
   useCloseDetailsOnOutsideClick(filterRef, "gallery-filters");
 
-  const requireAuth = useCallback(() => {
-    if (authLoading) return;
-    router.push(`/auth/login?returnTo=${encodeURIComponent(returnToGallery)}`);
-  }, [authLoading, router]);
+  const buildPhotoReturnTo = useCallback(
+    (photoId?: string | null) => {
+      const targetPhotoId = photoId ?? selected?.id ?? sharedPhotoId;
+      return targetPhotoId
+        ? `/gallery?photoId=${encodeURIComponent(targetPhotoId)}`
+        : "/gallery";
+    },
+    [selected?.id, sharedPhotoId],
+  );
+
+  const requireAuth = useCallback(
+    (photoId?: string | null) => {
+      if (authLoading) return;
+      router.push(`/auth/login?returnTo=${encodeURIComponent(buildPhotoReturnTo(photoId))}`);
+    },
+    [authLoading, buildPhotoReturnTo, router],
+  );
 
   const replaceGallerySearch = useCallback(
     (mutate: (params: URLSearchParams) => void) => {
@@ -391,17 +402,35 @@ function GalleryPageContent() {
   };
 
   const handlePhotoDeleted = useCallback((photoId: string) => {
+    const nextTotal = Math.max(0, total - 1);
+    const nextTotalPages = Math.max(1, Math.ceil(nextTotal / pageSize));
+    const nextPage = Math.min(page, nextTotalPages);
+
     resetSharedPhotoLink();
     setPhotos((prev) => prev.filter((photo) => photo.id !== photoId));
     setAllPhotos((prev) => prev.filter((photo) => photo.id !== photoId));
-    setTotal((currentTotal) => Math.max(0, currentTotal - 1));
+    setTotal(nextTotal);
     setLiked((prev) => {
       const next = new Set(prev);
       next.delete(photoId);
       return next;
     });
     setSelected(null);
-  }, [resetSharedPhotoLink]);
+    if (nextPage !== page) {
+      setPage(nextPage);
+    } else {
+      void fetchPagePhotos(nextPage, appliedFilters);
+    }
+    void fetchAllPhotos(appliedFilters);
+  }, [
+    appliedFilters,
+    fetchAllPhotos,
+    fetchPagePhotos,
+    page,
+    pageSize,
+    resetSharedPhotoLink,
+    total,
+  ]);
 
   const handlePhotoUpdated = useCallback((updatedPhoto: PhotoItem) => {
     setPhotos((prev) =>
@@ -419,7 +448,7 @@ function GalleryPageContent() {
     if (authLoading) return;
 
     if (!user) {
-      requireAuth();
+      requireAuth(photoId);
       return;
     }
 

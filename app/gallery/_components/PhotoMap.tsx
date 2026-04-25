@@ -28,9 +28,9 @@ const DESKTOP_MARKER_DIMENSIONS: MarkerDimensions = {
   radius: 12,
 };
 const MOBILE_MARKER_DIMENSIONS: MarkerDimensions = {
-  width: 50,
-  height: 67,
-  radius: 10,
+  width: 38,
+  height: 51,
+  radius: 8,
 };
 const DUPLICATE_POINT_RADIUS = 0.00018;
 
