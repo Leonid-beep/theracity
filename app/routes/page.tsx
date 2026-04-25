@@ -534,19 +534,15 @@ function RoutesPageContent() {
         <span className={styles.mark}>Посмотрите</span> маршруты пользователей
       </h1>
 
-      <button
-        type="button"
-        className={styles.createBtn}
-        onClick={() => {
-          if (!user) {
-            requireAuth();
-            return;
-          }
-          openCreateRouteForm();
-        }}
-      >
-        Создать новый маршрут
-      </button>
+      {user ? (
+        <button
+          type="button"
+          className={styles.createBtn}
+          onClick={openCreateRouteForm}
+        >
+          Создать новый маршрут
+        </button>
+      ) : null}
 
       <div className={styles.wrap}>
         <section className={styles.gallery}>
@@ -556,8 +552,10 @@ function RoutesPageContent() {
                 Загрузка...
               </p>
             ) : routes.length === 0 ? (
-              <p style={{ gridColumn: "1 / -1", textAlign: "center", color: "#111" }}>
-                Пока нет маршрутов
+              <p className={styles.emptyState}>
+                {hasAppliedFilters
+                  ? "По заданным фильтрам ничего не найдено"
+                  : "Пока нет маршрутов"}
               </p>
             ) : (
               routes.map((route) => {

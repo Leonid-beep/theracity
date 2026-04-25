@@ -511,6 +511,12 @@ function GalleryPageContent() {
               <p style={{ gridColumn: "1 / -1", textAlign: "center", color: "#fff" }}>
                 Загрузка...
               </p>
+            ) : photos.length === 0 ? (
+              <p className={styles.emptyState}>
+                {hasAppliedFilters
+                  ? "По заданным фильтрам ничего не найдено"
+                  : "Пока нет фотографий"}
+              </p>
             ) : (
               photos.map((photo) => (
                 <figure
