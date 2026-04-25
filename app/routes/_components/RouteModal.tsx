@@ -41,8 +41,6 @@ export default function RouteModal({
   onToggleLike,
   onClose,
   isAdmin,
-  isAuthenticated,
-  onRequireAuth,
   onShare,
   onEdit,
   onRouteDeleted,
@@ -53,8 +51,6 @@ export default function RouteModal({
   onToggleLike: (routeId: string) => void;
   onClose: () => void;
   isAdmin?: boolean;
-  isAuthenticated?: boolean;
-  onRequireAuth?: (routeId?: string | null) => void;
   onShare?: (routeId: string) => void;
   onEdit?: (route: RouteItem) => void;
   onRouteDeleted?: (routeId: string) => void;
@@ -417,13 +413,7 @@ export default function RouteModal({
             <button
               type="button"
               className={styles.bigBtn}
-              onClick={() => {
-                if (!isAuthenticated) {
-                  onRequireAuth?.(activeRoute.id);
-                  return;
-                }
-                onShare?.(activeRoute.id);
-              }}
+              onClick={() => onShare?.(activeRoute.id)}
             >
               <Image
                 src="/images/city/share.png"

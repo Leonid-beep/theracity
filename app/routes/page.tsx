@@ -792,8 +792,6 @@ function RoutesPageContent() {
           onToggleLike={toggleLike}
           onClose={closeRouteModal}
           isAdmin={isAdmin}
-          isAuthenticated={!!user}
-          onRequireAuth={requireAuth}
           onShare={(routeId) => void handleShareRoute(routeId)}
           onEdit={openEditRouteForm}
           onRouteDeleted={handleRouteDeleted}
