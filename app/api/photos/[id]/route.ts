@@ -75,16 +75,24 @@ export async function DELETE(
     const s3Key = photo.s3Key;
 
     await prisma.$transaction(async (tx) => {
-      if (isAdmin) {
-        const links = await tx.routePhoto.findMany({
-          where: { photoId: id },
-          select: { routeId: true },
-        });
-        const routeIds = [...new Set(links.map((link) => link.routeId))];
+      const links = await tx.routePhoto.findMany({
+        where: { photoId: id },
+        select: { routeId: true },
+      });
+      const routeIds = [...new Set(links.map((link) => link.routeId))];
 
-        if (routeIds.length > 0) {
-          await tx.route.deleteMany({ where: { id: { in: routeIds } } });
-        }
+      if (routeIds.length > 0) {
+        await tx.routePhoto.deleteMany({ where: { photoId: id } });
+        await tx.route.updateMany({
+          where: {
+            id: { in: routeIds },
+            routePhotos: { none: {} },
+          },
+          data: {
+            isPublished: false,
+            publishedAt: null,
+          },
+        });
       }
 
       await tx.photo.delete({ where: { id } });
