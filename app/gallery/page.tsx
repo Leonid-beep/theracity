@@ -758,10 +758,15 @@ function GalleryPageContent() {
         <UploadPhotoModal
           open
           onClose={() => setUploadOpen(false)}
-          onUploaded={() => {
+          onUploaded={(_, uploadedPhotos) => {
             void fetchPagePhotos(page, appliedFilters);
             void fetchAllPhotos(appliedFilters);
-            showSuccess("Фото загружено");
+            const uploadedCount = uploadedPhotos?.length ?? 1;
+            showSuccess(
+              uploadedCount > 1
+                ? `Загружено фото: ${uploadedCount}`
+                : "Фото загружено",
+            );
           }}
         />
       ) : null}

@@ -40,6 +40,11 @@
   z-index: 10;
 }
 
+.closeBtn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 .closeBtn::before,
 .closeBtn::after {
   content: "";
@@ -145,6 +150,89 @@
   max-height: 300px;
   object-fit: contain;
   display: block;
+}
+
+.batchArea {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.batchHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.batchCount {
+  min-width: 0;
+  font-family: var(--font-button);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  color: #111;
+  text-transform: uppercase;
+}
+
+.addMoreBtn {
+  flex: 0 0 auto;
+  height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.74);
+  padding: 0 14px;
+  cursor: pointer;
+  font-family: var(--font-button);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: #111;
+}
+
+.addMoreBtn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.draftPager {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.draftPage {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  background: rgba(255, 255, 255, 0.65);
+  cursor: pointer;
+  font-family: var(--font-button);
+  font-size: 12px;
+  letter-spacing: 0;
+  color: #111;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    transform 0.2s;
+}
+
+.draftPage:hover {
+  transform: translateY(-1px);
+}
+
+.draftPageActive {
+  border-color: #111;
+  background: #e0dab4;
+}
+
+.draftPageReady {
+  box-shadow: inset 0 -3px 0 rgba(34, 132, 88, 0.58);
+}
+
+.draftPagePending {
+  box-shadow: inset 0 -3px 0 rgba(238, 10, 10, 0.42);
 }
 
 .removePreview {
@@ -305,6 +393,13 @@
   cursor: default;
 }
 
+.batchStatus {
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: #555;
+  text-align: center;
+}
+
 .progressBar {
   width: 100%;
   height: 6px;
@@ -363,6 +458,14 @@
     min-height: 180px;
   }
 
+  .batchArea {
+    gap: 10px;
+  }
+
+  .batchCount {
+    font-size: 12px;
+  }
+
   .label {
     font-size: 13px;
   }
@@ -397,6 +500,12 @@
 
   .dropzoneHint {
     font-size: 14px;
+  }
+
+  .addMoreBtn {
+    height: 32px;
+    font-size: 11px;
+    padding: 0 12px;
   }
 
   .label {
@@ -462,6 +571,16 @@
   .multiMenu {
     max-height: 220px;
   }
+
+  .draftPager {
+    gap: 7px;
+  }
+
+  .draftPage {
+    width: 28px;
+    height: 28px;
+    font-size: 11px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -498,6 +617,16 @@
     font-size: 10px;
   }
 
+  .batchHeader {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .addMoreBtn {
+    width: 100%;
+  }
+
   .label {
     font-size: 11px;
   }
@@ -529,6 +658,10 @@
 
   .submitBtn {
     height: 40px;
+    font-size: 12px;
+  }
+
+  .batchStatus {
     font-size: 12px;
   }
 }
