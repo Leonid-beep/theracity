@@ -21,7 +21,7 @@ export type CabinetRouteItem = {
   isPublished?: boolean;
   metro: string[];
   address: string;
-  photos: { id: string; src: string; alt: string; metro?: string[]; address?: string }[];
+  photos: { id: string; src: string; alt: string; metro?: string[]; address?: string; uploaderUsername?: string }[];
   canEdit?: boolean;
 };
 
@@ -50,6 +50,7 @@ export default function CabinetRouteModal({
   const hasPhotos = photos.length > 0;
   const totalPages = photos.length;
   const [page, setPage] = useState(1);
+  const [landscapePhotoIds, setLandscapePhotoIds] = useState<Record<string, boolean>>({});
   const index = hasPhotos ? page - 1 : 0;
   const main = hasPhotos ? (photos[index] ?? photos[0]) : undefined;
   const prev = hasPhotos && index - 1 >= 0 ? photos[index - 1] : null;
@@ -100,16 +101,6 @@ export default function CabinetRouteModal({
     return result;
   }, [page, totalPages, hasPhotos]);
 
-  if (!open || !route) return null;
-  const mapsUrl = buildYandexMapsUrlFromString(main?.address ?? route.address);
-  const routeMapsUrl = buildYandexMapsRouteUrlFromStrings(
-    photos.map((photo) => photo.address),
-  );
-  const canEdit = Boolean(route.canEdit);
-  const mainPhotoUrl = main
-    ? getOptimizedPhotoUrl(main.src, ROUTE_MODAL_PHOTO_WIDTH, ROUTE_MODAL_PHOTO_QUALITY)
-    : null;
-
   useEffect(() => {
     if (!open) return;
 
@@ -121,6 +112,24 @@ export default function CabinetRouteModal({
       preloadOptimizedPhoto(next.src, ROUTE_MODAL_PHOTO_WIDTH, ROUTE_MODAL_PHOTO_QUALITY);
     }
   }, [next?.src, open, prev?.src]);
+
+  if (!open || !route) return null;
+  const mapsUrl = buildYandexMapsUrlFromString(main?.address ?? route.address);
+  const routeMapsUrl = buildYandexMapsRouteUrlFromStrings(
+    photos.map((photo) => photo.address),
+  );
+  const canEdit = Boolean(route.canEdit);
+  const mainPhotoUrl = main
+    ? getOptimizedPhotoUrl(main.src, ROUTE_MODAL_PHOTO_WIDTH, ROUTE_MODAL_PHOTO_QUALITY)
+    : null;
+  const mainPhotoUploader = main?.uploaderUsername?.trim() ?? "";
+  const isMainPhotoLandscape = !!main && landscapePhotoIds[main.id] === true;
+  const rememberPhotoOrientation = (photoId: string, image: HTMLImageElement) => {
+    const isLandscape = image.naturalWidth > image.naturalHeight;
+    setLandscapePhotoIds((prev) =>
+      prev[photoId] === isLandscape ? prev : { ...prev, [photoId]: isLandscape },
+    );
+  };
 
   return (
     <div className={styles.overlay} onClick={onClose} role="presentation">
@@ -143,7 +152,7 @@ export default function CabinetRouteModal({
 
         <div className={styles.routeDesc}>{route.desc}</div>
 
-        <div className={styles.photoRow}>
+        <div className={`${styles.photoRow} ${isMainPhotoLandscape ? styles.photoRowLandscape : ""}`}>
           {prev ? (
             <button
               type="button"
@@ -165,17 +174,18 @@ export default function CabinetRouteModal({
             <div className={`${styles.sideThumb} ${styles.sideThumbEmpty}`} aria-hidden="true" />
           )}
 
-          <div className={styles.mainPhoto}>
+          <div className={`${styles.mainPhoto} ${isMainPhotoLandscape ? styles.mainPhotoLandscape : ""}`}>
             {hasPhotos && main && mainPhotoUrl ? (
               <Image
                 src={mainPhotoUrl}
                 alt={main.alt}
                 width={300}
                 height={375}
-                sizes="300px"
+                sizes={isMainPhotoLandscape ? "(max-width: 768px) calc(100vw - 100px), 360px" : "300px"}
                 className={styles.mainImg}
                 unoptimized
                 loading="eager"
+                onLoad={(event) => rememberPhotoOrientation(main.id, event.currentTarget)}
               />
             ) : (
               <p className={styles.emptyRoutePhotos}>В этом маршруте пока нет фотографий</p>
@@ -276,6 +286,11 @@ export default function CabinetRouteModal({
         </div>
 
         <div className={styles.meta}>
+          {mainPhotoUploader ? (
+            <div className={styles.photoAuthorLine} title={`Фото добавил ${mainPhotoUploader}`}>
+              Фото от <span>{mainPhotoUploader}</span>
+            </div>
+          ) : null}
           <div>Метро: {formatMultiValue(main?.metro ?? route.metro) || "—"}</div>
           <div>
             Адрес:{" "}

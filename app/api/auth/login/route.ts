@@ -56,6 +56,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!user.emailVerified) {
+      console.log("[/api/auth/login] email is not verified", { userId: user.id });
+      return NextResponse.json(
+        { errors: ["Подтвердите email, чтобы войти"] },
+        { status: 403 },
+      );
+    }
+
     console.log("[/api/auth/login] token/session creation started", { userId: user.id });
     const response = NextResponse.json({
       user: {

@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
                   metro: true,
                   lat: true,
                   lng: true,
+                  uploadedBy: { select: { username: true } },
                 },
               },
             },
@@ -53,6 +54,7 @@ export async function GET(req: NextRequest) {
         alt: routePhoto.photo.title,
         metro: parseStoredMultiValue(routePhoto.photo.metro),
         address: `${routePhoto.photo.lat}, ${routePhoto.photo.lng}`,
+        uploaderUsername: routePhoto.photo.uploadedBy.username,
       }));
       const firstPhoto = route.routePhotos[0]?.photo;
 

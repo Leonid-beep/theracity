@@ -41,6 +41,7 @@ export type PhotoItem = {
   spaceType: string[];
   mood: string[];
   atmosphere: string[];
+  uploaderUsername?: string;
 };
 
 function isAllSelected(selected: string[], options: string[]): boolean {

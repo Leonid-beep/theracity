@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
               spaceType: true,
               mood: true,
               atmosphere: true,
+              uploadedBy: { select: { username: true } },
             },
           },
         },
@@ -51,6 +52,7 @@ export async function GET(req: NextRequest) {
       spaceType: parseStoredMultiValue(photo.spaceType),
       mood: parseStoredMultiValue(photo.mood),
       atmosphere: parseStoredMultiValue(photo.atmosphere),
+      uploaderUsername: photo.uploadedBy.username,
     }));
 
     return NextResponse.json({ photos, total, page, pageSize });

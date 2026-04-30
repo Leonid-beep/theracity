@@ -22,6 +22,7 @@ type RouteWithPhotos = {
       metro: string;
       lat: number;
       lng: number;
+      uploadedBy?: { username: string | null } | null;
     };
   }>;
 };
@@ -33,6 +34,7 @@ function formatRouteResponse(route: RouteWithPhotos, canEdit: boolean) {
     alt: routePhoto.photo.title,
     metro: parseStoredMultiValue(routePhoto.photo.metro),
     address: `${routePhoto.photo.lat}, ${routePhoto.photo.lng}`,
+    uploaderUsername: routePhoto.photo.uploadedBy?.username ?? "",
   }));
   const firstPhoto = route.routePhotos[0]?.photo;
 
@@ -84,7 +86,11 @@ export async function GET(
       include: {
         createdBy: { select: { username: true } },
         routePhotos: {
-          include: { photo: true },
+          include: {
+            photo: {
+              include: { uploadedBy: { select: { username: true } } },
+            },
+          },
           orderBy: { order: "asc" },
         },
       },
@@ -251,7 +257,11 @@ export async function PATCH(
           include: {
             createdBy: { select: { username: true } },
             routePhotos: {
-              include: { photo: true },
+              include: {
+                photo: {
+                  include: { uploadedBy: { select: { username: true } } },
+                },
+              },
               orderBy: { order: "asc" },
             },
           },

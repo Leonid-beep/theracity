@@ -278,6 +278,12 @@ export default function UploadPhotoModal({
   }, [open, isEditMode, initialPhoto, resetForm, resetCreateDrafts]);
 
   useEffect(() => {
+    if (!error) return;
+    const timeoutId = window.setTimeout(() => setError(""), 5000);
+    return () => window.clearTimeout(timeoutId);
+  }, [error]);
+
+  useEffect(() => {
     if (activeIndex < drafts.length || drafts.length === 0) return;
     setActiveIndex(drafts.length - 1);
   }, [activeIndex, drafts.length]);

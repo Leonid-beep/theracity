@@ -20,7 +20,10 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const photo = await prisma.photo.findUnique({ where: { id } });
+    const photo = await prisma.photo.findUnique({
+      where: { id },
+      include: { uploadedBy: { select: { username: true } } },
+    });
 
     if (!photo) {
       return NextResponse.json({ error: "Фото не найдено" }, { status: 404 });
@@ -38,6 +41,7 @@ export async function GET(
         spaceType: parseStoredMultiValue(photo.spaceType),
         mood: parseStoredMultiValue(photo.mood),
         atmosphere: parseStoredMultiValue(photo.atmosphere),
+        uploaderUsername: photo.uploadedBy.username,
       },
     });
   } catch {
@@ -165,6 +169,7 @@ export async function PATCH(
         mood: serializeMultiValue(mood),
         atmosphere: serializeMultiValue(atmosphere),
       },
+      include: { uploadedBy: { select: { username: true } } },
     });
 
     return NextResponse.json({
@@ -179,6 +184,7 @@ export async function PATCH(
         spaceType: parseStoredMultiValue(updated.spaceType),
         mood: parseStoredMultiValue(updated.mood),
         atmosphere: parseStoredMultiValue(updated.atmosphere),
+        uploaderUsername: updated.uploadedBy.username,
       },
     });
   } catch {

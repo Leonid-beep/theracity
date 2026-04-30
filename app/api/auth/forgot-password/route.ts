@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import nodemailer from "nodemailer";
 import { prisma } from "@/app/lib/prisma";
+import {
+  AUTH_CODE_TTL_MS,
+  createSixDigitAuthCode,
+  sendAuthCodeEmail,
+} from "@/app/lib/authEmail";
+
+export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,22 +20,14 @@ export async function POST(req: NextRequest) {
       : null;
 
     if (user) {
-      const code = String(Math.floor(100000 + Math.random() * 900000));
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+      const code = createSixDigitAuthCode();
+      const expiresAt = new Date(Date.now() + AUTH_CODE_TTL_MS);
 
       await prisma.passwordReset.create({
         data: { userId: user.id, code, expiresAt },
       });
 
-      const transport = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: Number(process.env.SMTP_PORT),
-        secure: true,
-        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-      });
-
-      await transport.sendMail({
-        from: process.env.SMTP_USER,
+      await sendAuthCodeEmail({
         to: user.email,
         subject: "Восстановление пароля — TheraCity",
         text: `Ваш код восстановления: ${code}\n\nКод действителен 15 минут.`,

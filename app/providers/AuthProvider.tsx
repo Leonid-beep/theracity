@@ -23,6 +23,13 @@ export type RegisterFailure = {
   fieldErrors?: Partial<{ email: string; username: string }>;
 };
 
+export type RegisterVerificationRequired = {
+  verificationRequired: true;
+  email: string;
+};
+
+export type RegisterResult = RegisterFailure | RegisterVerificationRequired | null;
+
 type AuthCtx = {
   user: User | null;
   loading: boolean;
@@ -38,7 +45,12 @@ type AuthCtx = {
     password: string,
     confirmPassword: string,
     returnTo?: string | null,
-  ) => Promise<RegisterFailure | null>;
+  ) => Promise<RegisterResult>;
+  verifyEmail: (
+    email: string,
+    code: string,
+    returnTo?: string | null,
+  ) => Promise<string[] | null>;
   logout: () => Promise<void>;
 };
 
@@ -48,6 +60,7 @@ const Ctx = createContext<AuthCtx>({
   refreshUser: async () => {},
   login: async () => null,
   register: async () => ({ errors: ["Ошибка регистрации"] }) as RegisterFailure,
+  verifyEmail: async () => ["Ошибка подтверждения email"],
   logout: async () => {},
 });
 
@@ -127,7 +140,7 @@ export default function AuthProvider({
       password: string,
       confirmPassword: string,
       returnTo?: string | null,
-    ): Promise<RegisterFailure | null> => {
+    ): Promise<RegisterResult> => {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -141,6 +154,40 @@ export default function AuthProvider({
           fieldErrors: data.fieldErrors ?? undefined,
         };
       }
+      if (data.verificationRequired) {
+        return {
+          verificationRequired: true,
+          email: String(data.email ?? email),
+        };
+      }
+      const u = data.user;
+      setUser({
+        id: u.id,
+        username: u.username,
+        email: u.email,
+        isAdmin: Boolean(u.isAdmin),
+      });
+      router.replace(safeReturnTo(returnTo));
+      router.refresh();
+      return null;
+    },
+    [router],
+  );
+
+  const verifyEmail = useCallback(
+    async (
+      email: string,
+      code: string,
+      returnTo?: string | null,
+    ): Promise<string[] | null> => {
+      const res = await fetch("/api/auth/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, code }),
+      });
+      const data = await res.json();
+      if (!res.ok) return data.errors ?? ["Ошибка подтверждения email"];
       const u = data.user;
       setUser({
         id: u.id,
@@ -166,7 +213,7 @@ export default function AuthProvider({
   }, [router]);
 
   return (
-    <Ctx.Provider value={{ user, loading, refreshUser, login, register, logout }}>
+    <Ctx.Provider value={{ user, loading, refreshUser, login, register, verifyEmail, logout }}>
       {children}
     </Ctx.Provider>
   );

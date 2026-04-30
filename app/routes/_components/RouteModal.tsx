@@ -18,6 +18,7 @@ type RoutePhoto = {
   alt: string;
   metro?: string[];
   address?: string;
+  uploaderUsername?: string;
 };
 
 const ROUTE_MODAL_PHOTO_WIDTH = 640;
@@ -58,6 +59,7 @@ export default function RouteModal({
   const [photoPage, setPhotoPage] = useState(1);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [landscapePhotoIds, setLandscapePhotoIds] = useState<Record<string, boolean>>({});
 
   const activeRoute = route;
   const photos = activeRoute?.photos ?? [];
@@ -119,6 +121,18 @@ export default function RouteModal({
     return result;
   }, [photoPage, totalPhotos]);
 
+  useEffect(() => {
+    if (!open) return;
+
+    if (prevPhoto?.src) {
+      preloadOptimizedPhoto(prevPhoto.src, ROUTE_MODAL_PHOTO_WIDTH, ROUTE_MODAL_PHOTO_QUALITY);
+    }
+
+    if (nextPhoto?.src) {
+      preloadOptimizedPhoto(nextPhoto.src, ROUTE_MODAL_PHOTO_WIDTH, ROUTE_MODAL_PHOTO_QUALITY);
+    }
+  }, [nextPhoto?.src, open, prevPhoto?.src]);
+
   const handleClose = () => {
     setConfirmDeleteOpen(false);
     onClose();
@@ -162,18 +176,14 @@ export default function RouteModal({
   const mainPhotoUrl = mainPhoto
     ? getOptimizedPhotoUrl(mainPhoto.src, ROUTE_MODAL_PHOTO_WIDTH, ROUTE_MODAL_PHOTO_QUALITY)
     : null;
-
-  useEffect(() => {
-    if (!open) return;
-
-    if (prevPhoto?.src) {
-      preloadOptimizedPhoto(prevPhoto.src, ROUTE_MODAL_PHOTO_WIDTH, ROUTE_MODAL_PHOTO_QUALITY);
-    }
-
-    if (nextPhoto?.src) {
-      preloadOptimizedPhoto(nextPhoto.src, ROUTE_MODAL_PHOTO_WIDTH, ROUTE_MODAL_PHOTO_QUALITY);
-    }
-  }, [nextPhoto?.src, open, prevPhoto?.src]);
+  const mainPhotoUploader = mainPhoto?.uploaderUsername?.trim() ?? "";
+  const isMainPhotoLandscape = !!mainPhoto && landscapePhotoIds[mainPhoto.id] === true;
+  const rememberPhotoOrientation = (photoId: string, image: HTMLImageElement) => {
+    const isLandscape = image.naturalWidth > image.naturalHeight;
+    setLandscapePhotoIds((prev) =>
+      prev[photoId] === isLandscape ? prev : { ...prev, [photoId]: isLandscape },
+    );
+  };
 
   return (
     <>
@@ -203,7 +213,7 @@ export default function RouteModal({
 
           <div className={styles.routeDesc}>{activeRoute.desc}</div>
 
-          <div className={styles.photoRow}>
+          <div className={`${styles.photoRow} ${isMainPhotoLandscape ? styles.photoRowLandscape : ""}`}>
             {prevPhoto ? (
               <button
                 type="button"
@@ -225,17 +235,18 @@ export default function RouteModal({
               <div className={`${styles.sideThumb} ${styles.sideThumbEmpty}`} aria-hidden="true" />
             )}
 
-            <div className={styles.mainPhoto}>
+            <div className={`${styles.mainPhoto} ${isMainPhotoLandscape ? styles.mainPhotoLandscape : ""}`}>
               {mainPhoto && mainPhotoUrl ? (
                 <Image
                   src={mainPhotoUrl}
                   alt={mainPhoto.alt}
                   width={300}
                   height={375}
-                  sizes="300px"
+                  sizes={isMainPhotoLandscape ? "(max-width: 768px) calc(100vw - 100px), 360px" : "300px"}
                   className={styles.mainImg}
                   unoptimized
                   loading="eager"
+                  onLoad={(event) => rememberPhotoOrientation(mainPhoto.id, event.currentTarget)}
                 />
               ) : (
                 <p className={styles.emptyRoutePhotos}>В этом маршруте пока нет фотографий</p>
@@ -375,6 +386,11 @@ export default function RouteModal({
           </div>
 
           <div className={styles.meta}>
+            {mainPhotoUploader ? (
+              <div className={styles.photoAuthorLine} title={`Фото добавил ${mainPhotoUploader}`}>
+                Фото от <span>{mainPhotoUploader}</span>
+              </div>
+            ) : null}
             <div>Метро: {formatMultiValue(mainPhoto?.metro ?? activeRoute.metro)}</div>
             <div>
               Адрес:{" "}

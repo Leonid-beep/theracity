@@ -29,6 +29,7 @@ const photoListSelect = {
   spaceType: true,
   mood: true,
   atmosphere: true,
+  uploadedBy: { select: { username: true } },
 } as const;
 
 function getSelectedValues(sp: URLSearchParams, key: FilterKey): string[] {
@@ -99,6 +100,7 @@ export async function GET(req: NextRequest) {
       spaceType: parseStoredMultiValue(photo.spaceType),
       mood: parseStoredMultiValue(photo.mood),
       atmosphere: parseStoredMultiValue(photo.atmosphere),
+      uploaderUsername: photo.uploadedBy.username,
     }));
 
     return NextResponse.json({
@@ -130,7 +132,7 @@ export async function POST(req: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { id: session.userId },
-      select: { email: true },
+      select: { email: true, username: true },
     });
     if (!user || !isAdminUserEmail(user.email)) {
       return NextResponse.json({ error: "РќРµС‚ РїСЂР°РІ РЅР° Р·Р°РіСЂСѓР·РєСѓ" }, { status: 403 });
@@ -227,6 +229,7 @@ export async function POST(req: NextRequest) {
         spaceType,
         mood,
         atmosphere,
+        uploaderUsername: user.username,
       },
     });
   } catch (error) {

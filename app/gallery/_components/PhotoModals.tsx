@@ -58,6 +58,7 @@ export default function PhotoModals(props: {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [landscapePhotoIds, setLandscapePhotoIds] = useState<Record<string, boolean>>({});
 
   const [routes, setRoutes] = useState<RouteOption[]>([]);
   const [routesLoaded, setRoutesLoaded] = useState(false);
@@ -282,6 +283,13 @@ export default function PhotoModals(props: {
     MODAL_PHOTO_WIDTH,
     MODAL_PHOTO_QUALITY,
   );
+  const isActivePhotoLandscape = landscapePhotoIds[activePhoto.id] === true;
+  const rememberPhotoOrientation = (photoId: string, image: HTMLImageElement) => {
+    const isLandscape = image.naturalWidth > image.naturalHeight;
+    setLandscapePhotoIds((prev) =>
+      prev[photoId] === isLandscape ? prev : { ...prev, [photoId]: isLandscape },
+    );
+  };
 
   const handleSharePhoto = async () => {
     breakShareLink(activePhoto);
@@ -301,19 +309,25 @@ export default function PhotoModals(props: {
           <div className={`${styles.modal} ${styles.modalPhoto}`} onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
             <button className={styles.closeBtn} onClick={closeAll} aria-label="Закрыть" type="button" />
             <div className={styles.photoTitle}>{activePhoto.title}</div>
+            {activePhoto.uploaderUsername ? (
+              <div className={styles.photoAuthor} title={`Фото добавил ${activePhoto.uploaderUsername}`}>
+                от <span>{activePhoto.uploaderUsername}</span>
+              </div>
+            ) : null}
 
-            <div className={styles.photoWrap}>
+            <div className={`${styles.photoWrap} ${isActivePhotoLandscape ? styles.photoWrapLandscape : ""}`}>
               <Image
                 key={activePhoto.id}
                 src={activePhotoUrl}
                 alt={activePhoto.title}
                 width={300}
                 height={375}
-                sizes="300px"
+                sizes={isActivePhotoLandscape ? "(max-width: 768px) calc(100vw - 48px), 420px" : "300px"}
                 className={styles.photoImg}
                 unoptimized
                 loading="eager"
                 priority
+                onLoad={(event) => rememberPhotoOrientation(activePhoto.id, event.currentTarget)}
               />
               {isAdmin ? (
                 <>

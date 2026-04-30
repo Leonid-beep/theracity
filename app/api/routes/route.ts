@@ -39,6 +39,7 @@ function mapRouteItem(
         metro: string;
         lat: number;
         lng: number;
+        uploadedBy?: { username: string | null } | null;
       };
     }>;
   },
@@ -51,6 +52,7 @@ function mapRouteItem(
     alt: routePhoto.photo.title,
     metro: parseStoredMultiValue(routePhoto.photo.metro),
     address: `${routePhoto.photo.lat}, ${routePhoto.photo.lng}`,
+    uploaderUsername: routePhoto.photo.uploadedBy?.username ?? "",
   }));
   const firstPhoto = route.routePhotos[0]?.photo;
 
@@ -115,6 +117,7 @@ export async function GET(req: NextRequest) {
                     spaceType: true,
                     mood: true,
                     atmosphere: true,
+                    uploadedBy: { select: { username: true } },
                   },
                 },
               },
@@ -137,6 +140,7 @@ export async function GET(req: NextRequest) {
                     metro: true,
                     lat: true,
                     lng: true,
+                    uploadedBy: { select: { username: true } },
                   },
                 },
               },

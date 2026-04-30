@@ -32,7 +32,7 @@ export type RouteItem = {
   authorUsername: string;
   metro: string[];
   address: string;
-  photos: { id: string; src: string; alt: string; metro?: string[]; address?: string }[];
+  photos: { id: string; src: string; alt: string; metro?: string[]; address?: string; uploaderUsername?: string }[];
   coverUrl: string;
   isPublished?: boolean;
   canEdit?: boolean;

@@ -84,6 +84,26 @@
   overflow-wrap: anywhere;
 }
 
+.photoAuthor {
+  align-self: stretch;
+  margin-top: 4px;
+  padding-right: 44px;
+  box-sizing: border-box;
+  max-width: 100%;
+  font-family: var(--font-text);
+  font-size: 19px;
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  color: rgba(17, 17, 17, 0.82);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.photoAuthor span {
+  font-weight: 500;
+}
+
 .photoWrap {
   position: relative;
   left: auto;
@@ -98,10 +118,24 @@
   box-shadow: 0 14px 28px rgba(0, 0, 0, 0.2);
 }
 
+.photoWrap.photoWrapLandscape {
+  width: min(420px, 100%);
+  height: auto;
+  aspect-ratio: 3 / 2;
+}
+
 .photoImg {
   width: 300px;
   height: 375px;
   object-fit: cover;
+}
+
+.photoWrapLandscape .photoImg {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
 }
 
 .likeDot {
@@ -619,6 +653,10 @@
     font-size: 22px;
     padding-right: 42px;
   }
+  .photoAuthor {
+    font-size: 18px;
+    padding-right: 42px;
+  }
   .photoWrap {
     margin-top: 16px;
     width: 260px;
@@ -758,6 +796,10 @@
   }
   .photoTitle {
     font-size: 20px;
+    padding-right: 40px;
+  }
+  .photoAuthor {
+    font-size: 17px;
     padding-right: 40px;
   }
   .photoWrap {
@@ -931,6 +973,10 @@
     white-space: normal;
     overflow: visible;
     text-overflow: clip;
+  }
+  .photoAuthor {
+    font-size: 16px;
+    padding-right: 32px;
   }
   .photoWrap {
     position: relative;
@@ -1154,6 +1200,10 @@
     white-space: normal;
     overflow: visible;
     text-overflow: clip;
+  }
+  .photoAuthor {
+    font-size: 15px;
+    padding-right: 30px;
   }
   .photoWrap {
     width: min(200px, calc(100vw - 60px));

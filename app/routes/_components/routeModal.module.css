@@ -89,8 +89,12 @@
 }
 
 .routeTitleAuthor {
-  flex: 0 0 auto;
-  font-size: 0.52em;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.64em;
   font-weight: 400;
   letter-spacing: 0.04em;
   line-height: 1.2;
@@ -132,6 +136,12 @@
   box-sizing: border-box;
 }
 
+.photoRow.photoRowLandscape {
+  max-width: 504px;
+  grid-template-columns: 54px minmax(0, 360px) 54px;
+  column-gap: 18px;
+}
+
 .mainPhoto {
   position: relative;
   width: 300px;
@@ -142,10 +152,24 @@
   background: rgba(255, 255, 255, 0.22);
 }
 
+.mainPhoto.mainPhotoLandscape {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 2;
+}
+
 .mainImg {
   width: 300px;
   height: 375px;
   object-fit: cover;
+}
+
+.mainPhotoLandscape .mainImg {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
 }
 
 .emptyRoutePhotos {
@@ -190,6 +214,12 @@
   object-fit: cover;
 }
 
+.photoRowLandscape .sideThumb,
+.photoRowLandscape .sideImg {
+  width: 54px;
+  height: 68px;
+}
+
 .meta {
   position: absolute;
   left: 15px;
@@ -213,6 +243,21 @@
 .metaLink {
   color: inherit;
   text-decoration: underline;
+}
+
+.photoAuthorLine {
+  max-width: 100%;
+  margin-bottom: 6px;
+  font-size: 20px;
+  line-height: 1.2;
+  color: rgba(17, 17, 17, 0.82);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.photoAuthorLine span {
+  font-weight: 500;
 }
 
 .pagination {
@@ -476,6 +521,12 @@
     font-size: 24px;
     max-width: calc(100% - 78px);
   }
+  .routeTitleAuthor {
+    max-width: 48%;
+  }
+  .photoAuthorLine {
+    font-size: 18px;
+  }
   .routeDesc {
     top: calc(19.5px + 24px + 22px);
     max-width: 100%;
@@ -497,6 +548,16 @@
   .sideImg {
     width: 34px;
     height: 43px;
+  }
+  .photoRow.photoRowLandscape {
+    max-width: 336px;
+    grid-template-columns: 28px minmax(0, 272px) 28px;
+    column-gap: 4px;
+  }
+  .photoRowLandscape .sideThumb,
+  .photoRowLandscape .sideImg {
+    width: 28px;
+    height: 35px;
   }
   .meta {
     top: calc(19.5px + 24px + 22px + 4.2em + 14px + 325px + 24px);
@@ -547,6 +608,9 @@
     font-size: 22px;
     max-width: calc(100% - 72px);
   }
+  .photoAuthorLine {
+    font-size: 17px;
+  }
   .routeDesc {
     top: calc(16px + 22px + 14px);
     width: calc(100% - 28px);
@@ -567,6 +631,16 @@
   }
   .sideThumb,
   .sideImg {
+    width: 28px;
+    height: 35px;
+  }
+  .photoRow.photoRowLandscape {
+    max-width: 302px;
+    grid-template-columns: 28px minmax(0, 240px) 28px;
+    column-gap: 3px;
+  }
+  .photoRowLandscape .sideThumb,
+  .photoRowLandscape .sideImg {
     width: 28px;
     height: 35px;
   }
@@ -651,6 +725,12 @@
     font-size: 20px;
     min-width: 0;
   }
+  .routeTitleAuthor {
+    max-width: 50%;
+  }
+  .photoAuthorLine {
+    font-size: 16px;
+  }
 
   .routeDesc {
     position: relative;
@@ -688,6 +768,16 @@
 
   .sideThumb,
   .sideImg {
+    width: 26px;
+    height: 33px;
+  }
+  .photoRow.photoRowLandscape {
+    max-width: 284px;
+    grid-template-columns: 26px minmax(0, 220px) 26px;
+    column-gap: 6px;
+  }
+  .photoRowLandscape .sideThumb,
+  .photoRowLandscape .sideImg {
     width: 26px;
     height: 33px;
   }
@@ -801,6 +891,9 @@
     overflow: visible;
     text-overflow: clip;
   }
+  .routeTitleAuthor {
+    max-width: 100%;
+  }
 
   .routeTitleMain {
     white-space: normal;
@@ -830,8 +923,21 @@
     width: 42px;
     height: 53px;
   }
+  .photoRow.photoRowLandscape {
+    max-width: 100%;
+    grid-template-columns: 42px minmax(0, min(200px, calc(100vw - 100px))) 42px;
+    column-gap: 8px;
+  }
+  .photoRowLandscape .sideThumb,
+  .photoRowLandscape .sideImg {
+    width: 42px;
+    height: 53px;
+  }
 
   .meta {
+    font-size: 15px;
+  }
+  .photoAuthorLine {
     font-size: 15px;
   }
 

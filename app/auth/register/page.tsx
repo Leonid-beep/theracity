@@ -5,10 +5,12 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import styles from "./styles.module.css";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { MAX_USERNAME_LENGTH } from "@/app/lib/userValidation";
+import EmailVerificationModal from "./_components/EmailVerificationModal";
 
 function RegisterPageContent() {
   const searchParams = useSearchParams();
-  const { register } = useAuth();
+  const { register, verifyEmail } = useAuth();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -16,6 +18,8 @@ function RegisterPageContent() {
   const [errors, setErrors] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; username?: string }>({});
   const [submitting, setSubmitting] = useState(false);
+  const [verificationOpen, setVerificationOpen] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState("");
   const returnTo = searchParams.get("returnTo");
 
   const loginHref =
@@ -29,8 +33,13 @@ function RegisterPageContent() {
     setSubmitting(true);
     const fail = await register(username, email, password, confirmPassword, returnTo);
     if (fail) {
-      setErrors(fail.errors.filter(Boolean));
-      if (fail.fieldErrors) setFieldErrors(fail.fieldErrors);
+      if ("verificationRequired" in fail) {
+        setVerificationEmail(fail.email);
+        setVerificationOpen(true);
+      } else {
+        setErrors(fail.errors.filter(Boolean));
+        if (fail.fieldErrors) setFieldErrors(fail.fieldErrors);
+      }
     }
     setSubmitting(false);
   };
@@ -65,6 +74,7 @@ function RegisterPageContent() {
                 className={styles.input}
                 placeholder="Value"
                 value={username}
+                maxLength={MAX_USERNAME_LENGTH}
                 onChange={(e) => {
                   setUsername(e.target.value);
                   setFieldErrors((f) => ({ ...f, username: undefined }));
@@ -119,6 +129,12 @@ function RegisterPageContent() {
           <span className={styles.mark}>Войти</span>
         </Link>
       </p>
+
+      <EmailVerificationModal
+        open={verificationOpen}
+        onClose={() => setVerificationOpen(false)}
+        onVerify={(code) => verifyEmail(verificationEmail, code, returnTo)}
+      />
     </main>
   );
 }

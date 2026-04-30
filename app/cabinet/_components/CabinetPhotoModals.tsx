@@ -24,6 +24,7 @@ export type CabinetPhotoItem = {
   coords: string;
   lat?: number;
   lng?: number;
+  uploaderUsername?: string;
 };
 
 type Step = "photo" | "choice" | "pick" | "create";
@@ -60,6 +61,7 @@ export default function CabinetPhotoModals({
   const [pickPage, setPickPage] = useState(1);
   const [pickedRouteId, setPickedRouteId] = useState<string | null>(null);
   const [photoPage, setPhotoPage] = useState(1);
+  const [landscapePhotoIds, setLandscapePhotoIds] = useState<Record<string, boolean>>({});
 
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -236,6 +238,13 @@ export default function CabinetPhotoModals({
     MODAL_PHOTO_WIDTH,
     MODAL_PHOTO_QUALITY,
   );
+  const isActivePhotoLandscape = landscapePhotoIds[activePhoto.id] === true;
+  const rememberPhotoOrientation = (photoId: string, image: HTMLImageElement) => {
+    const isLandscape = image.naturalWidth > image.naturalHeight;
+    setLandscapePhotoIds((prev) =>
+      prev[photoId] === isLandscape ? prev : { ...prev, [photoId]: isLandscape },
+    );
+  };
 
   const handleSharePhoto = async () => {
     try {
@@ -255,17 +264,23 @@ export default function CabinetPhotoModals({
           <div className={styles.photoTitle} title={activePhoto.title}>
             {activePhoto.title}
           </div>
+          {activePhoto.uploaderUsername ? (
+            <div className={styles.photoAuthor} title={`Фото добавил ${activePhoto.uploaderUsername}`}>
+              от <span>{activePhoto.uploaderUsername}</span>
+            </div>
+          ) : null}
 
-          <div className={styles.photoWrap}>
+          <div className={`${styles.photoWrap} ${isActivePhotoLandscape ? styles.photoWrapLandscape : ""}`}>
             <Image
               src={activePhotoUrl}
               alt={activePhoto.title}
               width={300}
               height={375}
-              sizes="300px"
+              sizes={isActivePhotoLandscape ? "(max-width: 768px) calc(100vw - 48px), 420px" : "300px"}
               className={styles.photoImg}
               unoptimized
               loading="eager"
+              onLoad={(event) => rememberPhotoOrientation(activePhoto.id, event.currentTarget)}
             />
             {isFavNow ? (
               <Image src="/images/city/heart_red.png" alt="" width={23} height={23} className={styles.likeIcon} aria-hidden="true" />
