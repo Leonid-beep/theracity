@@ -21,6 +21,8 @@ type Step = "photo" | "routeChoice" | "pickRoute" | "createRoute";
 
 const MODAL_PHOTO_WIDTH = 640;
 const MODAL_PHOTO_QUALITY = 78;
+const LANDSCAPE_MODAL_PHOTO_WIDTH = 960;
+const LANDSCAPE_MODAL_PHOTO_QUALITY = 86;
 const UploadPhotoModal = dynamic(() => import("./UploadPhotoModal"), {
   ssr: false,
 });
@@ -278,12 +280,12 @@ export default function PhotoModals(props: {
   if (!open || !photo || !activePhoto) return null;
 
   const mapsUrl = buildYandexMapsUrl({ lat: activePhoto.lat, lng: activePhoto.lng });
+  const isActivePhotoLandscape = landscapePhotoIds[activePhoto.id] === true;
   const activePhotoUrl = getOptimizedPhotoUrl(
     activePhoto.src,
-    MODAL_PHOTO_WIDTH,
-    MODAL_PHOTO_QUALITY,
+    isActivePhotoLandscape ? LANDSCAPE_MODAL_PHOTO_WIDTH : MODAL_PHOTO_WIDTH,
+    isActivePhotoLandscape ? LANDSCAPE_MODAL_PHOTO_QUALITY : MODAL_PHOTO_QUALITY,
   );
-  const isActivePhotoLandscape = landscapePhotoIds[activePhoto.id] === true;
   const rememberPhotoOrientation = (photoId: string, image: HTMLImageElement) => {
     const isLandscape = image.naturalWidth > image.naturalHeight;
     setLandscapePhotoIds((prev) =>
@@ -362,9 +364,17 @@ export default function PhotoModals(props: {
                   </button>
                 </>
               ) : null}
-              {likedNow ? (
-                <Image src="/images/city/heart_red.png" alt="" width={23} height={23} className={styles.likeIcon} aria-hidden="true" />
-              ) : null}
+              <div className={styles.likeCountBadge}>
+                <Image
+                  src={likedNow ? "/images/city/heart_red.png" : "/images/city/heart_black.png"}
+                  alt=""
+                  width={16}
+                  height={16}
+                  className={styles.likeCountIcon}
+                  aria-hidden="true"
+                />
+                <span>{activePhoto.favoriteCount ?? 0}</span>
+              </div>
             </div>
 
             <div className={styles.meta}>

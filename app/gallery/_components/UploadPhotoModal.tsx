@@ -36,6 +36,8 @@ type SavedPhoto = {
   spaceType: string[];
   mood: string[];
   atmosphere: string[];
+  favoriteCount?: number;
+  viewCount?: number;
 };
 
 export type EditablePhoto = {

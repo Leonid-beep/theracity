@@ -378,6 +378,17 @@ export default function CabinetPage() {
                       {!r.isPublished ? (
                         <span className={styles.unpublishedBadge}>Не опубликован</span>
                       ) : null}
+                      <div className={styles.likeBadge}>
+                        <Image
+                          src="/images/city/heart_black.png"
+                          alt=""
+                          width={16}
+                          height={16}
+                          className={styles.likeBadgeIcon}
+                          aria-hidden="true"
+                        />
+                        <span>{r.favoriteCount ?? 0}</span>
+                      </div>
                     </div>
                     <figcaption className={styles.cap}>{r.title}</figcaption>
                     {!r.isPublished ? (
@@ -425,14 +436,17 @@ export default function CabinetPage() {
                         quality={70}
                       />
                     ) : null}
-                    <Image
-                      src="/images/city/heart_red.png"
-                      alt=""
-                      width={23}
-                      height={23}
-                      className={styles.cardLike}
-                      aria-hidden="true"
-                    />
+                    <div className={styles.likeBadge}>
+                      <Image
+                        src="/images/city/heart_red.png"
+                        alt=""
+                        width={16}
+                        height={16}
+                        className={styles.likeBadgeIcon}
+                        aria-hidden="true"
+                      />
+                      <span>{p.favoriteCount ?? 0}</span>
+                    </div>
                   </div>
                   <figcaption className={styles.cap}>{p.title}</figcaption>
                 </figure>
@@ -480,14 +494,17 @@ export default function CabinetPage() {
                       ) : (
                         <span className={styles.thumbEmptyLabel}>Пустой маршрут</span>
                       )}
-                      <Image
-                        src="/images/city/heart_red.png"
-                        alt=""
-                        width={23}
-                        height={23}
-                        className={styles.cardLike}
-                        aria-hidden="true"
-                      />
+                      <div className={styles.likeBadge}>
+                        <Image
+                          src="/images/city/heart_red.png"
+                          alt=""
+                          width={16}
+                          height={16}
+                          className={styles.likeBadgeIcon}
+                          aria-hidden="true"
+                        />
+                        <span>{r.favoriteCount ?? 0}</span>
+                      </div>
                     </div>
                     <figcaption className={styles.cap}>{r.title}</figcaption>
                   </figure>
@@ -532,6 +549,7 @@ export default function CabinetPage() {
           }}
           onClose={() => setOpenRoute(false)}
           onEdit={openRouteEditForm}
+          isFavorite={activeSectionKey === "fav_routes"}
           actionLabel={activeSectionKey === "my_routes" ? "УДАЛИТЬ МАРШРУТ" : "УДАЛИТЬ ИЗ ИЗБРАННОГО"}
           onDelete={() => {
             if (activeSectionKey === "my_routes") askDelete("delete_route", activeRoute?.id);

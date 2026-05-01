@@ -22,7 +22,10 @@ export async function GET(
     const { id } = await params;
     const photo = await prisma.photo.findUnique({
       where: { id },
-      include: { uploadedBy: { select: { username: true } } },
+      include: {
+        uploadedBy: { select: { username: true } },
+        _count: { select: { favoritedBy: true } },
+      },
     });
 
     if (!photo) {
@@ -42,6 +45,8 @@ export async function GET(
         mood: parseStoredMultiValue(photo.mood),
         atmosphere: parseStoredMultiValue(photo.atmosphere),
         uploaderUsername: photo.uploadedBy.username,
+        favoriteCount: photo._count.favoritedBy,
+        viewCount: photo.viewCount,
       },
     });
   } catch {
@@ -169,7 +174,10 @@ export async function PATCH(
         mood: serializeMultiValue(mood),
         atmosphere: serializeMultiValue(atmosphere),
       },
-      include: { uploadedBy: { select: { username: true } } },
+      include: {
+        uploadedBy: { select: { username: true } },
+        _count: { select: { favoritedBy: true } },
+      },
     });
 
     return NextResponse.json({
@@ -185,6 +193,8 @@ export async function PATCH(
         mood: parseStoredMultiValue(updated.mood),
         atmosphere: parseStoredMultiValue(updated.atmosphere),
         uploaderUsername: updated.uploadedBy.username,
+        favoriteCount: updated._count.favoritedBy,
+        viewCount: updated.viewCount,
       },
     });
   } catch {

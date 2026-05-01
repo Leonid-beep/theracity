@@ -13,6 +13,8 @@ import {
 
 const ROUTE_MODAL_PHOTO_WIDTH = 640;
 const ROUTE_MODAL_PHOTO_QUALITY = 78;
+const ROUTE_MODAL_LANDSCAPE_PHOTO_WIDTH = 960;
+const ROUTE_MODAL_LANDSCAPE_PHOTO_QUALITY = 86;
 
 export type CabinetRouteItem = {
   id: string;
@@ -23,6 +25,8 @@ export type CabinetRouteItem = {
   address: string;
   photos: { id: string; src: string; alt: string; metro?: string[]; address?: string; uploaderUsername?: string }[];
   canEdit?: boolean;
+  favoriteCount?: number;
+  viewCount?: number;
 };
 
 export default function CabinetRouteModal({
@@ -35,6 +39,7 @@ export default function CabinetRouteModal({
   onClose,
   actionLabel,
   onDelete,
+  isFavorite,
 }: {
   open: boolean;
   route: CabinetRouteItem | null;
@@ -45,6 +50,7 @@ export default function CabinetRouteModal({
   onClose: () => void;
   actionLabel: string;
   onDelete: () => void;
+  isFavorite?: boolean;
 }) {
   const photos = route?.photos ?? [];
   const hasPhotos = photos.length > 0;
@@ -119,11 +125,17 @@ export default function CabinetRouteModal({
     photos.map((photo) => photo.address),
   );
   const canEdit = Boolean(route.canEdit);
-  const mainPhotoUrl = main
-    ? getOptimizedPhotoUrl(main.src, ROUTE_MODAL_PHOTO_WIDTH, ROUTE_MODAL_PHOTO_QUALITY)
-    : null;
-  const mainPhotoUploader = main?.uploaderUsername?.trim() ?? "";
   const isMainPhotoLandscape = !!main && landscapePhotoIds[main.id] === true;
+  const mainPhotoUrl = main
+    ? getOptimizedPhotoUrl(
+        main.src,
+        isMainPhotoLandscape ? ROUTE_MODAL_LANDSCAPE_PHOTO_WIDTH : ROUTE_MODAL_PHOTO_WIDTH,
+        isMainPhotoLandscape ? ROUTE_MODAL_LANDSCAPE_PHOTO_QUALITY : ROUTE_MODAL_PHOTO_QUALITY,
+      )
+    : null;
+  const modalClassName = `${styles.modal} ${styles.modalRoute} ${
+    isMainPhotoLandscape ? styles.modalRouteLandscape : ""
+  }`;
   const rememberPhotoOrientation = (photoId: string, image: HTMLImageElement) => {
     const isLandscape = image.naturalWidth > image.naturalHeight;
     setLandscapePhotoIds((prev) =>
@@ -134,7 +146,7 @@ export default function CabinetRouteModal({
   return (
     <div className={styles.overlay} onClick={onClose} role="presentation">
       <div
-        className={`${styles.modal} ${styles.modalRoute}`}
+        className={modalClassName}
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -181,7 +193,7 @@ export default function CabinetRouteModal({
                 alt={main.alt}
                 width={300}
                 height={375}
-                sizes={isMainPhotoLandscape ? "(max-width: 768px) calc(100vw - 100px), 360px" : "300px"}
+                sizes={isMainPhotoLandscape ? "(max-width: 768px) calc(100vw - 106px), 360px" : "300px"}
                 className={styles.mainImg}
                 unoptimized
                 loading="eager"
@@ -220,6 +232,18 @@ export default function CabinetRouteModal({
                 </svg>
               </button>
             ) : null}
+
+            <div className={styles.likeCountBadge}>
+              <Image
+                src={isFavorite ? "/images/city/heart_red.png" : "/images/city/heart_black.png"}
+                alt=""
+                width={16}
+                height={16}
+                className={styles.likeCountIcon}
+                aria-hidden="true"
+              />
+              <span>{route.favoriteCount ?? 0}</span>
+            </div>
 
             {totalPages > 1 ? (
               <div className={`${styles.pagination} ${styles.photoPagination}`}>
@@ -286,11 +310,6 @@ export default function CabinetRouteModal({
         </div>
 
         <div className={styles.meta}>
-          {mainPhotoUploader ? (
-            <div className={styles.photoAuthorLine} title={`Фото добавил ${mainPhotoUploader}`}>
-              Фото от <span>{mainPhotoUploader}</span>
-            </div>
-          ) : null}
           <div>Метро: {formatMultiValue(main?.metro ?? route.metro) || "—"}</div>
           <div>
             Адрес:{" "}

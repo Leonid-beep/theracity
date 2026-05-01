@@ -9,13 +9,7 @@ import {
 } from "@/app/lib/photoMetadata";
 
 type FilterKey = "metro" | "spaceType" | "mood" | "atmosphere";
-
-function getRouteSortTimestamp(route: {
-  createdAt: Date;
-  publishedAt: Date | null;
-}): number {
-  return (route.publishedAt ?? route.createdAt).getTime();
-}
+type RouteSort = "date" | "views" | "likes";
 
 function getSelectedValues(sp: URLSearchParams, key: FilterKey): string[] {
   return (sp.get(key) ?? "")
@@ -24,13 +18,46 @@ function getSelectedValues(sp: URLSearchParams, key: FilterKey): string[] {
     .filter(Boolean);
 }
 
+function getRouteSort(value: string | null): RouteSort {
+  if (value === "views" || value === "likes") {
+    return value;
+  }
+
+  return "date";
+}
+
+function getRouteOrderBy(sort: RouteSort) {
+  if (sort === "views") {
+    return [
+      { viewCount: "desc" as const },
+      { publishedAt: "desc" as const },
+      { createdAt: "desc" as const },
+    ];
+  }
+
+  if (sort === "likes") {
+    return [
+      { favoritedBy: { _count: "desc" as const } },
+      { publishedAt: "desc" as const },
+      { createdAt: "desc" as const },
+    ];
+  }
+
+  return [
+    { publishedAt: "desc" as const },
+    { createdAt: "desc" as const },
+  ];
+}
+
 function mapRouteItem(
   route: {
     id: string;
     title: string;
     description: string;
     createdById: string;
+    viewCount: number;
     createdBy?: { username: string | null } | null;
+    _count: { favoritedBy: number };
     routePhotos: Array<{
       photo: {
         id: string;
@@ -65,6 +92,8 @@ function mapRouteItem(
     address: firstPhoto ? `${firstPhoto.lat}, ${firstPhoto.lng}` : "",
     photos,
     coverUrl: photos[0]?.src ?? "",
+    favoriteCount: route._count.favoritedBy,
+    viewCount: route.viewCount,
     canEdit: !!sessionUserId && (isAdmin || route.createdById === sessionUserId),
   };
 }
@@ -75,6 +104,7 @@ export async function GET(req: NextRequest) {
     const includeAll = sp.get("all") === "1";
     const page = Math.max(1, Number(sp.get("page")) || 1);
     const pageSize = Math.min(100, Math.max(1, Number(sp.get("pageSize")) || 32));
+    const sort = getRouteSort(sp.get("sort"));
     const filters = {
       metro: getSelectedValues(sp, "metro"),
       spaceType: getSelectedValues(sp, "spaceType"),
@@ -104,6 +134,7 @@ export async function GET(req: NextRequest) {
           where: { isPublished: true },
           include: {
             createdBy: { select: { username: true } },
+            _count: { select: { favoritedBy: true } },
             routePhotos: {
               include: {
                 photo: {
@@ -124,12 +155,13 @@ export async function GET(req: NextRequest) {
               orderBy: { order: "asc" },
             },
           },
-          orderBy: { createdAt: "desc" },
+          orderBy: getRouteOrderBy(sort),
         })
       : await prisma.route.findMany({
           where: baseWhere,
           include: {
             createdBy: { select: { username: true } },
+            _count: { select: { favoritedBy: true } },
             routePhotos: {
               include: {
                 photo: {
@@ -147,10 +179,7 @@ export async function GET(req: NextRequest) {
               orderBy: { order: "asc" },
             },
           },
-          orderBy: [
-            { publishedAt: "desc" },
-            { createdAt: "desc" },
-          ],
+          orderBy: getRouteOrderBy(sort),
           ...(includeAll
             ? {}
             : {
@@ -169,7 +198,6 @@ export async function GET(req: NextRequest) {
               matchesSelectedValues(photo.atmosphere, filters.atmosphere),
             ),
           )
-          .sort((a, b) => getRouteSortTimestamp(b) - getRouteSortTimestamp(a))
       : routes;
 
     const pagedRoutes =

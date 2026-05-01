@@ -36,7 +36,11 @@ export type RouteItem = {
   coverUrl: string;
   isPublished?: boolean;
   canEdit?: boolean;
+  favoriteCount?: number;
+  viewCount?: number;
 };
+
+type RoutesSort = "date" | "views" | "likes";
 
 function isAllSelected(selected: string[], options: string[]): boolean {
   return options.length > 0 && selected.length === options.length;
@@ -61,6 +65,19 @@ function buildRoutesSearch(filters: Record<string, string>, extras?: Record<stri
     ...filters,
     ...extras,
   });
+}
+
+function adjustFavoriteCount<T extends { id: string; favoriteCount?: number }>(
+  item: T,
+  itemId: string,
+  delta: number,
+): T {
+  if (item.id !== itemId) return item;
+
+  return {
+    ...item,
+    favoriteCount: Math.max(0, (item.favoriteCount ?? 0) + delta),
+  };
 }
 
 function RoutesPageContent() {
@@ -98,7 +115,9 @@ function RoutesPageContent() {
   const [selAtmo, setSelAtmo] = useState<string[]>([]);
   const [filtersInitialized, setFiltersInitialized] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<Record<string, string>>({});
+  const [sortBy, setSortBy] = useState<RoutesSort>("date");
   const fetchRequestIdRef = useRef(0);
+  const viewedRouteIdRef = useRef<string | null>(null);
 
   const filterRef = useRef<HTMLElement>(null);
   useCloseDetailsOnOutsideClick(filterRef, "routes-filters");
@@ -172,6 +191,7 @@ function RoutesPageContent() {
       const pageSearch = buildRoutesSearch(filters, {
         page: String(nextPage),
         pageSize: String(pageSize),
+        sort: sortBy,
       });
       try {
         const pageResponse = await fetch(`/api/routes?${pageSearch}`);
@@ -196,7 +216,7 @@ function RoutesPageContent() {
         setLoading(false);
       }
     },
-    [pageSize],
+    [pageSize, sortBy],
   );
 
   const handleRouteDeleted = useCallback(
@@ -259,6 +279,38 @@ function RoutesPageContent() {
     };
   }, [sharedRouteId]);
 
+  useEffect(() => {
+    if (!open || !activeRoute) {
+      viewedRouteIdRef.current = null;
+      return;
+    }
+
+    if (viewedRouteIdRef.current === activeRoute.id) {
+      return;
+    }
+
+    viewedRouteIdRef.current = activeRoute.id;
+
+    fetch(`/api/routes/${activeRoute.id}/views`, { method: "POST" })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        const data = (await response.json().catch(() => ({}))) as { viewCount?: number };
+        return typeof data.viewCount === "number" ? data.viewCount : null;
+      })
+      .then((viewCount) => {
+        if (viewCount == null) return;
+
+        const updateViewCount = (route: RouteItem) =>
+          route.id === activeRoute.id ? { ...route, viewCount } : route;
+
+        setRoutes((prev) => prev.map(updateViewCount));
+        setActiveRoute((prev) =>
+          prev && prev.id === activeRoute.id ? { ...prev, viewCount } : prev,
+        );
+      })
+      .catch(() => {});
+  }, [activeRoute, open]);
+
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const canPrev = page > 1;
   const canNext = page < totalPages;
@@ -302,6 +354,11 @@ function RoutesPageContent() {
     );
   }, []);
 
+  const adjustRouteFavoriteCount = useCallback((routeId: string, delta: number) => {
+    setRoutes((prev) => prev.map((route) => adjustFavoriteCount(route, routeId, delta)));
+    setActiveRoute((prev) => (prev ? adjustFavoriteCount(prev, routeId, delta) : prev));
+  }, []);
+
   const openCreateRouteForm = () => {
     setRouteForm({
       mode: "create",
@@ -343,6 +400,7 @@ function RoutesPageContent() {
       else next.add(routeId);
       return next;
     });
+    adjustRouteFavoriteCount(routeId, wasLiked ? -1 : 1);
 
     try {
       const response = await fetch("/api/routes/favorites", {
@@ -362,6 +420,7 @@ function RoutesPageContent() {
           else next.delete(routeId);
           return next;
         });
+        adjustRouteFavoriteCount(routeId, wasLiked ? 1 : -1);
       }
     } catch {
       setLiked((prev) => {
@@ -370,6 +429,7 @@ function RoutesPageContent() {
         else next.delete(routeId);
         return next;
       });
+      adjustRouteFavoriteCount(routeId, wasLiked ? 1 : -1);
     }
   };
 
@@ -528,6 +588,11 @@ function RoutesPageContent() {
     });
   };
 
+  const handleSortChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSortBy(event.target.value as RoutesSort);
+    setPage(1);
+  };
+
   return (
     <main className={styles.root}>
       <h1 className={styles.h1}>
@@ -587,16 +652,17 @@ function RoutesPageContent() {
                           quality={70}
                         />
                       ) : null}
-                      {isLiked ? (
+                      <div className={styles.likeBadge}>
                         <Image
-                          src="/images/city/heart_red.png"
+                          src={isLiked ? "/images/city/heart_red.png" : "/images/city/heart_black.png"}
                           alt=""
-                          width={23}
-                          height={23}
-                          className={styles.cardLike}
+                          width={16}
+                          height={16}
+                          className={styles.likeBadgeIcon}
                           aria-hidden="true"
                         />
-                      ) : null}
+                        <span>{route.favoriteCount ?? 0}</span>
+                      </div>
                     </div>
                     <figcaption className={styles.cap}>{route.title}</figcaption>
                   </figure>
@@ -652,6 +718,19 @@ function RoutesPageContent() {
             </h2>
 
             <div className={styles.filterFields}>
+              <div className={styles.field}>
+                <div className={styles.fieldLabel}>Сортировка</div>
+                <select
+                  className={`${styles.select} ${styles.sortSelect}`}
+                  value={sortBy}
+                  onChange={handleSortChange}
+                >
+                  <option value="date">По дате добавления</option>
+                  <option value="views">По просмотрам</option>
+                  <option value="likes">По лайкам</option>
+                </select>
+              </div>
+
               <div className={styles.field}>
                 <div className={styles.fieldLabel}>Тип пространства</div>
                 <details className={styles.multi} name="routes-filters">

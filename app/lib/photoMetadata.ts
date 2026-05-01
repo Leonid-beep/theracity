@@ -89,7 +89,6 @@ const METRO_CLUSTERS: string[][] = [
   ["Площадь Александра Невского-I", "Площадь Александра Невского-II"],
 ];
 
-const NEARBY_RADIUS_METERS = 1000;
 const LAT_METER_SCALE = 111_320;
 const LNG_METER_SCALE = 55_660; // at ~60°N
 
@@ -114,24 +113,9 @@ export function findNearestMetroStations(lat: number, lng: number): string[] {
     .sort((a, b) => a.distance - b.distance);
 
   const distMap = new Map(sorted.map((s) => [s.name, s.distance]));
-  const result = new Set<string>();
-
-  const nearby = sorted.filter((s) => s.distance <= NEARBY_RADIUS_METERS);
-
-  if (nearby.length > 0) {
-    for (const station of nearby) {
-      result.add(station.name);
-      for (const member of getClusterMembers(station.name)) {
-        result.add(member);
-      }
-    }
-  } else {
-    const nearest = sorted[0];
-    result.add(nearest.name);
-    for (const member of getClusterMembers(nearest.name)) {
-      result.add(member);
-    }
-  }
+  const nearest = sorted[0];
+  const nearestCluster = getClusterMembers(nearest.name);
+  const result = new Set(nearestCluster.length > 0 ? nearestCluster : [nearest.name]);
 
   return [...result].sort((a, b) => (distMap.get(a) ?? 0) - (distMap.get(b) ?? 0));
 }

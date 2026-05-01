@@ -12,7 +12,9 @@ type RouteWithPhotos = {
   isPublished: boolean;
   publishedAt: Date | null;
   createdById: string;
+  viewCount: number;
   createdBy?: { username: string | null } | null;
+  _count: { favoritedBy: number };
   routePhotos: Array<{
     photoId: string;
     photo: {
@@ -48,6 +50,8 @@ function formatRouteResponse(route: RouteWithPhotos, canEdit: boolean) {
     photos,
     coverUrl: photos[0]?.src ?? "",
     isPublished: route.isPublished,
+    favoriteCount: route._count.favoritedBy,
+    viewCount: route.viewCount,
     canEdit,
   };
 }
@@ -85,6 +89,7 @@ export async function GET(
       where: { id },
       include: {
         createdBy: { select: { username: true } },
+        _count: { select: { favoritedBy: true } },
         routePhotos: {
           include: {
             photo: {
@@ -256,6 +261,7 @@ export async function PATCH(
           where: { id },
           include: {
             createdBy: { select: { username: true } },
+            _count: { select: { favoritedBy: true } },
             routePhotos: {
               include: {
                 photo: {

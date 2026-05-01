@@ -63,6 +63,10 @@
   overflow-x: hidden;
 }
 
+.modalRouteLandscape .meta {
+  top: calc(19.5px + 27px + 29px + 4.4em + 16px + 240px + 20px);
+}
+
 .routeTitle {
   position: absolute;
   left: 15px;
@@ -444,6 +448,39 @@
   pointer-events: none;
 }
 
+.likeCountBadge {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 2;
+  min-width: 40px;
+  height: 26px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(6px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.16);
+  font-family: var(--font-button);
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0;
+  color: #111;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.likeCountIcon {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  display: block;
+}
+
 .deleteRouteBtn {
   position: absolute;
   left: 10px;
@@ -565,6 +602,9 @@
     width: calc(100% - 30px);
     font-size: 24px;
   }
+  .modalRouteLandscape .meta {
+    top: calc(19.5px + 24px + 22px + 4.2em + 14px + 181px + 18px);
+  }
   .photoPagination {
     bottom: 10px;
     padding: 5px 7px;
@@ -653,6 +693,9 @@
     padding-bottom: 6px;
     box-sizing: border-box;
   }
+  .modalRouteLandscape .meta {
+    top: calc(16px + 22px + 14px + 36px + 8px + 160px + 16px);
+  }
   .photoPagination {
     bottom: 9px;
     padding: 5px 6px;
@@ -689,7 +732,7 @@
     height: auto;
     min-height: 0;
     max-height: calc(100vh - 24px);
-    padding: 16px 40px 14px 12px;
+    padding: 16px 12px 14px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -772,14 +815,15 @@
     height: 33px;
   }
   .photoRow.photoRowLandscape {
-    max-width: 284px;
-    grid-template-columns: 26px minmax(0, 220px) 26px;
+    max-width: 100%;
+    grid-template-columns: 32px minmax(0, min(300px, calc(100vw - 106px))) 32px;
     column-gap: 6px;
+    justify-content: center;
   }
   .photoRowLandscape .sideThumb,
   .photoRowLandscape .sideImg {
-    width: 26px;
-    height: 33px;
+    width: 32px;
+    height: 40px;
   }
 
   .meta {
@@ -798,6 +842,9 @@
     box-sizing: border-box;
     overflow-x: hidden;
     overflow-y: visible;
+  }
+  .modalRouteLandscape .meta {
+    top: auto;
   }
 
   .pagination {
@@ -881,7 +928,7 @@
     width: 100%;
     max-width: calc(100vw - 20px);
     max-height: calc(100dvh - 20px);
-    padding: 12px 38px 12px 10px;
+    padding: 12px 10px;
   }
 
   .routeTitle {
@@ -925,13 +972,14 @@
   }
   .photoRow.photoRowLandscape {
     max-width: 100%;
-    grid-template-columns: 42px minmax(0, min(200px, calc(100vw - 100px))) 42px;
-    column-gap: 8px;
+    grid-template-columns: 34px minmax(0, min(300px, calc(100vw - 108px))) 34px;
+    column-gap: 6px;
+    justify-content: center;
   }
   .photoRowLandscape .sideThumb,
   .photoRowLandscape .sideImg {
-    width: 42px;
-    height: 53px;
+    width: 34px;
+    height: 43px;
   }
 
   .meta {

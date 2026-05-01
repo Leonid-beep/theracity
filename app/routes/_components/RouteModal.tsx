@@ -23,6 +23,8 @@ type RoutePhoto = {
 
 const ROUTE_MODAL_PHOTO_WIDTH = 640;
 const ROUTE_MODAL_PHOTO_QUALITY = 78;
+const ROUTE_MODAL_LANDSCAPE_PHOTO_WIDTH = 960;
+const ROUTE_MODAL_LANDSCAPE_PHOTO_QUALITY = 86;
 
 type RouteItem = {
   id: string;
@@ -33,6 +35,8 @@ type RouteItem = {
   address: string;
   photos: RoutePhoto[];
   canEdit?: boolean;
+  favoriteCount?: number;
+  viewCount?: number;
 };
 
 export default function RouteModal({
@@ -173,11 +177,17 @@ export default function RouteModal({
   );
   const liked = likedRouteIds.has(activeRoute.id);
   const canEdit = Boolean(activeRoute.canEdit);
-  const mainPhotoUrl = mainPhoto
-    ? getOptimizedPhotoUrl(mainPhoto.src, ROUTE_MODAL_PHOTO_WIDTH, ROUTE_MODAL_PHOTO_QUALITY)
-    : null;
-  const mainPhotoUploader = mainPhoto?.uploaderUsername?.trim() ?? "";
   const isMainPhotoLandscape = !!mainPhoto && landscapePhotoIds[mainPhoto.id] === true;
+  const mainPhotoUrl = mainPhoto
+    ? getOptimizedPhotoUrl(
+        mainPhoto.src,
+        isMainPhotoLandscape ? ROUTE_MODAL_LANDSCAPE_PHOTO_WIDTH : ROUTE_MODAL_PHOTO_WIDTH,
+        isMainPhotoLandscape ? ROUTE_MODAL_LANDSCAPE_PHOTO_QUALITY : ROUTE_MODAL_PHOTO_QUALITY,
+      )
+    : null;
+  const modalClassName = `${styles.modal} ${styles.modalRoute} ${
+    isMainPhotoLandscape ? styles.modalRouteLandscape : ""
+  }`;
   const rememberPhotoOrientation = (photoId: string, image: HTMLImageElement) => {
     const isLandscape = image.naturalWidth > image.naturalHeight;
     setLandscapePhotoIds((prev) =>
@@ -189,7 +199,7 @@ export default function RouteModal({
     <>
       <div className={styles.overlay} onClick={handleClose} role="presentation">
         <div
-          className={`${styles.modal} ${styles.modalRoute}`}
+          className={modalClassName}
           onClick={(event) => event.stopPropagation()}
           role="dialog"
           aria-modal="true"
@@ -242,7 +252,7 @@ export default function RouteModal({
                   alt={mainPhoto.alt}
                   width={300}
                   height={375}
-                  sizes={isMainPhotoLandscape ? "(max-width: 768px) calc(100vw - 100px), 360px" : "300px"}
+                  sizes={isMainPhotoLandscape ? "(max-width: 768px) calc(100vw - 106px), 360px" : "300px"}
                   className={styles.mainImg}
                   unoptimized
                   loading="eager"
@@ -310,16 +320,17 @@ export default function RouteModal({
                 </button>
               ) : null}
 
-              {liked ? (
+              <div className={styles.likeCountBadge}>
                 <Image
-                  src="/images/city/heart_red.png"
+                  src={liked ? "/images/city/heart_red.png" : "/images/city/heart_black.png"}
                   alt=""
-                  width={23}
-                  height={23}
-                  className={styles.likeIcon}
+                  width={16}
+                  height={16}
+                  className={styles.likeCountIcon}
                   aria-hidden="true"
                 />
-              ) : null}
+                <span>{activeRoute.favoriteCount ?? 0}</span>
+              </div>
 
               {totalPhotos > 1 ? (
                 <div className={`${styles.pagination} ${styles.photoPagination}`}>
@@ -386,11 +397,6 @@ export default function RouteModal({
           </div>
 
           <div className={styles.meta}>
-            {mainPhotoUploader ? (
-              <div className={styles.photoAuthorLine} title={`Фото добавил ${mainPhotoUploader}`}>
-                Фото от <span>{mainPhotoUploader}</span>
-              </div>
-            ) : null}
             <div>Метро: {formatMultiValue(mainPhoto?.metro ?? activeRoute.metro)}</div>
             <div>
               Адрес:{" "}

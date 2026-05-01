@@ -16,6 +16,18 @@ function isPublicPath(pathname: string, req: NextRequest): boolean {
   if (pathname === "/routes" || pathname.startsWith("/routes/")) return true;
   if (PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return true;
 
+  if (req.method === "POST") {
+    const photoSegments = pathname.startsWith("/api/photos/")
+      ? pathname.slice("/api/photos/".length).split("/").filter(Boolean)
+      : [];
+    const routeSegments = pathname.startsWith("/api/routes/")
+      ? pathname.slice("/api/routes/".length).split("/").filter(Boolean)
+      : [];
+
+    if (photoSegments.length === 2 && photoSegments[1] === "views") return true;
+    if (routeSegments.length === 2 && routeSegments[1] === "views") return true;
+  }
+
   const m = req.method;
   if (m === "GET" || m === "HEAD") {
     if (pathname === "/api/photos") return true;

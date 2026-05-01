@@ -31,6 +31,8 @@ export async function GET(req: NextRequest) {
               title: true,
               description: true,
               createdById: true,
+              viewCount: true,
+              _count: { select: { favoritedBy: true } },
               routePhotos: {
                 select: {
                   photo: {
@@ -79,6 +81,8 @@ export async function GET(req: NextRequest) {
         address: firstPhoto ? `${firstPhoto.lat}, ${firstPhoto.lng}` : "",
         photos,
         canEdit: isAdmin || route.createdById === session.userId,
+        favoriteCount: route._count.favoritedBy,
+        viewCount: route.viewCount,
       };
     });
 

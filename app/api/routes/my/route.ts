@@ -23,6 +23,8 @@ export async function GET(req: NextRequest) {
           title: true,
           description: true,
           isPublished: true,
+          viewCount: true,
+          _count: { select: { favoritedBy: true } },
           routePhotos: {
             select: {
               photo: {
@@ -67,6 +69,8 @@ export async function GET(req: NextRequest) {
         address: firstPhoto ? `${firstPhoto.lat}, ${firstPhoto.lng}` : "",
         photos,
         coverUrl: photos[0]?.src ?? "",
+        favoriteCount: route._count.favoritedBy,
+        viewCount: route.viewCount,
         canEdit: true,
       };
     });

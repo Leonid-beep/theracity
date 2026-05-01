@@ -18,6 +18,7 @@ import {
 export const runtime = "nodejs";
 
 type FilterKey = "metro" | "spaceType" | "mood" | "atmosphere";
+type PhotoSort = "date" | "views" | "likes" | "admin";
 
 const photoListSelect = {
   id: true,
@@ -29,7 +30,10 @@ const photoListSelect = {
   spaceType: true,
   mood: true,
   atmosphere: true,
+  createdAt: true,
+  viewCount: true,
   uploadedBy: { select: { username: true } },
+  _count: { select: { favoritedBy: true } },
 } as const;
 
 function getSelectedValues(sp: URLSearchParams, key: FilterKey): string[] {
@@ -39,12 +43,40 @@ function getSelectedValues(sp: URLSearchParams, key: FilterKey): string[] {
     .filter(Boolean);
 }
 
+function getPhotoSort(value: string | null): PhotoSort {
+  if (value === "views" || value === "likes" || value === "admin") {
+    return value;
+  }
+
+  return "date";
+}
+
+function getPhotoOrderBy(sort: PhotoSort) {
+  if (sort === "views") {
+    return [{ viewCount: "desc" as const }, { createdAt: "desc" as const }];
+  }
+
+  if (sort === "likes") {
+    return [{ favoritedBy: { _count: "desc" as const } }, { createdAt: "desc" as const }];
+  }
+
+  if (sort === "admin") {
+    return [
+      { uploadedBy: { username: "asc" as const } },
+      { createdAt: "desc" as const },
+    ];
+  }
+
+  return { createdAt: "desc" as const };
+}
+
 export async function GET(req: NextRequest) {
   try {
     const sp = req.nextUrl.searchParams;
     const includeAll = sp.get("all") === "1";
     const page = Math.max(1, Number(sp.get("page")) || 1);
     const pageSize = Math.min(100, Math.max(1, Number(sp.get("pageSize")) || 32));
+    const sort = getPhotoSort(sp.get("sort"));
     const filters = {
       metro: getSelectedValues(sp, "metro"),
       spaceType: getSelectedValues(sp, "spaceType"),
@@ -56,11 +88,11 @@ export async function GET(req: NextRequest) {
     const photos = hasFilters
       ? await prisma.photo.findMany({
           select: photoListSelect,
-          orderBy: { createdAt: "desc" },
+          orderBy: getPhotoOrderBy(sort),
         })
       : await prisma.photo.findMany({
           select: photoListSelect,
-          orderBy: { createdAt: "desc" },
+          orderBy: getPhotoOrderBy(sort),
           ...(includeAll
             ? {}
             : {
@@ -101,6 +133,8 @@ export async function GET(req: NextRequest) {
       mood: parseStoredMultiValue(photo.mood),
       atmosphere: parseStoredMultiValue(photo.atmosphere),
       uploaderUsername: photo.uploadedBy.username,
+      favoriteCount: photo._count.favoritedBy,
+      viewCount: photo.viewCount,
     }));
 
     return NextResponse.json({
@@ -230,6 +264,8 @@ export async function POST(req: NextRequest) {
         mood,
         atmosphere,
         uploaderUsername: user.username,
+        favoriteCount: 0,
+        viewCount: photo.viewCount,
       },
     });
   } catch (error) {

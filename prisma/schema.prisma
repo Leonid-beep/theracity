@@ -37,11 +37,13 @@ model Photo {
   atmosphere   String
   uploadedById String
   createdAt    DateTime @default(now())
+  viewCount    Int      @default(0)
 
   uploadedBy  User           @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
   routePhotos RoutePhoto[]
   favoritedBy FavoritePhoto[]
 
+  @@index([viewCount])
   @@index([createdAt])
   @@index([metro])
   @@index([spaceType])
@@ -57,11 +59,13 @@ model Route {
   isPublished Boolean  @default(false)
   publishedAt DateTime?
   createdAt   DateTime @default(now())
+  viewCount   Int      @default(0)
 
   createdBy   User           @relation(fields: [createdById], references: [id], onDelete: Cascade)
   routePhotos RoutePhoto[]
   favoritedBy FavoriteRoute[]
 
+  @@index([viewCount])
   @@index([createdById, createdAt])
   @@index([isPublished, publishedAt])
 }

@@ -623,6 +623,39 @@
   pointer-events: none;
 }
 
+.likeCountBadge {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 2;
+  min-width: 40px;
+  height: 26px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(6px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.16);
+  font-family: var(--font-button);
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0;
+  color: #111;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.likeCountIcon {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  display: block;
+}
+
 .btnImg {
   width: 23px;
   height: 23px;

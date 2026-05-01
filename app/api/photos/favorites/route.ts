@@ -30,7 +30,9 @@ export async function GET(req: NextRequest) {
               spaceType: true,
               mood: true,
               atmosphere: true,
+              viewCount: true,
               uploadedBy: { select: { username: true } },
+              _count: { select: { favoritedBy: true } },
             },
           },
         },
@@ -53,6 +55,8 @@ export async function GET(req: NextRequest) {
       mood: parseStoredMultiValue(photo.mood),
       atmosphere: parseStoredMultiValue(photo.atmosphere),
       uploaderUsername: photo.uploadedBy.username,
+      favoriteCount: photo._count.favoritedBy,
+      viewCount: photo.viewCount,
     }));
 
     return NextResponse.json({ photos, total, page, pageSize });

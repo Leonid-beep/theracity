@@ -42,7 +42,11 @@ export type PhotoItem = {
   mood: string[];
   atmosphere: string[];
   uploaderUsername?: string;
+  favoriteCount?: number;
+  viewCount?: number;
 };
+
+type GallerySort = "date" | "views" | "likes" | "admin";
 
 function isAllSelected(selected: string[], options: string[]): boolean {
   return options.length > 0 && selected.length === options.length;
@@ -69,6 +73,19 @@ function buildGallerySearch(filters: Record<string, string>, extras?: Record<str
   });
 }
 
+function adjustFavoriteCount<T extends { id: string; favoriteCount?: number }>(
+  item: T,
+  itemId: string,
+  delta: number,
+): T {
+  if (item.id !== itemId) return item;
+
+  return {
+    ...item,
+    favoriteCount: Math.max(0, (item.favoriteCount ?? 0) + delta),
+  };
+}
+
 function GalleryPageContent() {
   const pageSize = useResponsivePageSize();
   const searchParams = useSearchParams();
@@ -92,11 +109,13 @@ function GalleryPageContent() {
   const [selAtmo, setSelAtmo] = useState<string[]>([]);
   const [filtersInitialized, setFiltersInitialized] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<Record<string, string>>({});
+  const [sortBy, setSortBy] = useState<GallerySort>("date");
 
   const [selected, setSelected] = useState<PhotoItem | null>(null);
   const { message: successMsg, showSuccess } = useSuccessToast();
   const pageFetchRequestIdRef = useRef(0);
   const allPhotosFetchRequestIdRef = useRef(0);
+  const viewedPhotoIdRef = useRef<string | null>(null);
   const sharedPhotoRequestRef = useRef<string | null>(null);
   const sharedPhotoId = searchParams.get("photoId");
   const createdRouteId = searchParams.get("createdRouteId");
@@ -210,6 +229,7 @@ function GalleryPageContent() {
       const pageSearch = buildGallerySearch(filters, {
         page: String(nextPage),
         pageSize: String(pageSize),
+        sort: sortBy,
       });
 
       try {
@@ -235,7 +255,7 @@ function GalleryPageContent() {
         setLoading(false);
       }
     },
-    [pageSize],
+    [pageSize, sortBy],
   );
 
   useEffect(() => {
@@ -244,7 +264,7 @@ function GalleryPageContent() {
 
   const fetchAllPhotos = useCallback(async (filters: Record<string, string>) => {
     const requestId = ++allPhotosFetchRequestIdRef.current;
-    const allSearch = buildGallerySearch(filters, { all: "1" });
+    const allSearch = buildGallerySearch(filters, { all: "1", sort: sortBy });
 
     try {
       const response = await fetch(`/api/photos?${allSearch}`);
@@ -402,6 +422,11 @@ function GalleryPageContent() {
     });
   };
 
+  const handleSortChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSortBy(event.target.value as GallerySort);
+    setPage(1);
+  };
+
   const handlePhotoDeleted = useCallback((photoId: string) => {
     const nextTotal = Math.max(0, total - 1);
     const nextTotalPages = Math.max(1, Math.ceil(nextTotal / pageSize));
@@ -443,7 +468,46 @@ function GalleryPageContent() {
     setSelected((prev) => (prev && prev.id === updatedPhoto.id ? updatedPhoto : prev));
   }, []);
 
+  const adjustPhotoFavoriteCount = useCallback((photoId: string, delta: number) => {
+    setPhotos((prev) => prev.map((photo) => adjustFavoriteCount(photo, photoId, delta)));
+    setAllPhotos((prev) => prev.map((photo) => adjustFavoriteCount(photo, photoId, delta)));
+    setSelected((prev) => (prev ? adjustFavoriteCount(prev, photoId, delta) : prev));
+  }, []);
+
   const displayedSelectedPhoto = selected ?? sharedPhoto;
+
+  useEffect(() => {
+    if (!displayedSelectedPhoto) {
+      viewedPhotoIdRef.current = null;
+      return;
+    }
+
+    if (viewedPhotoIdRef.current === displayedSelectedPhoto.id) {
+      return;
+    }
+
+    viewedPhotoIdRef.current = displayedSelectedPhoto.id;
+
+    fetch(`/api/photos/${displayedSelectedPhoto.id}/views`, { method: "POST" })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        const data = (await response.json().catch(() => ({}))) as { viewCount?: number };
+        return typeof data.viewCount === "number" ? data.viewCount : null;
+      })
+      .then((viewCount) => {
+        if (viewCount == null) return;
+
+        const updateViewCount = (photo: PhotoItem) =>
+          photo.id === displayedSelectedPhoto.id ? { ...photo, viewCount } : photo;
+
+        setPhotos((prev) => prev.map(updateViewCount));
+        setAllPhotos((prev) => prev.map(updateViewCount));
+        setSelected((prev) =>
+          prev && prev.id === displayedSelectedPhoto.id ? { ...prev, viewCount } : prev,
+        );
+      })
+      .catch(() => {});
+  }, [displayedSelectedPhoto]);
 
   const toggleLike = async (photoId: string) => {
     if (authLoading) return;
@@ -461,6 +525,7 @@ function GalleryPageContent() {
       else next.add(photoId);
       return next;
     });
+    adjustPhotoFavoriteCount(photoId, wasLiked ? -1 : 1);
 
     try {
       const response = await fetch("/api/photos/favorites", {
@@ -478,6 +543,7 @@ function GalleryPageContent() {
           else next.delete(photoId);
           return next;
         });
+        adjustPhotoFavoriteCount(photoId, wasLiked ? 1 : -1);
       }
     } catch {
       setLiked((prev) => {
@@ -486,6 +552,7 @@ function GalleryPageContent() {
         else next.delete(photoId);
         return next;
       });
+      adjustPhotoFavoriteCount(photoId, wasLiked ? 1 : -1);
     }
   };
 
@@ -542,16 +609,17 @@ function GalleryPageContent() {
                       className={styles.img}
                       quality={70}
                     />
-                    {liked.has(photo.id) ? (
+                    <div className={styles.likeBadge}>
                       <Image
-                        src="/images/city/heart_red.png"
+                        src={liked.has(photo.id) ? "/images/city/heart_red.png" : "/images/city/heart_black.png"}
                         alt=""
-                        width={23}
-                        height={23}
-                        className={styles.cardLike}
+                        width={16}
+                        height={16}
+                        className={styles.likeBadgeIcon}
                         aria-hidden="true"
                       />
-                    ) : null}
+                      <span>{photo.favoriteCount ?? 0}</span>
+                    </div>
                   </div>
                   <figcaption className={styles.cap}>{photo.title}</figcaption>
                 </figure>
@@ -608,6 +676,20 @@ function GalleryPageContent() {
             </h2>
 
             <div className={styles.filterFields}>
+              <div className={styles.field}>
+                <div className={styles.fieldLabel}>Сортировка</div>
+                <select
+                  className={`${styles.select} ${styles.sortSelect}`}
+                  value={sortBy}
+                  onChange={handleSortChange}
+                >
+                  <option value="date">По дате добавления</option>
+                  <option value="views">По просмотрам</option>
+                  <option value="likes">По лайкам</option>
+                  <option value="admin">По админу</option>
+                </select>
+              </div>
+
               <div className={styles.field}>
                 <div className={styles.fieldLabel}>Тип пространства</div>
                 <details className={styles.multi} name="gallery-filters">

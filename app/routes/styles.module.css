@@ -198,6 +198,39 @@
   box-shadow: none;
 }
 
+.likeBadge {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  z-index: 2;
+  min-width: 34px;
+  height: 24px;
+  padding: 0 7px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(6px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  pointer-events: none;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.14);
+  font-family: var(--font-button);
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0;
+  color: #111;
+  font-variant-numeric: tabular-nums;
+}
+
+.likeBadgeIcon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  display: block;
+}
+
 .likeIcon {
   position: absolute;
   right: 10px;
@@ -387,6 +420,13 @@
 .select option {
   font-family: var(--font-text);
   font-weight: 400;
+}
+
+.sortSelect {
+  cursor: pointer;
+  color: #111;
+  text-align: center;
+  text-align-last: center;
 }
 
 .multi .select {
@@ -664,6 +704,19 @@
     right: 6px;
     top: 6px;
   }
+  .likeBadge {
+    right: 6px;
+    top: 6px;
+    min-width: 30px;
+    height: 20px;
+    padding: 0 6px;
+    font-size: 10px;
+    gap: 3px;
+  }
+  .likeBadgeIcon {
+    width: 12px;
+    height: 12px;
+  }
   .pagination {
     gap: 14px;
     margin-top: 36px;
@@ -787,6 +840,18 @@
     height: 16px;
     right: 6px;
     top: 6px;
+  }
+  .likeBadge {
+    right: 5px;
+    top: 5px;
+    min-width: 28px;
+    height: 19px;
+    padding: 0 5px;
+    font-size: 9px;
+  }
+  .likeBadgeIcon {
+    width: 11px;
+    height: 11px;
   }
   .pagination {
     gap: 12px;
@@ -913,6 +978,18 @@
     height: 14px;
     right: 5px;
     top: 5px;
+  }
+  .likeBadge {
+    right: 5px;
+    top: 5px;
+    min-width: 26px;
+    height: 18px;
+    padding: 0 5px;
+    font-size: 9px;
+  }
+  .likeBadgeIcon {
+    width: 10px;
+    height: 10px;
   }
   .pagination {
     gap: 10px;
@@ -1081,6 +1158,10 @@
   .cardLike {
     width: 14px;
     height: 14px;
+  }
+  .likeBadge {
+    right: 5px;
+    top: 5px;
   }
   .pagination {
     gap: 8px;
