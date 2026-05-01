@@ -46,7 +46,7 @@ export type PhotoItem = {
   viewCount?: number;
 };
 
-type GallerySort = "date" | "views" | "likes" | "admin";
+type GallerySort = "date" | "views" | "likes";
 
 function isAllSelected(selected: string[], options: string[]): boolean {
   return options.length > 0 && selected.length === options.length;
@@ -686,7 +686,6 @@ function GalleryPageContent() {
                   <option value="date">По дате добавления</option>
                   <option value="views">По просмотрам</option>
                   <option value="likes">По лайкам</option>
-                  <option value="admin">По админу</option>
                 </select>
               </div>
 

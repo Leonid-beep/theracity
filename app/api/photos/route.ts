@@ -18,7 +18,7 @@ import {
 export const runtime = "nodejs";
 
 type FilterKey = "metro" | "spaceType" | "mood" | "atmosphere";
-type PhotoSort = "date" | "views" | "likes" | "admin";
+type PhotoSort = "date" | "views" | "likes";
 
 const photoListSelect = {
   id: true,
@@ -44,7 +44,7 @@ function getSelectedValues(sp: URLSearchParams, key: FilterKey): string[] {
 }
 
 function getPhotoSort(value: string | null): PhotoSort {
-  if (value === "views" || value === "likes" || value === "admin") {
+  if (value === "views" || value === "likes") {
     return value;
   }
 
@@ -58,13 +58,6 @@ function getPhotoOrderBy(sort: PhotoSort) {
 
   if (sort === "likes") {
     return [{ favoritedBy: { _count: "desc" as const } }, { createdAt: "desc" as const }];
-  }
-
-  if (sort === "admin") {
-    return [
-      { uploadedBy: { username: "asc" as const } },
-      { createdAt: "desc" as const },
-    ];
   }
 
   return { createdAt: "desc" as const };

@@ -1000,13 +1000,16 @@
   .filterFields {
     flex: none;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto auto auto;
     gap: 12px 10px;
     width: 100%;
     max-width: 260px;
     margin: 0 auto;
     align-items: start;
+  }
+  .filterFields .field:first-child {
+    grid-column: 1 / -1;
   }
   .field {
     width: 100%;
