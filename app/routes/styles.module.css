@@ -1187,3 +1187,51 @@
     font-size: 12px;
   }
 }
+
+.pages {
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: nowrap;
+}
+
+.page {
+  width: auto;
+  min-width: 34px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  letter-spacing: 0;
+}
+
+@media (max-width: 1440px) {
+  .page {
+    min-width: 28px;
+    padding: 0 7px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .page {
+    min-width: 24px;
+    padding: 0 6px;
+  }
+}
+
+@media (max-width: 700px) {
+  .page {
+    min-width: 20px;
+    padding: 0 5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page {
+    min-width: 18px;
+    padding: 0 5px;
+  }
+}
